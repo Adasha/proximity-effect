@@ -3,10 +3,10 @@
 
 const VALID_MODES    = new Set(['mousemove', 'enterframe', 'redraw']);
 const DEFAULT_MODE   = 'redraw';
-const DEFAULT_FPS    = 30;
+const DEFAULT_FPS    =  30;
 const DEFAULT_RUNOFF = 100;
-const DEFAULT_ATTACK = 1;
-const DEFAULT_DECAY  = 1;
+const DEFAULT_ATTACK =   1;
+const DEFAULT_DECAY  =   1;
 const VALID_EFFECTS  = {
     opacity:    {min: 0, max: 1, style: 'opacity',   unit: ''},
     scale:      {                style: 'transform'},
@@ -46,6 +46,16 @@ class MouseFader
 	
     constructor(target, params = {})
     {
+		_params = params;
+        
+        this.threshold = _params.hasOwnProperty('threshold') ? _params.threshold : 0;
+        this.runoff    = _params.hasOwnProperty('runoff')    ? _params.runoff    : DEFAULT_RUNOFF;
+        this.attack    = _params.hasOwnProperty('attack')    ? _params.attack    : 1;
+        this.decay     = _params.hasOwnProperty('decay')     ? _params.decay     : 1;
+        this.FPS       = _params.FPS  || DEFAULT_FPS;
+        this.mode      = _params.mode || DEFAULT_MODE;
+        
+        
         let nodes;
         
         if(target instanceof HTMLElement)
@@ -68,7 +78,6 @@ class MouseFader
 			return;
 		}
         
-		_params = params;
         this.nodes = nodes;
         _lastDeltas = new Array(nodes.length);
         
@@ -84,41 +93,11 @@ class MouseFader
 	/////////////////////////
 	
 	
-	// MODE [String]
-	
-    get mode()
-    {
-        return _params.mode || DEFAULT_MODE;
-    }
-    
-    set mode(str)
-    {
-        if(!_params.mode || str!==_params.mode)
-        {
-            _params.mode = VALID_MODES.has(str) ? str : DEFAULT_MODE;
-        }
-		//this.init(_params.mode);
-    }
-	
-	
-	// FPS [Number>0]
-	
-	get FPS()
-	{
-		return _params.FPS || DEFAULT_FPS;
-	}
-	
-	set FPS(num)
-	{
-		_params.FPS = constrain(num, 0);
-	}
-	
-	
 	// THRESHOLD [Number>=0]
 	
 	get threshold()
 	{
-		return _params.hasOwnProperty('threshold') ? _params.threshold : 0;
+		return _params.threshold;
 	}
 	
 	set threshold(num)
@@ -131,7 +110,7 @@ class MouseFader
 	
 	get runoff()
 	{
-		return _params.hasOwnProperty('runoff') ? _params.runoff : DEFAULT_RUNOFF;
+		return _params.runoff;
 	}
 	
 	set runoff(num)
@@ -152,7 +131,7 @@ class MouseFader
 	
 	get attack()
 	{
-		return _params.hasOwnProperty('attack') ? _params.attack : 1;
+		return _params.attack;
 	}
 	
 	set attack(num)
@@ -165,13 +144,47 @@ class MouseFader
 	
 	get decay()
 	{
-		return _params.hasOwnProperty('decay') ? _params.decay : 1;
+		return _params.decay;
 	}
 	
 	set decay(num)
 	{
 		_params.decay = constrain(num, 0, 1);
 	}
+	
+	
+	// FPS [Number>0]
+	
+	get FPS()
+	{
+		return _params.FPS;
+	}
+	
+	set FPS(num)
+	{
+		_params.FPS = constrain(num, 0.1);
+	}
+	
+	
+	// MODE [String]
+	
+    get mode()
+    {
+        return _params.mode;
+    }
+    
+    set mode(str)
+    {
+        if(str!==_params.mode)
+        {
+            if(VALID_MODES.has(str))
+            {
+                _params.mode = str;
+            }
+            else console.log(`${str} not a recognised mode.`);
+        }
+		else console.log(`Already in ${str} mode. Mode not changed.`);
+    }
 	
 	
 	
