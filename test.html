@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>MouseFader.js test page</title>
+    <style>
+        
+        html, body { height: 100%; }
+        
+        #sampleelement
+        {
+            display: flex;
+            flex-wrap: wrap;
+            flex: 1 1 auto;
+            align-content: center;
+            justify-content: center;
+			transform: translateZ(0);
+            
+            width: 600px;
+            height: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 10px;
+            background: #eee;
+        }
+        
+        *.childelement
+        {
+            width: 100px;
+            height: 100px;
+            box-sizing: border-box;
+            margin: 2px;
+            background-color: #666;
+            box-shadow: 0 0 50px rgba(0,0,0,1) inset;
+        }
+        
+        
+    </style>
+</head>
+
+<body>
+    
+    <div id="sampleelement">
+
+
+        <div class="childelement">&nbsp;</div>
+
+
+    </div>
+	
+    
+    
+	<script src="MouseFader.js"></script>
+    <script>
+
+        var t = document.querySelector('#sampleelement');
+        var n = t.removeChild(t.querySelector('*.childelement'));
+        var fader;
+
+        var params = {
+            mode: 'enterframe',
+            FPS:  30,
+
+            threshold: 80,
+            runoff:    20,
+            attack: 0.9,
+            decay:  0.07,
+        };
+
+        function resizeArea()
+        {
+            build();
+        }
+
+        function build()
+        {
+            var size = 104;
+
+            var e = window.getComputedStyle(t);
+            var w = parseInt(e.getPropertyValue('width')),
+                h = parseInt(e.getPropertyValue('height'));
+            var nx = Math.floor(w/size),
+                ny = Math.floor(h/size);
+
+            while (t.hasChildNodes()) {
+                t.removeChild(t.lastChild);
+            }
+
+            var i, j;
+            for(i=0; i<ny; i++)
+            {
+                for(j=0; j<nx; j++)
+                {
+                    t.appendChild(n.cloneNode());
+                }
+            }
+
+            if(!fader)
+            {
+                 fader = new MouseFader(document.getElementById('sampleelement'), params);
+            }
+            else
+            {
+            }
+
+            fader.addEffect('opacity', 0.9, 0.2);
+            fader.addEffect('scale',   0.2, 1);
+            //fader.addEffect('blur', 0, 10);
+        }
+
+        window.addEventListener('resize', resizeArea);
+        build();
+
+    </script>
+</body>
+</html>
