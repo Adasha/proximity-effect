@@ -296,7 +296,7 @@ class MouseFader
 					let transforms = [],
                         filters = [];
 					
-					for(let e of _effects)
+/*					for(let e of _effects)
 					{
 						let near = this.effect(e).near,
 							far  = this.effect(e).far;
@@ -306,7 +306,7 @@ class MouseFader
 							
 						}
 					}
-					
+*/					
 					if(this.hasEffect('opacity'))
 					{
 						node.style.opacity = delta(d, this.effect('opacity').near, this.effect('opacity').far);
