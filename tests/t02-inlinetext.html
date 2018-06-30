@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>MouseFader.js test page</title>
+    <link href="https://fonts.googleapis.com/css?family=Eater" rel="stylesheet">
+    
+    <style>
+        
+        #jabberwocky
+        {
+            font: 160% 'Eater', cursive;
+            width: -webkit-max-content;
+            width: -moz-max-content;
+            width: max-content;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 2em;
+            color: #000;
+            background: #eee;
+            overflow-wrap: break-word;
+            white-space: normal;
+            word-wrap: normal;
+        }
+        
+        
+        #jabberwocky > *, #jabberwocky > * > *
+        {
+            display: inline-block;
+        }
+        
+    </style>
+</head>
+
+<body>
+    
+    <p id="jabberwocky">
+        <span class="wiggle">’Twas brillig, and the slithy toves</span><br>
+        <span class="wiggle">Did gyre and gimble in the wabe:</span><br>
+        <span class="wiggle">All mimsy were the borogoves,</span><br>
+        <span class="wiggle">And the mome raths outgrabe.</span>
+    </p>
+	
+    
+    
+	<script src="../MouseFader.js"></script>
+    <script>
+
+        var params = {
+            threshold: 10,
+            runoff:    50,
+            attack:     0.8,
+            decay:      0.8,
+            direction: 'vertical'
+        };
+        
+        
+        //let fader = new MouseFader(document.querySelector('#jabberwocky'), params);
+        let fader = new MouseFader(document.querySelectorAll('*.wiggle'), params);
+        fader.addEffect('opacity', 1,   0.2);
+        fader.addEffect('scale',   1,   0.66);
+        //fader.addEffect('blur',    5,   0);
+
+
+    </script>
+</body>
+</html>

@@ -50,7 +50,7 @@
 	
     
     
-	<script src="MouseFader.js"></script>
+	<script src="../MouseFader.js"></script>
     <script>
 
         var t = document.querySelector('#sampleelement');
@@ -58,13 +58,10 @@
         var fader;
 
         var params = {
-            mode: 'redraw',
-            FPS:  30,
-
             threshold: 80,
             runoff:    20,
-            attack: 0.9,
-            decay:  0.07,
+            attack:     0.9,
+            decay:      0.07
         };
 
         function resizeArea()

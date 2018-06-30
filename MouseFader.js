@@ -1,13 +1,15 @@
 ﻿// MOUSEFADER CLASS
 
 
-const VALID_MODES    = new Set(['mousemove', 'enterframe', 'redraw']);
-const DEFAULT_MODE   = 'redraw';
-const DEFAULT_FPS    =  30;
-const DEFAULT_RUNOFF = 100;
-const DEFAULT_ATTACK =   1;
-const DEFAULT_DECAY  =   1;
-const VALID_EFFECTS  = {
+const VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']);
+const VALID_DIRECTIONS  = new Set(['both', 'horizontal', 'vertical']);
+const DEFAULT_MODE      = 'redraw';
+const DEFAULT_DIRECTION = 'both';
+const DEFAULT_FPS       =  30;
+const DEFAULT_RUNOFF    = 100;
+const DEFAULT_ATTACK    =   1;
+const DEFAULT_DECAY     =   1;
+const VALID_EFFECTS     = {
     opacity:    {min: 0, max: 1, style: 'opacity',   unit: ''},
     scale:      {                style: 'transform'},
     translateX: {},
@@ -17,7 +19,8 @@ const VALID_EFFECTS  = {
     blur:       {min: 0}
 };
 
-let _params,
+let _target,
+    _params,
 	_effects = {},
     _pointer = {},
     _frameLoop,
@@ -52,34 +55,12 @@ class MouseFader
         this.runoff    = _params.hasOwnProperty('runoff')    ? _params.runoff    : DEFAULT_RUNOFF;
         this.attack    = _params.hasOwnProperty('attack')    ? _params.attack    : 1;
         this.decay     = _params.hasOwnProperty('decay')     ? _params.decay     : 1;
-        this.FPS       = _params.FPS  || DEFAULT_FPS;
-        this.mode      = _params.mode || DEFAULT_MODE;
+        this.direction = _params.direction || DEFAULT_DIRECTION;
+        this.FPS       = _params.FPS       || DEFAULT_FPS;
+        this.mode      = _params.mode      || DEFAULT_MODE;
         
         
-        let nodes;
-        
-        if(target instanceof HTMLElement)
-        {
-            nodes = target.childNodes;
-        }
-        else if(target instanceof NodeList)
-		{
-			nodes = target;
-		}
-        else
-		{
-			console.log(`${target} is not a suitable target`);
-			return;
-		}
-		
-        if(nodes.length<1)
-		{
-			console.log(`No children found on ${target}`);
-			return;
-		}
-        
-        this.nodes = nodes;
-        _lastDeltas = new Array(nodes.length);
+        this.target = target;
         
 		this.init();
     }
@@ -93,6 +74,44 @@ class MouseFader
 	/////////////////////////
 	
 	
+    // TARGET
+    
+    get target()
+    {
+        return _target;
+    }
+    
+    set target(t)
+    {
+        let nodes;
+        
+        if(t instanceof HTMLElement)
+        {
+            console.log('HTMLElement found');
+            nodes = t.childNodes;
+        }
+        else if(t instanceof NodeList)
+		{
+            console.log('NodeList found');
+			nodes = t;
+		}
+        else
+		{
+			console.log(`${t} is not a suitable target`);
+			return;
+		}
+		
+        if(nodes.length<1)
+		{
+			console.log(`No children found on ${t}`);
+			return;
+		}
+        
+        this.nodes = nodes;
+        _lastDeltas = new Array(this.nodes.length);
+    }
+    
+    
 	// THRESHOLD [Number>=0]
 	
 	get threshold()
@@ -153,7 +172,24 @@ class MouseFader
 	}
 	
 	
-	// FPS [Number>0]
+	// DIRECTION [String]
+    
+    get direction()
+    {
+        return _params.direction;
+    }
+    
+    set direction(str)
+    {
+        if(VALID_DIRECTIONS.has(str))
+        {
+            _params.direction = str;
+        }
+        else console.log(`${str} not a valid direction.`);
+    }
+    
+    
+    // FPS [Number>0]
 	
 	get FPS()
 	{
@@ -162,7 +198,11 @@ class MouseFader
 	
 	set FPS(num)
 	{
-		_params.FPS = constrain(num, 0.1);
+        if(num>0 && typeof num==='number')
+        {
+            _params.FPS = constrain(num, 0);
+        }
+        else console.log('Invalid FPS requested');
 	}
 	
 	
@@ -290,9 +330,12 @@ class MouseFader
 			
 			if((bounds.right>=0 && bounds.left<=view.clientWidth && bounds.bottom>=0 && bounds.top<=view.clientHeight) || last<1)
 			{
-				dx = _pointer.x - (bounds.left+bounds.right )*0.5;
-				dy = _pointer.y - (bounds.top +bounds.bottom)*0.5;
-				dd = Math.sqrt(dx*dx+dy*dy);
+                dx = _pointer.x - (bounds.left+bounds.right )*0.5;
+                dy = _pointer.y - (bounds.top +bounds.bottom)*0.5;
+                
+                if(this.direction==='both') dd = Math.sqrt(dx*dx+dy*dy);
+                else dd = Math.abs(this.direction==='horizontal' ? dx : dy);
+                
 				td = constrain((dd-this.threshold)/this.runoff, 0, 1);
                 
                 if(last)
