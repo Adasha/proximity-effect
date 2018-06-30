@@ -28,6 +28,7 @@ let params = {
    decay: 1, // [0<=n>=1] rate of change when receding, 1=full speed 0=no movement
    threshold: 0, // [n>=0] minimum distance (from element's mathematical centre) before effect starts
    runoff: 100 // [n>=0] distance over which styles are interpolated
+   direction: 'both'; // 'both' | 'horizontal' | 'vertical'
    mode: 'redraw'; // redraw=every animation frame; ~~mousemove=have a guess; enterframe=follow FPS~~
    FPS: 30; // [n>0] 'enterframe' mode only, up to refresh rate
 }
