@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <title>MouseFader.js test page</title>
     <style>
-        
+
         html, body { height: 100%; }
-        
+
         #sampleelement
         {
             display: flex;
@@ -15,7 +15,9 @@
             align-content: center;
             justify-content: center;
 			transform: translateZ(0);
-            
+            perspective: 500px;
+            backface-visibility: hidden;
+
             width: 600px;
             height: 600px;
             margin-left: auto;
@@ -23,7 +25,7 @@
             padding: 10px;
             background: #eee;
         }
-        
+
         *.childelement
         {
             width: 100px;
@@ -31,15 +33,18 @@
             box-sizing: border-box;
             margin: 2px;
             background-color: #666;
+            background-image: url('holly.jpg');
+            background-size: cover;
             box-shadow: 0 0 50px rgba(0,0,0,1) inset;
+            z-index: auto;
         }
-        
-        
+
+
     </style>
 </head>
 
 <body>
-    
+
     <div id="sampleelement">
 
 
@@ -47,9 +52,9 @@
 
 
     </div>
-	
-    
-    
+
+
+
 	<script src="../MouseFader.js"></script>
     <script>
 
@@ -100,9 +105,12 @@
             {
             }
 
-            fader.addEffect('opacity', 1,   0.2);
-            fader.addEffect('scale',   0.2, 1);
-            fader.addEffect('blur',   20,   0);
+            fader.addEffect('opacity',      1,    0.7);
+            fader.addEffect('scale',        1,    0.8);
+            fader.addEffect('translateX', 100,    0);
+            fader.addEffect('blur',         0,    5);
+            fader.addEffect('brightness', 130,  100);
+            fader.addEffect('hueRotate',    0, -120);
         }
 
         window.addEventListener('resize', resizeArea);

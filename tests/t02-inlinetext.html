@@ -51,15 +51,17 @@
             runoff:    50,
             attack:     0.8,
             decay:      0.8,
-            direction: 'vertical'
         };
         
         
+        let fader = new MouseFader(document.getElementById('jabberwocky'), params);
         //let fader = new MouseFader(document.querySelector('#jabberwocky'), params);
-        let fader = new MouseFader(document.querySelectorAll('*.wiggle'), params);
+        //let fader = new MouseFader(document.querySelectorAll('#jabberwocky'), params);
+        //let fader = new MouseFader(document.querySelectorAll('*.wiggle'), params);
+        //let fader = new MouseFader(document.querySelectorAll('#jabberwocky > *'), params);
         fader.addEffect('opacity', 1,   0.2);
         fader.addEffect('scale',   1,   0.66);
-        //fader.addEffect('blur',    5,   0);
+        fader.addEffect('blur',    0,   5);
 
 
     </script>
