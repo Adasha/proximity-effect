@@ -37,3 +37,7 @@ let myFader = new MouseFader(target, params);
 myFader.addEffect('opacity', 1, 0.5); // effect, near val, far val
 ...
 ```
+
+## License:
+
+This software is provided under the Mozilla Public License 2.0. You can freely use the code in your own projects, using any license, without limitation, but if you modify the code base those changes must be pushed back under the same MPL2 license. Any copyright/credits must be left intact.
