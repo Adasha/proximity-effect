@@ -59,6 +59,7 @@ const delta = (num, a, b) => (b-a)*num+a;
 
 const map = (num, inMin, inMax, outMin, outMax) => (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 
+const XOR = (a, b) => (a || b) && !(a && b);
 
 //const startTimer = (delay) =>
 
@@ -79,6 +80,7 @@ class MouseFader
         this.runoff    = _params.hasOwnProperty('runoff')    ? _params.runoff    : DEFAULT_RUNOFF;
         this.attack    = _params.hasOwnProperty('attack')    ? _params.attack    : 1;
         this.decay     = _params.hasOwnProperty('decay')     ? _params.decay     : 1;
+        this.invert    = _params.invert    || false;
         this.direction = _params.direction || DEFAULT_DIRECTION;
         this.FPS       = _params.FPS       || DEFAULT_FPS;
         this.mode      = _params.mode      || DEFAULT_MODE;
@@ -121,7 +123,7 @@ class MouseFader
         }
         else if(t instanceof NodeList)
         {
-            console.log(`NodeList with ${t.length} children found`);
+            console.log(`NodeList with ${t.length} childNodes found`);
             nodes = t;
         }
         else
@@ -173,6 +175,20 @@ class MouseFader
     get boundary()
     {
     	return this.threshold + this.runoff;
+    }
+
+
+
+    // INVERT [Boolean]
+
+    get invert()
+    {
+        return _params.invert;
+    }
+
+    set invert(bool)
+    {
+        _params.invert = !!bool;
     }
 
 
@@ -372,15 +388,13 @@ class MouseFader
                 else dd = Math.abs(this.direction==='horizontal' ? dx : dy);
 
         		td = constrain((dd-this.threshold)/this.runoff, 0, 1);
+                if(this.invert) td = 1 - td;
 
                 if(last)
                 {
-                    d = last+(td-last)*((td>last) ? this.decay : this.attack);
+                    d = last+(td-last)*(XOR(td>last, this.invert) ? this.decay : this.attack);
                 }
-                else
-                {
-                    d = td;
-                }
+                else d = td;
 
     			if(d<=1)
     			{
@@ -412,7 +426,7 @@ class MouseFader
                     {
                         node.style[r] = styles[r].join(' ');
                     }
-                    node.style.zIndex = 1000-Math.floor(d*1000);
+                    //node.style.zIndex = 1000-Math.floor(d*1000);
         		}
 
                 _lastDeltas[i] = d;

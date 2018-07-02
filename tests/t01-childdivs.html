@@ -16,7 +16,12 @@
             justify-content: center;
 			transform: translateZ(0);
             perspective: 500px;
-            backface-visibility: hidden;
+            /* -webkit-backface-visibility: visible;
+            -moz-backface-visibility: visible;
+            backface-visibility: visible;
+            -webkit-transform-style: preserve-3d;
+            -moz-transform-style: preserve-3d;
+            transform-style: preserve-3d; */
 
             width: 600px;
             height: 600px;
@@ -49,6 +54,30 @@
 
 
         <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
+        <div class="childelement">&nbsp;</div>
 
 
     </div>
@@ -59,62 +88,26 @@
     <script>
 
         var t = document.querySelector('#sampleelement');
-        var n = t.removeChild(t.querySelector('*.childelement'));
-        var fader;
 
         var params = {
-            threshold: 80,
-            runoff:    20,
-            attack:     0.9,
-            decay:      0.07
+            threshold: 100,
+            runoff:    80,
+            attack:     0.5,
+            decay:      0.2
         };
 
-        function resizeArea()
-        {
-            build();
-        }
+        let fader = new MouseFader(document.getElementById('sampleelement'), params);
 
-        function build()
-        {
-            var size = 104;
 
-            var e = window.getComputedStyle(t);
-            var w = parseInt(e.getPropertyValue('width')),
-                h = parseInt(e.getPropertyValue('height'));
-            var nx = Math.floor(w/size),
-                ny = Math.floor(h/size);
+        //fader.addEffect('opacity',      1,    0.7);
+        //fader.addEffect('scale',        1,    0.6);
+        fader.addEffect('rotateX',    0,   180);
+        //fader.addEffect('rotateZ',    -45,   45);
+        //fader.addEffect('translateX', 100,    0);
+        //fader.addEffect('blur',         0,    5);
+        //fader.addEffect('brightness', 130,  100);
+        //fader.addEffect('hueRotate',    0, -120);
 
-            while (t.hasChildNodes()) {
-                t.removeChild(t.lastChild);
-            }
-
-            var i, j;
-            for(i=0; i<ny; i++)
-            {
-                for(j=0; j<nx; j++)
-                {
-                    t.appendChild(n.cloneNode());
-                }
-            }
-
-            if(!fader)
-            {
-                 fader = new MouseFader(document.getElementById('sampleelement'), params);
-            }
-            else
-            {
-            }
-
-            fader.addEffect('opacity',      1,    0.7);
-            fader.addEffect('scale',        1,    0.8);
-            fader.addEffect('translateX', 100,    0);
-            fader.addEffect('blur',         0,    5);
-            fader.addEffect('brightness', 130,  100);
-            fader.addEffect('hueRotate',    0, -120);
-        }
-
-        window.addEventListener('resize', resizeArea);
-        build();
 
     </script>
 </body>
