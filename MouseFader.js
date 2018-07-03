@@ -328,23 +328,33 @@ class MouseFader
     ////////////////////
 
 
-    addEffect(str, near, far)
+    addEffect(str, near, far, ...rest)
     {
-        if(VALID_EFFECTS.hasOwnProperty(str))
-        {
-            let template = VALID_EFFECTS[str];
-            _effects = _effects || [];
+        let template;
 
-            _effects.push({
-                type: str,
-                near: constrain(near, template.min, template.max),
-                far:  far!==undefined ? constrain(far, template.min, template.max) : near,
-				rule: template.rule,
-				func: template.func,
-				unit: template.unit
-            });
+        if(rest.length>0)
+        {
+            template = {rule: rest[0], func: rest[1], unit: rest[2]};
         }
-        else console.log(`${str} is not a supported effect type`);
+        else if(VALID_EFFECTS.hasOwnProperty(str))
+        {
+            template = VALID_EFFECTS[str];
+        }
+        else
+        {
+            console.log(`${str} is not a supported effect type`);
+            return;
+        }
+
+        _effects = _effects || [];
+        _effects.push({
+            type: str,
+            near: constrain(near, template.min, template.max),
+            far:  (far!==undefined && far!==null) ? constrain(far, template.min, template.max) : near,
+            rule: template.rule,
+            func: template.func,
+            unit: template.unit
+        });
     }
 
 
@@ -376,8 +386,8 @@ class MouseFader
 		{
 			if(this.jitter>0)
 			{
-				this.nodes[i].dataset.jitterx = (Math.random()-0.5) * this.jitter;
-				this.nodes[i].dataset.jittery = (Math.random()-0.5) * this.jitter;
+				this.nodes[i].dataset['jitterx'] = (Math.random()-0.5) * this.jitter;
+				this.nodes[i].dataset['jittery'] = (Math.random()-0.5) * this.jitter;
 			}
 			else if(this.nodes[i].dataset.jitterx)
 			{
@@ -398,6 +408,7 @@ class MouseFader
     init()
     {
         document.addEventListener('mousemove', this.updatePointer);
+        document.dispatchEvent(new MouseEvent('mousemove'));
 
     	/*let b = document.body;
     	b.removeEventListener('mousemove',  update());
@@ -445,8 +456,8 @@ class MouseFader
 
     		if((bounds.right>=0 && bounds.left<=view.clientWidth && bounds.bottom>=0 && bounds.top<=view.clientHeight) || last<1)
     		{
-				let centerX = (bounds.left+bounds.right )*0.5 - this.offsetX - (node.dataset.jitterx||0),
-					centerY = (bounds.top +bounds.bottom)*0.5 - this.offsetY - (node.dataset.jittery||0);
+				let centerX = (bounds.left+bounds.right )*0.5 - this.offsetX - (node.dataset['jitterx']||0),
+					centerY = (bounds.top +bounds.bottom)*0.5 - this.offsetY - (node.dataset['jittery']||0);
 
                 let dx = _pointer.x - centerX,
                     dy = _pointer.y - centerY,
@@ -489,11 +500,11 @@ class MouseFader
                             styles[rule].push(func+'('+val+unit+')');
                         }
         			}
-                    for(let r in styles)
+                    for(let rule in styles)
                     {
-                        node.style[r] = styles[r].join(' ');
+                        node.style[rule] = styles[rule].join(' ');
                     }
-                    //node.style.zIndex = 1000-Math.floor(d*1000);
+                    node.style.zIndex = 1000-Math.floor(d*1000);
         		}
 
                 _lastDeltas[i] = d;
