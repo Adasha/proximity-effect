@@ -33,8 +33,8 @@
 
         *.childelement
         {
-            width: 100px;
-            height: 100px;
+            width: 40px;
+            height: 40px;
             box-sizing: border-box;
             margin: 2px;
             background-color: #666;
@@ -54,30 +54,6 @@
 
 
         <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
-        <div class="childelement">&nbsp;</div>
 
 
     </div>
@@ -87,13 +63,24 @@
 	<script src="../MouseFader.js"></script>
     <script>
 
-        var t = document.querySelector('#sampleelement');
-
-        var params = {
-            threshold: 100,
-            runoff:    80,
-            attack:     0.5,
-            decay:      0.2
+        let t = document.querySelector('#sampleelement');
+    	let n = t.removeChild(t.querySelector('*.childelement'));
+		
+        for(let i=0; i<10; i++)
+        {
+            for(let j=0; j<10; j++)
+            {
+                t.appendChild(n.cloneNode());
+            }
+        }
+		
+		
+        let params = {
+            threshold:  50,
+            runoff:     80,
+			jitter:     150,
+            attack:      0.5,
+            decay:       0.2
         };
 
         let fader = new MouseFader(document.getElementById('sampleelement'), params);
@@ -105,7 +92,7 @@
         //fader.addEffect('rotateZ',    -45,   45);
         //fader.addEffect('translateX', 100,    0);
         //fader.addEffect('blur',         0,    5);
-        //fader.addEffect('brightness', 130,  100);
+        fader.addEffect('grayscale', 0,  100);
         //fader.addEffect('hueRotate',    0, -120);
 
 
