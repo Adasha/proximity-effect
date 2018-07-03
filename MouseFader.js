@@ -81,6 +81,9 @@ class MouseFader
         this.attack    = _params.hasOwnProperty('attack')    ? _params.attack    : 1;
         this.decay     = _params.hasOwnProperty('decay')     ? _params.decay     : 1;
         this.invert    = _params.invert    || false;
+		this.offsetX   = _params.offsetX   || 0;
+		this.offsetY   = _params.offsetY   || 0;
+		this.jitter    = _params.jitter    || 0;
         this.direction = _params.direction || DEFAULT_DIRECTION;
         this.FPS       = _params.FPS       || DEFAULT_FPS;
         this.mode      = _params.mode      || DEFAULT_MODE;
@@ -157,7 +160,7 @@ class MouseFader
     }
 
 
-    // DISTANCE [Number>=0]
+    // RUNOFF [Number>=0]
 
     get runoff()
     {
@@ -193,7 +196,7 @@ class MouseFader
 
 
 
-    // ATTACK [0>Number>=1]
+    // ATTACK [0>=Number>=1]
 
     get attack()
     {
@@ -206,7 +209,7 @@ class MouseFader
     }
 
 
-    // DECAY [0>Number>=1]
+    // DECAY [0>=Number>=1]
 
     get decay()
     {
@@ -217,6 +220,46 @@ class MouseFader
     {
     	_params.decay = constrain(num, 0, 1);
     }
+
+
+
+	// OFFSET [Number]
+	
+	get offsetX()
+	{
+		return _params.offsetX;
+	}
+
+	get offsetY()
+	{
+		return _params.offsetY;
+	}
+	
+	
+	set offsetX(num)
+	{
+		_params.offsetX = num;
+	}
+
+	set offsetY(num)
+	{
+		_params.offsetY = num;
+	}
+	
+	
+	
+	// JITTER [Number>=0]
+	
+	get jitter()
+	{
+		return _params.jitter;
+	}
+	
+	set jitter(num)
+	{
+		_params.jitter = constrain(num, 0);
+		this.setJitterValues();
+	}
 
 
 
@@ -231,13 +274,13 @@ class MouseFader
     {
         if(VALID_DIRECTIONS.has(str))
         {
-              _params.direction = str;
+        	_params.direction = str;
         }
         else console.log(`${str} not a valid direction.`);
     }
-
-
-
+	
+	
+	
     // FPS [Number>0]
 
     get FPS()
@@ -295,7 +338,10 @@ class MouseFader
             _effects.push({
                 type: str,
                 near: constrain(near, effect.min, effect.max),
-                far:  far!==undefined ? constrain(far, effect.min, effect.max) : near
+                far:  far!==undefined ? constrain(far, effect.min, effect.max) : near,
+				rule: effect.rule,
+				func: effect.func,
+				unit: effect.unit
             });
         }
         else console.log(`${str} is not a supported effect type`);
@@ -323,6 +369,24 @@ class MouseFader
     }
 
 
+
+	setJitterValues()
+	{
+		for(let i=0; i<this.nodes.length; i++)
+		{
+			if(this.jitter>0)
+			{
+				this.nodes[i].dataset.jitterx = (Math.random()-0.5) * this.jitter;
+				this.nodes[i].dataset.jittery = (Math.random()-0.5) * this.jitter;
+			}
+			else if(this.nodes[i].dataset.jitterx)
+			{
+				delete this.nodes[i].dataset.jitterx;
+				delete this.nodes[i].dataset.jittery;
+			}
+		}
+	}
+	
 
 
 
@@ -358,8 +422,9 @@ class MouseFader
     	this.update = this.update.bind(this);
         window.requestAnimationFrame(this.update);
     }
-
-
+	
+	
+	
     updatePointer(evt)
     {
         _pointer.x = evt.clientX;
@@ -380,8 +445,11 @@ class MouseFader
 
     		if((bounds.right>=0 && bounds.left<=view.clientWidth && bounds.bottom>=0 && bounds.top<=view.clientHeight) || last<1)
     		{
-                let dx = _pointer.x - (bounds.left+bounds.right )*0.5,
-                    dy = _pointer.y - (bounds.top +bounds.bottom)*0.5,
+				let centerX = (bounds.left+bounds.right )*0.5 - this.offsetX - (node.dataset.jitterx||0),
+					centerY = (bounds.top +bounds.bottom)*0.5 - this.offsetY - (node.dataset.jittery||0);
+				
+                let dx = _pointer.x - centerX,
+                    dy = _pointer.y - centerY,
                     dd, td, d;
 
                 if(this.direction==='both') dd = Math.sqrt(dx*dx+dy*dy);
@@ -402,15 +470,14 @@ class MouseFader
 
         			for(let i=0; i<_effects.length; i++)
         			{
-        				let type   = _effects[i].type,
-                            near   = _effects[i].near,
-        					far    = _effects[i].far,
-                            val    = delta(d, near, far);
-
-                        let effect = VALID_EFFECTS[type],
+        				let effect = _effects[i],
+							type   = effect.type,
+                            near   = effect.near,
+        					far    = effect.far,
                             rule   = effect.rule,
                             func   = effect.func,
-                            unit   = effect.unit || '';
+                            unit   = effect.unit || '',
+                            val    = delta(d, near, far);
 
                         if(!func)
                         {
