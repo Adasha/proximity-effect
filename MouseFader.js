@@ -224,7 +224,7 @@ class MouseFader
 
 
 	// OFFSET [Number]
-	
+
 	get offsetX()
 	{
 		return _params.offsetX;
@@ -234,8 +234,8 @@ class MouseFader
 	{
 		return _params.offsetY;
 	}
-	
-	
+
+
 	set offsetX(num)
 	{
 		_params.offsetX = num;
@@ -245,16 +245,16 @@ class MouseFader
 	{
 		_params.offsetY = num;
 	}
-	
-	
-	
+
+
+
 	// JITTER [Number>=0]
-	
+
 	get jitter()
 	{
 		return _params.jitter;
 	}
-	
+
 	set jitter(num)
 	{
 		_params.jitter = constrain(num, 0);
@@ -278,9 +278,9 @@ class MouseFader
         }
         else console.log(`${str} not a valid direction.`);
     }
-	
-	
-	
+
+
+
     // FPS [Number>0]
 
     get FPS()
@@ -292,7 +292,7 @@ class MouseFader
     {
         if(num>0 && typeof num==='number')
         {
-              _params.FPS = constrain(num, 0);
+            _params.FPS = constrain(num, 0);
         }
         else console.log('Invalid FPS requested');
     }
@@ -332,16 +332,16 @@ class MouseFader
     {
         if(VALID_EFFECTS.hasOwnProperty(str))
         {
-            let effect = VALID_EFFECTS[str];
+            let template = VALID_EFFECTS[str];
             _effects = _effects || [];
 
             _effects.push({
                 type: str,
-                near: constrain(near, effect.min, effect.max),
-                far:  far!==undefined ? constrain(far, effect.min, effect.max) : near,
-				rule: effect.rule,
-				func: effect.func,
-				unit: effect.unit
+                near: constrain(near, template.min, template.max),
+                far:  far!==undefined ? constrain(far, template.min, template.max) : near,
+				rule: template.rule,
+				func: template.func,
+				unit: template.unit
             });
         }
         else console.log(`${str} is not a supported effect type`);
@@ -386,7 +386,7 @@ class MouseFader
 			}
 		}
 	}
-	
+
 
 
 
@@ -422,9 +422,9 @@ class MouseFader
     	this.update = this.update.bind(this);
         window.requestAnimationFrame(this.update);
     }
-	
-	
-	
+
+
+
     updatePointer(evt)
     {
         _pointer.x = evt.clientX;
@@ -447,7 +447,7 @@ class MouseFader
     		{
 				let centerX = (bounds.left+bounds.right )*0.5 - this.offsetX - (node.dataset.jitterx||0),
 					centerY = (bounds.top +bounds.bottom)*0.5 - this.offsetY - (node.dataset.jittery||0);
-				
+
                 let dx = _pointer.x - centerX,
                     dy = _pointer.y - centerY,
                     dd, td, d;
