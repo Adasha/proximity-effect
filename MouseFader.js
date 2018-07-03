@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿// MOUSEFADER CLASS
 // adasha.com
 
@@ -1012,4 +1011,3 @@ class MouseFader
     } // update end
 
 }
->>>>>>> bab60ae2b66ecba0757b567f505476ca3b999c1b
