@@ -27,7 +27,7 @@ In your `<body>` content add some elements you want to affect:
 ```
 
 ### Set-up
-Store a reference to the chosen target:
+Remaining set-up should be done after content has loaded. Store a reference to the chosen target:
 ```javascript
 let target = document.querySelectorAll("*.targetName"); // requires NodeList at present
 ```
