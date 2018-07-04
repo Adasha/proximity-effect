@@ -48,9 +48,10 @@ let params = {
 
 Finally add effects as you see fit:
 
-```javascript```
+```javascript
 let myFader = new MouseFader(target, params);
 myFader.addEffect('opacity', 1, 0.5); // effect, near val, far val
+myFader.addEffect('scale',   1, 2); // effect, near val, far val
 ...
 ```
 
