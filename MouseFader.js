@@ -40,6 +40,7 @@ const VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
 
 let _target,
     _nodes,
+	_centers = [],
     _params,
     _effects,
     _pointer = {},
@@ -142,6 +143,7 @@ class MouseFader
     	}
 
         this.nodes = nodes;
+		this.setCenters();
         _lastDeltas = new Array(this.nodes.length);
     }
 
@@ -380,31 +382,11 @@ class MouseFader
 
 
 
-	setJitterValues()
-	{
-		for(let i=0; i<this.nodes.length; i++)
-		{
-			if(this.jitter>0)
-			{
-				this.nodes[i].dataset['jitterx'] = (Math.random()-0.5) * this.jitter;
-				this.nodes[i].dataset['jittery'] = (Math.random()-0.5) * this.jitter;
-			}
-			else if(this.nodes[i].dataset.jitterx)
-			{
-				delete this.nodes[i].dataset.jitterx;
-				delete this.nodes[i].dataset.jittery;
-			}
-		}
-	}
-
-
-
-
-    //////////////////////
-    // EVENT MANAGEMENT //
-    //////////////////////
-
-
+	////////////
+	// SET-UP //
+	////////////
+	
+	
     init()
     {
         document.addEventListener('mousemove', this.updatePointer);
@@ -436,6 +418,48 @@ class MouseFader
 
 
 
+	setCenters()
+	{
+		console.log('set');
+		for(let i=0; i<this.nodes.length; i++)
+		{
+			let node = this.nodes[i],
+				bounds = node.getBoundingClientRect();
+			
+			_centers.push({
+				x: (bounds.left+bounds.right )*0.5,
+				y: (bounds.top +bounds.bottom)*0.5
+			});
+		}
+	}
+	
+	
+	
+	setJitterValues()
+	{
+		for(let i=0; i<this.nodes.length; i++)
+		{
+			if(this.jitter>0)
+			{
+				this.nodes[i].dataset['jitterx'] = (Math.random()-0.5) * this.jitter;
+				this.nodes[i].dataset['jittery'] = (Math.random()-0.5) * this.jitter;
+			}
+			else if(this.nodes[i].dataset.jitterx)
+			{
+				delete this.nodes[i].dataset.jitterx;
+				delete this.nodes[i].dataset.jittery;
+			}
+		}
+	}
+
+
+
+
+    //////////////////////
+    // EVENT MANAGEMENT //
+    //////////////////////
+
+
     updatePointer(evt)
     {
         _pointer.x = evt.clientX;
@@ -456,8 +480,8 @@ class MouseFader
 
     		if((bounds.right>=0 && bounds.left<=view.clientWidth && bounds.bottom>=0 && bounds.top<=view.clientHeight) || last<1)
     		{
-				let centerX = (bounds.left+bounds.right )*0.5 - this.offsetX - (node.dataset['jitterx']||0),
-					centerY = (bounds.top +bounds.bottom)*0.5 - this.offsetY - (node.dataset['jittery']||0);
+				let centerX = _centers[i].x - this.offsetX - (node.dataset['jitterx']||0),
+					centerY = _centers[i].y - this.offsetY - (node.dataset['jittery']||0);
 
                 let dx = _pointer.x - centerX,
                     dy = _pointer.y - centerY,
