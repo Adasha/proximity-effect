@@ -2,10 +2,9 @@
 
 
 Modify CSS properties on children of target element based on mouse pointer proximity.
-Port of an old Flash component, missing some features but gained others. 6Kb minified, no dependencies.
+Port of an old Flash component, missing some features but gained others. 6Kb minified.
 
-Note: ES6 browser needed for now - compatibility is currently an afterthought.
-
+Now using Babel, but not yet checking for features so still needs a capable browser.
 
 [View demos on adasha.com](http://www.adasha.com/lab/mousefader)
 
