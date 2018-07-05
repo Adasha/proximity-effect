@@ -1,0 +1,12 @@
+{
+	"name": "mousefader",
+	"version": "0.6.0-alpha",
+	"scripts": {
+		"babel": "babel",
+		"build": "babel src -d lib"
+	},
+	"devDependencies": {
+		"babel-cli": "^6.26.0",
+		"babel-preset-env": "^1.7.0"
+	}
+}

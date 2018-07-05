@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <title>MouseFader.js test page</title>
     <link href="https://fonts.googleapis.com/css?family=Eater" rel="stylesheet">
-    
+
     <style>
-        
+
         #jabberwocky
         {
             font: 160% 'Eater', cursive;
@@ -22,28 +22,28 @@
             white-space: normal;
             word-wrap: normal;
         }
-        
-        
+
+
         #jabberwocky > *, #jabberwocky > * > *
         {
             display: inline-block;
         }
-        
+
     </style>
 </head>
 
 <body>
-    
+
     <p id="jabberwocky">
         <span class="wiggle">’Twas brillig, and the slithy toves</span><br>
         <span class="wiggle">Did gyre and gimble in the wabe:</span><br>
         <span class="wiggle">All mimsy were the borogoves,</span><br>
         <span class="wiggle">And the mome raths outgrabe.</span>
     </p>
-	
-    
-    
-	<script src="../MouseFader.js"></script>
+
+
+
+	<script src="../src/MouseFader.js"></script>
     <script>
 
         var params = {
@@ -52,8 +52,8 @@
             attack:     0.8,
             decay:      0.8,
         };
-        
-        
+
+
         let fader = new MouseFader(document.getElementById('jabberwocky'), params);
         //let fader = new MouseFader(document.querySelector('#jabberwocky'), params);
         //let fader = new MouseFader(document.querySelectorAll('#jabberwocky'), params);
