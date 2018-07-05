@@ -40,7 +40,7 @@ const VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
 
 let _target,
     _nodes,
-	_centers = [],
+	_centers,
     _params,
     _effects,
     _pointer = {},
@@ -385,12 +385,15 @@ class MouseFader
 	////////////
 	// SET-UP //
 	////////////
-	
-	
+
+
     init()
     {
         document.addEventListener('mousemove', this.updatePointer);
         document.dispatchEvent(new MouseEvent('mousemove'));
+
+        window.addEventListener('scroll', this.windowEvent.bind(this));
+        window.addEventListener('resize', this.windowEvent.bind(this));
 
     	/*let b = document.body;
     	b.removeEventListener('mousemove',  update());
@@ -412,7 +415,7 @@ class MouseFader
     			break;
     	}*/
 
-    	this.update = this.update.bind(this);
+        this.update = this.update.bind(this);
         window.requestAnimationFrame(this.update);
     }
 
@@ -420,21 +423,21 @@ class MouseFader
 
 	setCenters()
 	{
-		console.log('set');
+		_centers = [];
 		for(let i=0; i<this.nodes.length; i++)
 		{
 			let node = this.nodes[i],
 				bounds = node.getBoundingClientRect();
-			
+
 			_centers.push({
 				x: (bounds.left+bounds.right )*0.5,
 				y: (bounds.top +bounds.bottom)*0.5
 			});
 		}
 	}
-	
-	
-	
+
+
+
 	setJitterValues()
 	{
 		for(let i=0; i<this.nodes.length; i++)
@@ -446,6 +449,7 @@ class MouseFader
 			}
 			else if(this.nodes[i].dataset.jitterx)
 			{
+                //test
 				delete this.nodes[i].dataset.jitterx;
 				delete this.nodes[i].dataset.jittery;
 			}
@@ -468,14 +472,21 @@ class MouseFader
 
 
 
+    windowEvent(evt)
+    {
+        this.setCenters();
+    }
+
+
+
     update(timestamp)
     {
         let view = document.documentElement;
 
         for(let i=0; i<this.nodes.length; i++)
         {
-            let node = this.nodes[i],
-                last = _lastDeltas[i],
+            let node   = this.nodes[i],
+                last   = _lastDeltas[i],
                 bounds = node.getBoundingClientRect();
 
     		if((bounds.right>=0 && bounds.left<=view.clientWidth && bounds.bottom>=0 && bounds.top<=view.clientHeight) || last<1)
