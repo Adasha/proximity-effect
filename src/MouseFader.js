@@ -80,6 +80,11 @@ class MouseFader
 
     constructor(target, params = {})
     {
+        if(!target)
+        {
+            console.log('MouseFader: target argument is required');
+            return null;
+        }
         this.target = target;
         _params = params;
 
@@ -151,7 +156,7 @@ class MouseFader
     	}
 
         this.nodes = nodes;
-		this.setCenters();
+		if(_params) this.setCenters();
         _lastDeltas = new Array(this.nodes.length);
     }
 
@@ -250,11 +255,13 @@ class MouseFader
 	set offsetX(num)
 	{
 		_params.offsetX = num;
+        this.setCenters();
 	}
 
 	set offsetY(num)
 	{
 		_params.offsetY = num;
+        this.setCenters();
 	}
 
 
@@ -452,8 +459,8 @@ class MouseFader
 				bounds = node.getBoundingClientRect();
 
 			_centers.push({
-				x: (bounds.left+bounds.right )*0.5,
-				y: (bounds.top +bounds.bottom)*0.5
+				x: (bounds.left+bounds.right )*0.5 - this.offsetX,
+				y: (bounds.top +bounds.bottom)*0.5 - this.offsetY
 			});
 		}
 	}
@@ -513,8 +520,8 @@ class MouseFader
 
     		if((bounds.right>=0 && bounds.left<=view.clientWidth && bounds.bottom>=0 && bounds.top<=view.clientHeight) || last<1)
     		{
-				let centerX = _centers[i].x - this.offsetX - (node.dataset['jitterx']||0),
-					centerY = _centers[i].y - this.offsetY - (node.dataset['jittery']||0);
+				let centerX = _centers[i].x - (node.dataset['jitterx']||0),
+					centerY = _centers[i].y - (node.dataset['jittery']||0);
 
                 let dx = _pointer.x - centerX,
                     dy = _pointer.y - centerY,

@@ -42,7 +42,8 @@ var _target = void 0,
     _effects = void 0,
     _pointer = {},
     _lastDeltas = void 0,
-    _frameLoop = void 0;
+    _frameLoop = void 0,
+    _invRunoff = void 0;
 
 var constrain = function constrain(num, min, max) {
     if (typeof num !== 'number') return NaN;
@@ -79,6 +80,10 @@ var MouseFader = function () {
 
         _classCallCheck(this, MouseFader);
 
+        if (!target) {
+            console.log('MouseFader: target argument is required');
+            return null;
+        }
         this.target = target;
         _params = params;
 
@@ -200,8 +205,8 @@ var MouseFader = function () {
                     bounds = node.getBoundingClientRect();
 
                 _centers.push({
-                    x: (bounds.left + bounds.right) * 0.5,
-                    y: (bounds.top + bounds.bottom) * 0.5
+                    x: (bounds.left + bounds.right) * 0.5 - this.offsetX,
+                    y: (bounds.top + bounds.bottom) * 0.5 - this.offsetY
                 });
             }
         }
@@ -247,8 +252,8 @@ var MouseFader = function () {
                     bounds = node.getBoundingClientRect();
 
                 if (bounds.right >= 0 && bounds.left <= view.clientWidth && bounds.bottom >= 0 && bounds.top <= view.clientHeight || last < 1) {
-                    var centerX = _centers[i].x - this.offsetX - (node.dataset['jitterx'] || 0),
-                        centerY = _centers[i].y - this.offsetY - (node.dataset['jittery'] || 0);
+                    var centerX = _centers[i].x - (node.dataset['jitterx'] || 0),
+                        centerY = _centers[i].y - (node.dataset['jittery'] || 0);
 
                     var dx = _pointer.x - centerX,
                         dy = _pointer.y - centerY,
@@ -258,7 +263,7 @@ var MouseFader = function () {
 
                     if (this.direction === 'both') dd = Math.sqrt(dx * dx + dy * dy);else dd = Math.abs(this.direction === 'horizontal' ? dx : dy);
 
-                    td = constrain((dd - this.threshold) / this.runoff, 0, 1);
+                    td = constrain((dd - this.threshold) * _invRunoff, 0, 1);
                     if (this.invert) td = 1 - td;
 
                     if (last) {
@@ -331,7 +336,7 @@ var MouseFader = function () {
             }
 
             this.nodes = nodes;
-            this.setCenters();
+            if (_params) this.setCenters();
             _lastDeltas = new Array(this.nodes.length);
         }
 
@@ -355,6 +360,7 @@ var MouseFader = function () {
         },
         set: function set(num) {
             _params.runoff = constrain(num, 0);
+            _invRunoff = 1 / _params.runoff;
         }
 
         // BOUNDARY [READ-ONLY Number]
@@ -407,6 +413,7 @@ var MouseFader = function () {
         },
         set: function set(num) {
             _params.offsetX = num;
+            this.setCenters();
         }
     }, {
         key: 'offsetY',
@@ -415,6 +422,7 @@ var MouseFader = function () {
         },
         set: function set(num) {
             _params.offsetY = num;
+            this.setCenters();
         }
 
         // JITTER [Number>=0]
