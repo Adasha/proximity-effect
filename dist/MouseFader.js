@@ -8,15 +8,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-// MOUSEFADER CLASS
+// MOUSEFADER CLASS v2.1.5-alpha
 // adasha.com
 
 
 var VALID_MODES = new Set(['mousemove', 'enterframe', 'redraw']),
     VALID_DIRECTIONS = new Set(['both', 'horizontal', 'vertical']),
     DEFAULT_MODE = 'redraw',
+    DEFAULT_ACCURACY = 10,
     DEFAULT_DIRECTION = 'both',
-    DEFAULT_FPS = 30,
+    DEFAULT_FPS = 5,
     DEFAULT_RUNOFF = 100,
     DEFAULT_ATTACK = 1,
     DEFAULT_DECAY = 1,
@@ -50,6 +51,13 @@ var constrain = function constrain(num, min, max) {
     return num;
 };
 
+var roundTo = function roundTo(num) {
+    var dp = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+
+    var mult = Math.pow(dp + 1, 10);
+    return Math.round(num * mult) / mult;
+};
+
 var delta = function delta(num, a, b) {
     return (b - a) * num + a;
 };
@@ -78,6 +86,7 @@ var MouseFader = function () {
         this.runoff = _params.hasOwnProperty('runoff') ? _params.runoff : DEFAULT_RUNOFF;
         this.attack = _params.hasOwnProperty('attack') ? _params.attack : 1;
         this.decay = _params.hasOwnProperty('decay') ? _params.decay : 1;
+        this.accuracy = _params.hasOwnProperty('accuracy') ? _params.accuracy : DEFAULT_ACCURACY;
         this.invert = _params.invert || false;
         this.offsetX = _params.offsetX || 0;
         this.offsetY = _params.offsetY || 0;
@@ -255,6 +264,8 @@ var MouseFader = function () {
                     if (last) {
                         d = last + (td - last) * (XOR(td > last, this.invert) ? this.decay : this.attack);
                     } else d = td;
+
+                    d = roundTo(d, this.accuracy);
 
                     if (d <= 1) {
                         var styles = {};
@@ -457,6 +468,17 @@ var MouseFader = function () {
                     _params.mode = str;
                 } else console.log(str + ' not a recognised mode.');
             } else console.log('Already in ' + str + ' mode. Mode not changed.');
+        }
+
+        // ACCURACY [Number>=0]
+
+    }, {
+        key: 'accuracy',
+        get: function get() {
+            return _params.accuracy;
+        },
+        set: function set(num) {
+            _params.accuracy = Math.floor(constrain(num, 0));
         }
     }]);
 
