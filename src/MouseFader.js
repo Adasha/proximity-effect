@@ -46,7 +46,8 @@ let _target,
     _effects,
     _pointer = {},
     _lastDeltas,
-    _frameLoop;
+    _frameLoop,
+    _invRunoff;
 
 
 
@@ -179,6 +180,7 @@ class MouseFader
     set runoff(num)
     {
     	_params.runoff = constrain(num, 0);
+        _invRunoff = 1/_params.runoff;
     }
 
 
@@ -521,7 +523,7 @@ class MouseFader
                 if(this.direction==='both') dd = Math.sqrt(dx*dx+dy*dy);
                 else dd = Math.abs(this.direction==='horizontal' ? dx : dy);
 
-        		td = constrain((dd-this.threshold)/this.runoff, 0, 1);
+        		td = constrain((dd-this.threshold)*_invRunoff, 0, 1);
                 if(this.invert) td = 1 - td;
 
                 if(last)
