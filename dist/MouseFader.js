@@ -205,8 +205,8 @@ var MouseFader = function () {
                     bounds = node.getBoundingClientRect();
 
                 _centers.push({
-                    x: (bounds.left + bounds.right) * 0.5 - this.offsetX,
-                    y: (bounds.top + bounds.bottom) * 0.5 - this.offsetY
+                    x: (bounds.left + bounds.right) * 0.5 - this.offsetX - (node.dataset['jitterx'] || 0),
+                    y: (bounds.top + bounds.bottom) * 0.5 - this.offsetY - (node.dataset['jittery'] || 0)
                 });
             }
         }
@@ -223,6 +223,7 @@ var MouseFader = function () {
                     delete this.nodes[i].dataset.jittery;
                 }
             }
+            this.setCenters();
         }
 
         //////////////////////
@@ -252,8 +253,8 @@ var MouseFader = function () {
                     bounds = node.getBoundingClientRect();
 
                 if (bounds.right >= 0 && bounds.left <= view.clientWidth && bounds.bottom >= 0 && bounds.top <= view.clientHeight || last < 1) {
-                    var centerX = _centers[i].x - (node.dataset['jitterx'] || 0),
-                        centerY = _centers[i].y - (node.dataset['jittery'] || 0);
+                    var centerX = _centers[i].x - (node.dataset['offsetx'] || 0),
+                        centerY = _centers[i].y - (node.dataset['offsety'] || 0);
 
                     var dx = _pointer.x - centerX,
                         dy = _pointer.y - centerY,
