@@ -241,7 +241,12 @@ var MouseFader = function () {
     }, {
         key: 'windowEvent',
         value: function windowEvent(evt) {
-            if (!this.preventCenterCalculations) this.setCenterPoints();
+            var _this = this;
+
+            console.log(evt);
+            if (!this.preventCenterCalculations) window.setTimeout(function () {
+                return _this.setCenterPoints();
+            }, 1);
         }
     }, {
         key: 'update',

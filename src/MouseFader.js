@@ -499,7 +499,8 @@ class MouseFader
 
     windowEvent(evt)
     {
-        if(!this.preventCenterCalculations) this.setCenterPoints();
+        console.log(evt);
+        if(!this.preventCenterCalculations) window.setTimeout(() => this.setCenterPoints(), 1);
     }
 
 
