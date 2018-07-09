@@ -71,6 +71,12 @@ var XOR = function XOR(a, b) {
     return (a || b) && !(a && b);
 };
 
+var isVisibleInViewport = function isVisibleInViewport(el) {
+    var bounds = el.getBoundingClientRect(),
+        view = document.documentElement;
+    return bounds.right >= 0 && bounds.left <= view.clientWidth && bounds.bottom >= 0 && bounds.top <= view.clientHeight;
+};
+
 //const startTimer = (delay) =>
 
 
@@ -84,6 +90,9 @@ var MouseFader = function () {
             console.log('MouseFader: target argument is required');
             return null;
         }
+
+        this.preventCenterCalculations = true;
+
         this.target = target;
         _params = params;
 
@@ -99,6 +108,9 @@ var MouseFader = function () {
         this.direction = _params.direction || DEFAULT_DIRECTION;
         this.FPS = _params.FPS || DEFAULT_FPS;
         this.mode = _params.mode || DEFAULT_MODE;
+
+        this.preventCenterCalculations = false;
+        this.setCenterPoints();
 
         this.init();
     }
@@ -197,33 +209,22 @@ var MouseFader = function () {
             window.requestAnimationFrame(this.update);
         }
     }, {
-        key: 'setCenters',
-        value: function setCenters() {
+        key: 'setCenterPoints',
+        value: function setCenterPoints() {
             _centers = [];
             for (var i = 0; i < this.nodes.length; i++) {
                 var node = this.nodes[i],
-                    bounds = node.getBoundingClientRect();
+                    bounds = node.getBoundingClientRect(),
+                    x = (bounds.left + bounds.right) * 0.5 - this.offsetX - (node.dataset['jitterx'] || 0),
+                    y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY - (node.dataset['jittery'] || 0);
 
-                _centers.push({
-                    x: (bounds.left + bounds.right) * 0.5 - this.offsetX - (node.dataset['jitterx'] || 0),
-                    y: (bounds.top + bounds.bottom) * 0.5 - this.offsetY - (node.dataset['jittery'] || 0)
-                });
-            }
-        }
-    }, {
-        key: 'setJitterValues',
-        value: function setJitterValues() {
-            for (var i = 0; i < this.nodes.length; i++) {
                 if (this.jitter > 0) {
-                    this.nodes[i].dataset['jitterx'] = (Math.random() - 0.5) * this.jitter;
-                    this.nodes[i].dataset['jittery'] = (Math.random() - 0.5) * this.jitter;
-                } else if (this.nodes[i].dataset.jitterx) {
-                    //test
-                    delete this.nodes[i].dataset.jitterx;
-                    delete this.nodes[i].dataset.jittery;
+                    x += (Math.random() - 0.5) * this.jitter;
+                    y += (Math.random() - 0.5) * this.jitter;
                 }
+
+                _centers.push({ x: x, y: y });
             }
-            this.setCenters();
         }
 
         //////////////////////
@@ -240,7 +241,7 @@ var MouseFader = function () {
     }, {
         key: 'windowEvent',
         value: function windowEvent(evt) {
-            this.setCenters();
+            if (!this.preventCenterCalculations) this.setCenterPoints();
         }
     }, {
         key: 'update',
@@ -252,7 +253,8 @@ var MouseFader = function () {
                     last = _lastDeltas[i],
                     bounds = node.getBoundingClientRect();
 
-                if (bounds.right >= 0 && bounds.left <= view.clientWidth && bounds.bottom >= 0 && bounds.top <= view.clientHeight || last < 1) {
+                //if(isVisibleInViewport(node) || last<1)
+                if (true) {
                     var centerX = _centers[i].x - (node.dataset['offsetx'] || 0),
                         centerY = _centers[i].y - (node.dataset['offsety'] || 0);
 
@@ -337,7 +339,7 @@ var MouseFader = function () {
             }
 
             this.nodes = nodes;
-            if (_params) this.setCenters();
+            if (_params && !this.preventCenterCalculations) this.setCenterPoints();
             _lastDeltas = new Array(this.nodes.length);
         }
 
@@ -414,7 +416,7 @@ var MouseFader = function () {
         },
         set: function set(num) {
             _params.offsetX = num;
-            this.setCenters();
+            if (!this.preventCenterCalculations) this.setCenterPoints();
         }
     }, {
         key: 'offsetY',
@@ -423,7 +425,7 @@ var MouseFader = function () {
         },
         set: function set(num) {
             _params.offsetY = num;
-            this.setCenters();
+            if (!this.preventCenterCalculations) this.setCenterPoints();
         }
 
         // JITTER [Number>=0]
@@ -435,7 +437,7 @@ var MouseFader = function () {
         },
         set: function set(num) {
             _params.jitter = constrain(num, 0);
-            this.setJitterValues();
+            if (!this.preventCenterCalculations) this.setCenterPoints();
         }
 
         // DIRECTION [String]
@@ -459,7 +461,7 @@ var MouseFader = function () {
             return _params.FPS;
         },
         set: function set(num) {
-            if (num > 0 && typeof num === 'number') {
+            if (num > 0) {
                 _params.FPS = constrain(num, 0);
             } else console.log('Invalid FPS requested');
         }

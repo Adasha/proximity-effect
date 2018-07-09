@@ -41,7 +41,7 @@ const VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
 
 let _target,
     _nodes,
-	_centers,
+    _centers,
     _params,
     _effects,
     _pointer = {},
@@ -69,6 +69,13 @@ const map = (num, inMin, inMax, outMin, outMax) => (num - inMin) * (outMax - out
 
 const XOR = (a, b) => (a || b) && !(a && b);
 
+const isVisibleInViewport = (el) => {
+    let bounds = el.getBoundingClientRect(),
+        view   = document.documentElement;
+    return bounds.right>=0 && bounds.left<=view.clientWidth && bounds.bottom>=0 && bounds.top<=view.clientHeight;
+}
+
+
 //const startTimer = (delay) =>
 
 
@@ -85,6 +92,9 @@ class MouseFader
             console.log('MouseFader: target argument is required');
             return null;
         }
+
+        this.preventCenterCalculations = true;
+
         this.target = target;
         _params = params;
 
@@ -95,15 +105,17 @@ class MouseFader
         this.decay     = _params.hasOwnProperty('decay')     ? _params.decay     : 1;
         this.accuracy  = _params.hasOwnProperty('accuracy')  ? _params.accuracy  : DEFAULT_ACCURACY;
         this.invert    = _params.invert    || false;
-		this.offsetX   = _params.offsetX   || 0;
-		this.offsetY   = _params.offsetY   || 0;
-		this.jitter    = _params.jitter    || 0;
+        this.offsetX   = _params.offsetX   || 0;
+        this.offsetY   = _params.offsetY   || 0;
+        this.jitter    = _params.jitter    || 0;
         this.direction = _params.direction || DEFAULT_DIRECTION;
         this.FPS       = _params.FPS       || DEFAULT_FPS;
         this.mode      = _params.mode      || DEFAULT_MODE;
 
+        this.preventCenterCalculations = false;
+        this.setCenterPoints();
 
-    	this.init();
+      	this.init();
     }
 
 
@@ -144,19 +156,19 @@ class MouseFader
             nodes = t;
         }
         else
-    	{
+      	{
     		console.log(`${t} is not a suitable target`);
     		return;
-    	}
+      	}
 
         if(nodes.length<1)
-    	{
+      	{
     		console.log(`No children found on ${t}`);
     		return;
-    	}
+      	}
 
         this.nodes = nodes;
-		if(_params) this.setCenters();
+		if(_params && !this.preventCenterCalculations) this.setCenterPoints();
         _lastDeltas = new Array(this.nodes.length);
     }
 
@@ -239,45 +251,45 @@ class MouseFader
 
 
 
-	// OFFSET [Number]
+  	// OFFSET [Number]
 
-	get offsetX()
-	{
-		return _params.offsetX;
-	}
+  	get offsetX()
+  	{
+        return _params.offsetX;
+  	}
 
-	get offsetY()
-	{
-		return _params.offsetY;
-	}
-
-
-	set offsetX(num)
-	{
-		_params.offsetX = num;
-        this.setCenters();
-	}
-
-	set offsetY(num)
-	{
-		_params.offsetY = num;
-        this.setCenters();
-	}
+  	get offsetY()
+  	{
+        return _params.offsetY;
+  	}
 
 
+  	set offsetX(num)
+  	{
+        _params.offsetX = num;
+        if(!this.preventCenterCalculations) this.setCenterPoints();
+  	}
 
-	// JITTER [Number>=0]
+  	set offsetY(num)
+  	{
+        _params.offsetY = num;
+        if(!this.preventCenterCalculations) this.setCenterPoints();
+  	}
 
-	get jitter()
-	{
-		return _params.jitter;
-	}
 
-	set jitter(num)
-	{
-		_params.jitter = constrain(num, 0);
-		this.setJitterValues();
-	}
+
+  	// JITTER [Number>=0]
+
+  	get jitter()
+  	{
+        return _params.jitter;
+  	}
+
+  	set jitter(num)
+  	{
+        _params.jitter = constrain(num, 0);
+        if(!this.preventCenterCalculations) this.setCenterPoints();
+  	}
 
 
 
@@ -308,7 +320,7 @@ class MouseFader
 
     set FPS(num)
     {
-        if(num>0 && typeof num==='number')
+        if(num>0)
         {
             _params.FPS = constrain(num, 0);
         }
@@ -450,42 +462,25 @@ class MouseFader
 
 
 
-	setCenters()
-	{
-		_centers = [];
-		for(let i=0; i<this.nodes.length; i++)
-		{
-			let node = this.nodes[i],
-				bounds = node.getBoundingClientRect();
+    setCenterPoints()
+    {
+    	_centers = [];
+    	for(let i=0; i<this.nodes.length; i++)
+    	{
+    		let node   = this.nodes[i],
+    			bounds = node.getBoundingClientRect(),
+                x      = (bounds.left+bounds.right )*0.5 - this.offsetX - (node.dataset['jitterx']||0),
+                y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY - (node.dataset['jittery']||0);
 
-			_centers.push({
-				x: (bounds.left+bounds.right )*0.5 - this.offsetX - (node.dataset['jitterx']||0),
-				y: (bounds.top +bounds.bottom)*0.5 - this.offsetY - (node.dataset['jittery']||0)
-			});
-		}
-	}
+            if(this.jitter>0)
+            {
+                x += (Math.random()-0.5) * this.jitter;
+                y += (Math.random()-0.5) * this.jitter;
+            }
 
-
-
-	setJitterValues()
-	{
-		for(let i=0; i<this.nodes.length; i++)
-		{
-			if(this.jitter>0)
-			{
-				this.nodes[i].dataset['jitterx'] = (Math.random()-0.5) * this.jitter;
-				this.nodes[i].dataset['jittery'] = (Math.random()-0.5) * this.jitter;
-			}
-			else if(this.nodes[i].dataset.jitterx)
-			{
-                //test
-				delete this.nodes[i].dataset.jitterx;
-				delete this.nodes[i].dataset.jittery;
-			}
-		}
-        this.setCenters();
-	}
-
+    		_centers.push({x: x, y: y});
+        }
+    }
 
 
 
@@ -504,7 +499,7 @@ class MouseFader
 
     windowEvent(evt)
     {
-        this.setCenters();
+        if(!this.preventCenterCalculations) this.setCenterPoints();
     }
 
 
@@ -519,10 +514,11 @@ class MouseFader
                 last   = _lastDeltas[i],
                 bounds = node.getBoundingClientRect();
 
-    		if((bounds.right>=0 && bounds.left<=view.clientWidth && bounds.bottom>=0 && bounds.top<=view.clientHeight) || last<1)
+    		//if(isVisibleInViewport(node) || last<1)
+            if(true)
     		{
 				let centerX = _centers[i].x - (node.dataset['offsetx']||0),
-					centerY = _centers[i].y - (node.dataset['offsety']||0);
+                    centerY = _centers[i].y - (node.dataset['offsety']||0);
 
                 let dx = _pointer.x - centerX,
                     dy = _pointer.y - centerY,
@@ -549,13 +545,13 @@ class MouseFader
         			for(let i=0; i<_effects.length; i++)
         			{
         				let effect = _effects[i],
-							type   = effect.type,
-                            near   = effect.near,
-        					far    = effect.far,
-                            rule   = effect.rule,
-                            func   = effect.func,
-                            unit   = effect.unit || '',
-                            val    = delta(d, near, far);
+                        type   = effect.type,
+                        near   = effect.near,
+                        far    = effect.far,
+                        rule   = effect.rule,
+                        func   = effect.func,
+                        unit   = effect.unit || '',
+                        val    = delta(d, near, far);
 
                         if(!func)
                         {
@@ -569,10 +565,10 @@ class MouseFader
         			}
                     for(let rule in styles)
                     {
-                        node.style[rule] = styles[rule].join(' ');
+                      node.style[rule] = styles[rule].join(' ');
                     }
                     node.style.zIndex = 1000-Math.floor(d*1000);
-        		}
+                }
 
                 _lastDeltas[i] = d;
             }
