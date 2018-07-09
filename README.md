@@ -2,20 +2,21 @@
 
 
 Modify CSS properties on children of target element based on mouse pointer proximity.
-Port of an old Flash component, missing some features but gained others. 9Kb minified.
+Port of an old Flash component, missing some features but gained others. 9Kb minified, no dependencies.
 
 Fairly widely compatible but effects are dependent on browser support.
 
 [View demos on adasha.com](http://www.adasha.com/lab/mousefader)
 
-## To use
+## Installation
 
-### Add MouseFader.js to page
-Include the JS file in your HTML (either in `<head>` or at end of `<body>`:
-
+Just a .js file - no Bower or npm or repositories (yet). Download your version of choice and embed in your HTML:
 ```html
 <script src="mousefader.min.js"></script>
 ```
+
+## To use
+
 
 ### Add some content to affect
 In your `<body>` content add some elements you want to affect:
