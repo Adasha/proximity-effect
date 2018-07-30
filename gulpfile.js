@@ -5,9 +5,7 @@ var rename = require("gulp-rename");
 
 gulp.task('babel', function() {
     return gulp.src('src/MouseFader.js')
-    .pipe(babel({
-        presets: ['env']
-    }))
+    .pipe(babel())
     .pipe(gulp.dest('dist'))
 });
 

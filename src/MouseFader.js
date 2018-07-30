@@ -1,41 +1,41 @@
-﻿// MOUSEFADER CLASS v2.1.5-alpha
-// adasha.com
+﻿// MOUSEFADER CLASS by Adasha
+// v2.1.7-alpha
+// Repository: https://github.com/Adasha/mousefader
+// Demos: http://lab.adasha.com/mousefader
 
 
 const VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
       VALID_DIRECTIONS  = new Set(['both', 'horizontal', 'vertical']),
-      DEFAULT_MODE      = 'redraw',
-      DEFAULT_ACCURACY  =  10,
       DEFAULT_DIRECTION = 'both',
-      DEFAULT_FPS       =   5,
+      DEFAULT_MODE      = 'redraw',
+      DEFAULT_ACCURACY  =   5,
+      DEFAULT_FPS       =  15,
       DEFAULT_RUNOFF    = 100,
-      DEFAULT_ATTACK    =   1,
-      DEFAULT_DECAY     =   1,
       VALID_EFFECTS     = {
-        opacity:     {min: 0, max:   1, rule: 'opacity'},
-        translateX:  {                  rule: 'transform', func: 'translateX',  unit: 'px'},
-        translateY:  {                  rule: 'transform', func: 'translateY',  unit: 'px'},
-        translateZ:  {                  rule: 'transform', func: 'translateZ',  unit: 'px'},
-        rotate:      {                  rule: 'transform', func: 'rotate',      unit: 'deg'},
-        rotateX:     {                  rule: 'transform', func: 'rotateX',     unit: 'deg'},
-        rotateY:     {                  rule: 'transform', func: 'rotateY',     unit: 'deg'},
-        rotateZ:     {                  rule: 'transform', func: 'rotateZ',     unit: 'deg'},
-        scale:       {                  rule: 'transform', func: 'scale'},
-        scaleX:      {                  rule: 'transform', func: 'scaleX'},
-        scaleY:      {                  rule: 'transform', func: 'scaleY'},
-        scaleY:      {                  rule: 'transform', func: 'scaleY'},
-        skewX:       {                  rule: 'transform', func: 'skewX',       unit: 'deg'},
-        skewY:       {                  rule: 'transform', func: 'skewY',       unit: 'deg'},
-        perspective: {                  rule: 'transform', func: 'perspective', unit: 'px'},
-        blur:        {min: 0,           rule: 'filter',    func: 'blur',        unit: 'px'},
-        brightness:  {min: 0,           rule: 'filter',    func: 'brightness',  unit: '%'},
-        contrast:    {min: 0,           rule: 'filter',    func: 'contrast',    unit: '%'},
-        grayscale:   {min: 0, max: 100, rule: 'filter',    func: 'grayscale',   unit: '%'},
-        hueRotate:   {                  rule: 'filter',    func: 'hue-rotate',  unit: 'deg'},
-        invert:      {min: 0, max: 100, rule: 'filter',    func: 'invert',      unit: '%'},
-        //opacity:     {min: 0, max: 100, rule: 'filter',    func: 'opacity',     unit: '%'},
-        saturate:    {min: 0, max: 100, rule: 'filter',    func: 'saturate',    unit: '%'},
-        sepia:       {min: 0, max: 100, rule: 'filter',    func: 'sepia',       unit: '%'}
+        opacity:     {min: 0, max:   1, default:   1, rule: 'opacity'},
+        translateX:  {                  default:   0, rule: 'transform', func: 'translateX',  unit: 'px'},
+        translateY:  {                  default:   0, rule: 'transform', func: 'translateY',  unit: 'px'},
+        translateZ:  {                  default:   0, rule: 'transform', func: 'translateZ',  unit: 'px'},
+        rotate:      {                  default:   0, rule: 'transform', func: 'rotate',      unit: 'deg'},
+        rotateX:     {                  default:   0, rule: 'transform', func: 'rotateX',     unit: 'deg'},
+        rotateY:     {                  default:   0, rule: 'transform', func: 'rotateY',     unit: 'deg'},
+        rotateZ:     {                  default:   0, rule: 'transform', func: 'rotateZ',     unit: 'deg'},
+        scale:       {                  default:   1, rule: 'transform', func: 'scale'},
+        scaleX:      {                  default:   1, rule: 'transform', func: 'scaleX'},
+        scaleY:      {                  default:   1, rule: 'transform', func: 'scaleY'},
+        scaleY:      {                  default:   1, rule: 'transform', func: 'scaleY'},
+        skewX:       {                  default:   0, rule: 'transform', func: 'skewX',       unit: 'deg'},
+        skewY:       {                  default:   0, rule: 'transform', func: 'skewY',       unit: 'deg'},
+        perspective: {                  default:   0, rule: 'transform', func: 'perspective', unit: 'px'},
+        blur:        {min: 0,           default:   0, rule: 'filter',    func: 'blur',        unit: 'px'},
+        brightness:  {min: 0,           default: 100, rule: 'filter',    func: 'brightness',  unit: '%'},
+        contrast:    {min: 0,           default: 100, rule: 'filter',    func: 'contrast',    unit: '%'},
+        grayscale:   {min: 0, max: 100, default:   0, rule: 'filter',    func: 'grayscale',   unit: '%'},
+        hueRotate:   {                  default:   0, rule: 'filter',    func: 'hue-rotate',  unit: 'deg'},
+        invert:      {min: 0, max: 100, default:   0, rule: 'filter',    func: 'invert',      unit: '%'},
+        //opacity:     {min: 0, max: 100, default: 100, rule: 'filter',    func: 'opacity',     unit: '%'},
+        saturate:    {min: 0, max: 100, default: 100, rule: 'filter',    func: 'saturate',    unit: '%'},
+        sepia:       {min: 0, max: 100, default:   0, rule: 'filter',    func: 'sepia',       unit: '%'}
       };
 
 
@@ -82,11 +82,13 @@ const isVisibleInViewport = (el) => {
 
 
 
-class MouseFader
+class MouseFader extends EventTarget
 {
 
     constructor(target, params = {})
     {
+        super();
+
         if(!target)
         {
             console.log('MouseFader: target argument is required');
@@ -115,6 +117,7 @@ class MouseFader
         this.preventCenterCalculations = false;
         this.setCenterPoints();
 
+        this.update = this.update.bind(this);
       	this.init();
     }
 
@@ -456,7 +459,6 @@ class MouseFader
     			break;
     	}*/
 
-        this.update = this.update.bind(this);
         window.requestAnimationFrame(this.update);
     }
 
@@ -484,6 +486,15 @@ class MouseFader
 
 
 
+
+
+    distanceFrom(node)
+    {
+        return this.nodes[node].dataset['distance'];
+    }
+
+
+
     //////////////////////
     // EVENT MANAGEMENT //
     //////////////////////
@@ -499,7 +510,6 @@ class MouseFader
 
     windowEvent(evt)
     {
-        console.log(evt);
         if(!this.preventCenterCalculations) window.setTimeout(() => this.setCenterPoints(), 1);
     }
 
@@ -515,7 +525,9 @@ class MouseFader
                 last   = _lastDeltas[i],
                 bounds = node.getBoundingClientRect();
 
-    		//if(isVisibleInViewport(node) || last<1)
+            // TODO: optimise to update only visible elements
+            // WORKAROUND FOR ISSUE #10
+            //if(isVisibleInViewport(node) || last<1)
             if(true)
     		{
 				let centerX = _centers[i].x - (node.dataset['offsetx']||0),
@@ -537,9 +549,11 @@ class MouseFader
                 }
                 else d = td;
 
+                node.dataset['distance'] = d;
+
                 d = roundTo(d, this.accuracy);
 
-    			if(d<=1)
+    			if(d<=1 && _effects)
     			{
         			let styles = {};
 
@@ -576,6 +590,10 @@ class MouseFader
         }
 
         if(this.mode==='redraw') window.requestAnimationFrame(this.update);
+
+        // TODO: event dispatching breaks babel
+        this.dispatchEvent(new Event('redraw'));
+
     } // update end
 
 }

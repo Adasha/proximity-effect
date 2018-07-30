@@ -1,19 +1,48 @@
 {
 	"name": "mousefader",
-	"version": "2.1.5-alpha",
-	"description": "",
-	"main": "src/MouseFader.js",
-	"license": "MPL2",
-	"scripts": {
-		"babel": "babel",
-		"build": "babel src -d lib"
+	"version": "v2.1.7-alpha",
+	"description": "Mass modify CSS properties based on mouse proximity.",
+	"author": {
+		"name": "Adam Shailer",
+		"email": "",
+		"url": "http://adasha.com"
 	},
+	"keywords": [
+		"mouse",
+		"distance",
+		"range",
+		"proximity",
+		"nearness",
+		"position",
+		"approach",
+		"animate",
+		"CSS",
+		"style",
+		"stylesheet"
+	],
+	"homepage": "http://lab.adasha.com/mousefader",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Adasha/mousefader"
+	},
+	"bugs": {
+		"url": "https://github.com/Adasha/mousefader/issues",
+		"email": ""
+	},
+	"browser": "src/MouseFader.js",
+	"license": "MPL-2.0",
+	"dependencies": {},
 	"devDependencies": {
 		"babel-core": "^6.26.3",
+		"babel-plugin-transform-builtin-extend": "^1.1.2",
 		"babel-preset-env": "^1.7.0",
 		"gulp": "^3.9.1",
 		"gulp-babel": "^7.0.1",
 		"gulp-rename": "^1.3.0",
 		"gulp-uglify": "^3.0.0"
+	},
+	"scripts": {
+		"build:js": "gulp babel && gulp minify",
+		"test": "echo \"Error: no test specified\" && exit 1"
 	}
 }
