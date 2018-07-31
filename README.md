@@ -59,6 +59,9 @@ let myEffect = new ProximityEffect(elements, params);
 myEffect.addEffect('opacity', 1,  0.5); // effect, near val, far val
 myEffect.addEffect('scale',   1,  2);   // effect, near val, far val
 myEffect.addEffect('blur',    0, 10);   // effect, near val, far val
+
+myEffect.addEffect(null,    100, 50, null,        'left',        'px');
+myEffect.addEffect(null,    100, 50, 'transform', 'perspective', '%');
 ...
 ```
 ProximityEffect directly supports most permitted functions of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-value CSS rule.
