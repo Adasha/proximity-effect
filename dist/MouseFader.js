@@ -2,8 +2,6 @@
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _VALID_EFFECTS;
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
@@ -35,8 +33,6 @@ function _extendableBuiltin(cls) {
     return ExtendableBuiltin;
 }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 // MOUSEFADER CLASS by Adasha
 // v2.1.7-alpha
 // Repository: https://github.com/Adasha/mousefader
@@ -50,7 +46,7 @@ var VALID_MODES = new Set(['mousemove', 'enterframe', 'redraw']),
     DEFAULT_ACCURACY = 5,
     DEFAULT_FPS = 15,
     DEFAULT_RUNOFF = 100,
-    VALID_EFFECTS = (_VALID_EFFECTS = {
+    VALID_EFFECTS = {
     opacity: { min: 0, max: 1, default: 1, rule: 'opacity' },
     translateX: { default: 0, rule: 'transform', func: 'translateX', unit: 'px' },
     translateY: { default: 0, rule: 'transform', func: 'translateY', unit: 'px' },
@@ -61,8 +57,21 @@ var VALID_MODES = new Set(['mousemove', 'enterframe', 'redraw']),
     rotateZ: { default: 0, rule: 'transform', func: 'rotateZ', unit: 'deg' },
     scale: { default: 1, rule: 'transform', func: 'scale' },
     scaleX: { default: 1, rule: 'transform', func: 'scaleX' },
-    scaleY: { default: 1, rule: 'transform', func: 'scaleY' }
-}, _defineProperty(_VALID_EFFECTS, 'scaleY', { default: 1, rule: 'transform', func: 'scaleY' }), _defineProperty(_VALID_EFFECTS, 'skewX', { default: 0, rule: 'transform', func: 'skewX', unit: 'deg' }), _defineProperty(_VALID_EFFECTS, 'skewY', { default: 0, rule: 'transform', func: 'skewY', unit: 'deg' }), _defineProperty(_VALID_EFFECTS, 'perspective', { default: 0, rule: 'transform', func: 'perspective', unit: 'px' }), _defineProperty(_VALID_EFFECTS, 'blur', { min: 0, default: 0, rule: 'filter', func: 'blur', unit: 'px' }), _defineProperty(_VALID_EFFECTS, 'brightness', { min: 0, default: 100, rule: 'filter', func: 'brightness', unit: '%' }), _defineProperty(_VALID_EFFECTS, 'contrast', { min: 0, default: 100, rule: 'filter', func: 'contrast', unit: '%' }), _defineProperty(_VALID_EFFECTS, 'grayscale', { min: 0, max: 100, default: 0, rule: 'filter', func: 'grayscale', unit: '%' }), _defineProperty(_VALID_EFFECTS, 'hueRotate', { default: 0, rule: 'filter', func: 'hue-rotate', unit: 'deg' }), _defineProperty(_VALID_EFFECTS, 'invert', { min: 0, max: 100, default: 0, rule: 'filter', func: 'invert', unit: '%' }), _defineProperty(_VALID_EFFECTS, 'saturate', { min: 0, max: 100, default: 100, rule: 'filter', func: 'saturate', unit: '%' }), _defineProperty(_VALID_EFFECTS, 'sepia', { min: 0, max: 100, default: 0, rule: 'filter', func: 'sepia', unit: '%' }), _VALID_EFFECTS);
+    scaleY: { default: 1, rule: 'transform', func: 'scaleY' },
+    scaleZ: { default: 1, rule: 'transform', func: 'scaleZ' },
+    skewX: { default: 0, rule: 'transform', func: 'skewX', unit: 'deg' },
+    skewY: { default: 0, rule: 'transform', func: 'skewY', unit: 'deg' },
+    perspective: { default: 0, rule: 'transform', func: 'perspective', unit: 'px' },
+    blur: { min: 0, default: 0, rule: 'filter', func: 'blur', unit: 'px' },
+    brightness: { min: 0, default: 100, rule: 'filter', func: 'brightness', unit: '%' },
+    contrast: { min: 0, default: 100, rule: 'filter', func: 'contrast', unit: '%' },
+    grayscale: { min: 0, max: 100, default: 0, rule: 'filter', func: 'grayscale', unit: '%' },
+    hueRotate: { default: 0, rule: 'filter', func: 'hue-rotate', unit: 'deg' },
+    invert: { min: 0, max: 100, default: 0, rule: 'filter', func: 'invert', unit: '%' },
+    //opacity:     {min: 0, max: 100, default: 100, rule: 'filter',    func: 'opacity',     unit: '%'},
+    saturate: { min: 0, max: 100, default: 100, rule: 'filter', func: 'saturate', unit: '%' },
+    sepia: { min: 0, max: 100, default: 0, rule: 'filter', func: 'sepia', unit: '%' }
+};
 
 var _target = void 0,
     _nodes = void 0,
@@ -163,9 +172,9 @@ var MouseFader = function (_extendableBuiltin2) {
         key: 'addEffect',
 
 
-        ////////////////////
-        // EFFECT METHODS //
-        ////////////////////
+        /////////////////
+        // API METHODS //
+        /////////////////
 
 
         value: function addEffect(str, near, far) {
@@ -190,6 +199,9 @@ var MouseFader = function (_extendableBuiltin2) {
                 unit: template.unit
             });
         }
+
+        // TODO: implement full API
+
     }, {
         key: 'hasEffect',
         value: function hasEffect(str) {
@@ -202,12 +214,17 @@ var MouseFader = function (_extendableBuiltin2) {
         }
     }, {
         key: 'removeEffect',
-        value: function removeEffect(str) {}
-        // if(this.hasEffect(str))
-        // {
-        //     delete _effects[str];
-        // }
-
+        value: function removeEffect(str) {
+            // if(this.hasEffect(str))
+            // {
+            //     delete _effects[str];
+            // }
+        }
+    }, {
+        key: 'distanceFrom',
+        value: function distanceFrom(node) {
+            return this.nodes[node].dataset['distance'];
+        }
 
         ////////////
         // SET-UP //
@@ -222,6 +239,8 @@ var MouseFader = function (_extendableBuiltin2) {
 
             window.addEventListener('scroll', this.windowEvent.bind(this));
             window.addEventListener('resize', this.windowEvent.bind(this));
+
+            // TODO: add alternative trigger modes
 
             /*let b = document.body;
             b.removeEventListener('mousemove',  update());
@@ -262,15 +281,10 @@ var MouseFader = function (_extendableBuiltin2) {
                 _centers.push({ x: x, y: y });
             }
         }
-    }, {
-        key: 'distanceFrom',
-        value: function distanceFrom(node) {
-            return this.nodes[node].dataset['distance'];
-        }
 
-        //////////////////////
-        // EVENT MANAGEMENT //
-        //////////////////////
+        ////////////
+        // EVENTS //
+        ////////////
 
 
     }, {
@@ -284,6 +298,7 @@ var MouseFader = function (_extendableBuiltin2) {
         value: function windowEvent(evt) {
             var _this2 = this;
 
+            // TODO: is this a hack? or the best way to do it?
             if (!this.preventCenterCalculations) window.setTimeout(function () {
                 return _this2.setCenterPoints();
             }, 1);
@@ -356,7 +371,6 @@ var MouseFader = function (_extendableBuiltin2) {
 
             if (this.mode === 'redraw') window.requestAnimationFrame(this.update);
 
-            // TODO: event dispatching breaks babel
             this.dispatchEvent(new Event('redraw'));
         } // update end
 
@@ -367,6 +381,8 @@ var MouseFader = function (_extendableBuiltin2) {
         },
         set: function set(t) {
             var nodes = void 0;
+
+            // TODO: get rid of all of this. just accept a NodeList
 
             if (t instanceof HTMLElement) {
                 console.log('HTMLElement with ' + t.children.length + ' children found');

@@ -23,7 +23,7 @@ const VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
         scale:       {                  default:   1, rule: 'transform', func: 'scale'},
         scaleX:      {                  default:   1, rule: 'transform', func: 'scaleX'},
         scaleY:      {                  default:   1, rule: 'transform', func: 'scaleY'},
-        scaleY:      {                  default:   1, rule: 'transform', func: 'scaleY'},
+        scaleZ:      {                  default:   1, rule: 'transform', func: 'scaleZ'},
         skewX:       {                  default:   0, rule: 'transform', func: 'skewX',       unit: 'deg'},
         skewY:       {                  default:   0, rule: 'transform', func: 'skewY',       unit: 'deg'},
         perspective: {                  default:   0, rule: 'transform', func: 'perspective', unit: 'px'},
@@ -73,7 +73,7 @@ const isVisibleInViewport = (el) => {
     let bounds = el.getBoundingClientRect(),
         view   = document.documentElement;
     return bounds.right>=0 && bounds.left<=view.clientWidth && bounds.bottom>=0 && bounds.top<=view.clientHeight;
-}
+};
 
 
 //const startTimer = (delay) =>
@@ -140,6 +140,8 @@ class MouseFader extends EventTarget
     set target(t)
     {
         let nodes;
+
+        // TODO: get rid of all of this. just accept a NodeList
 
         if(t instanceof HTMLElement)
         {
@@ -369,9 +371,9 @@ class MouseFader extends EventTarget
 
 
 
-    ////////////////////
-    // EFFECT METHODS //
-    ////////////////////
+    /////////////////
+    // API METHODS //
+    /////////////////
 
 
     addEffect(str, near, far, ...rest)
@@ -403,6 +405,7 @@ class MouseFader extends EventTarget
         });
     }
 
+    // TODO: implement full API
 
     hasEffect(str)
     {
@@ -425,6 +428,15 @@ class MouseFader extends EventTarget
     }
 
 
+    distanceFrom(node)
+    {
+        return this.nodes[node].dataset['distance'];
+    }
+
+
+
+
+
 
 	////////////
 	// SET-UP //
@@ -438,6 +450,8 @@ class MouseFader extends EventTarget
 
         window.addEventListener('scroll', this.windowEvent.bind(this));
         window.addEventListener('resize', this.windowEvent.bind(this));
+
+        // TODO: add alternative trigger modes
 
     	/*let b = document.body;
     	b.removeEventListener('mousemove',  update());
@@ -488,16 +502,11 @@ class MouseFader extends EventTarget
 
 
 
-    distanceFrom(node)
-    {
-        return this.nodes[node].dataset['distance'];
-    }
 
 
-
-    //////////////////////
-    // EVENT MANAGEMENT //
-    //////////////////////
+    ////////////
+    // EVENTS //
+    ////////////
 
 
     updatePointer(evt)
@@ -510,6 +519,7 @@ class MouseFader extends EventTarget
 
     windowEvent(evt)
     {
+        // TODO: is this a hack? or the best way to do it?
         if(!this.preventCenterCalculations) window.setTimeout(() => this.setCenterPoints(), 1);
     }
 
@@ -591,7 +601,6 @@ class MouseFader extends EventTarget
 
         if(this.mode==='redraw') window.requestAnimationFrame(this.update);
 
-        // TODO: event dispatching breaks babel
         this.dispatchEvent(new Event('redraw'));
 
     } // update end
