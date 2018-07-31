@@ -33,7 +33,7 @@ function _extendableBuiltin(cls) {
     return ExtendableBuiltin;
 }
 
-// MOUSEFADER CLASS by Adasha
+// PROXIMITYEFFECT CLASS by Adasha
 // v2.1.7-alpha
 // Repository: https://github.com/Adasha/mousefader
 // Demos: http://lab.adasha.com/mousefader
@@ -97,6 +97,7 @@ var roundTo = function roundTo(num) {
     return Math.round(num * mult) / mult;
 };
 
+// TODO: uncaught range error when num<0 or num>1
 var delta = function delta(num, a, b) {
     return (b - a) * num + a;
 };
@@ -118,15 +119,15 @@ var isVisibleInViewport = function isVisibleInViewport(el) {
 //const startTimer = (delay) =>
 
 
-var MouseFader = function (_extendableBuiltin2) {
-    _inherits(MouseFader, _extendableBuiltin2);
+var ProximityEffect = function (_extendableBuiltin2) {
+    _inherits(ProximityEffect, _extendableBuiltin2);
 
-    function MouseFader(target) {
+    function ProximityEffect(target) {
         var params = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-        _classCallCheck(this, MouseFader);
+        _classCallCheck(this, ProximityEffect);
 
-        var _this = _possibleConstructorReturn(this, (MouseFader.__proto__ || Object.getPrototypeOf(MouseFader)).call(this));
+        var _this = _possibleConstructorReturn(this, (ProximityEffect.__proto__ || Object.getPrototypeOf(ProximityEffect)).call(this));
 
         if (!target) {
             var _ret;
@@ -168,7 +169,7 @@ var MouseFader = function (_extendableBuiltin2) {
 
     // TARGET
 
-    _createClass(MouseFader, [{
+    _createClass(ProximityEffect, [{
         key: 'addEffect',
 
 
@@ -561,5 +562,5 @@ var MouseFader = function (_extendableBuiltin2) {
         }
     }]);
 
-    return MouseFader;
+    return ProximityEffect;
 }(_extendableBuiltin(EventTarget));

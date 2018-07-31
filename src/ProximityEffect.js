@@ -1,4 +1,4 @@
-﻿// MOUSEFADER CLASS by Adasha
+﻿// PROXIMITYEFFECT CLASS by Adasha
 // v2.1.7-alpha
 // Repository: https://github.com/Adasha/mousefader
 // Demos: http://lab.adasha.com/mousefader
@@ -63,6 +63,7 @@ const roundTo = (num, dp = 0) => {
     return Math.round(num*mult)/mult;
 };
 
+// TODO: uncaught range error when num<0 or num>1
 const delta = (num, a, b) => (b-a)*num+a;
 
 const map = (num, inMin, inMax, outMin, outMax) => (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
@@ -82,7 +83,7 @@ const isVisibleInViewport = (el) => {
 
 
 
-class MouseFader extends EventTarget
+class ProximityEffect extends EventTarget
 {
 
     constructor(target, params = {})
