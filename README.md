@@ -5,7 +5,7 @@ Bulk modify CSS properties on elements based on mouse pointer or other arbitrary
 
 <del>Fairly widely compatible but</del> effects are dependent on browser support. ***NOTE: current version requires capability to extend built-in objects - this knocks out Edge and Firefox before v59 until backwards compatibility is given more thought***
 
-[View demos on adasha.com](http://lab.adasha.com/proximity-effect)
+[View live demos](http://lab.adasha.com/proximity-effect)
 
 ## Installation
 
