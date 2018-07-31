@@ -1,10 +1,9 @@
 # MouseFader.js
 
 
-Modify CSS properties on children of target element based on mouse pointer proximity.
-Port of an old Flash component, missing some features but gained others. 9Kb minified, no dependencies.
+Bulk modify CSS properties on elements based on mouse pointer proximity. Does not modify existing style sheets.
 
-<del>Fairly widely compatible but</del> effects are dependent on browser support. ***NOTE: current version requires capability to extend built-in objects - this knocks out Edge and Firefox before v59 until polyfills are implemented)***
+<del>Fairly widely compatible but</del> effects are dependent on browser support. ***NOTE: current version requires capability to extend built-in objects - this knocks out Edge and Firefox before v59 until polyfills are implemented***
 
 [View demos on adasha.com](http://www.adasha.com/lab/mousefader)
 
