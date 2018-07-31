@@ -1,7 +1,7 @@
 # <del>MouseFader.js</del> ProximityEffect.js
 
 
-Bulk modify CSS properties on elements based on mouse pointer proximity. Does not modify existing style sheets.
+Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Does not modify existing style sheets.
 
 <del>Fairly widely compatible but</del> effects are dependent on browser support. ***NOTE: current version requires capability to extend built-in objects - this knocks out Edge and Firefox before v59 until polyfills are implemented***
 
