@@ -37,16 +37,20 @@ let elements = document.querySelectorAll("*.foo"); // requires NodeList at prese
 Then define parameters in an object:
 ```javascript
 let params = {
-   attack: 1, // [0<=n>=1] rate of change when approaching, 1=full speed 0=no movement
-   decay: 1, // [0<=n>=1] rate of change when receding, 1=full speed 0=no movement
-   threshold: 0, // [n>=0] minimum distance (from element's mathematical centre) before effect starts
-   runoff: 100 // [n>=0] distance over which styles are interpolated
-   direction: 'both'; // 'both' | 'horizontal' | 'vertical'
-   mode: 'redraw'; // redraw=every animation frame; ~~mousemove=have a guess; enterframe=follow FPS~~
-   FPS: 30; // [n>0] 'enterframe' mode only, up to refresh rate
+   attack:           1, // [0<=n>=1] rate of change when approaching, 1=full speed 0=no movement
+   decay:            1, // [0<=n>=1] rate of change when receding, 1=full speed 0=no movement
+   invert        false, // [Boolean] swap near and far distances
+   threshold:        0, // [n>=0] minimum distance (from element's mathematical centre) before effect starts
+   runoff:         100, // [n>=0] distance over which styles are interpolated
+   direction:   'both', // 'both' | 'horizontal' | 'vertical'
+   offsetX:          0, // [n>=0] global horizontal centrepoint offset
+   offsetY:          0, // [n>=0] global vertical centrepoint offset
+   mode:      'redraw', // 'redraw' <del>| 'mousemove' | 'enterframe'</del>
+   FPS:             30, // [n>0] 'enterframe' mode only, up to refresh rate
+   accuracy;         5; // [n>0] rounds internal calculations to reduce CPU load
 }
 ```
-These parameters can also be accessed as properties on the ProximityEffect instance.
+These parameters can also be accessed as individual properties on the ProximityEffect instance.
 
 Finally add effects as you see fit:
 
@@ -57,7 +61,8 @@ myEffect.addEffect('scale',   1,  2);   // effect, near val, far val
 myEffect.addEffect('blur',    0, 10);   // effect, near val, far val
 ...
 ```
-
+ProximityEffect directly supports most permitted functions of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-value CSS rule.
+23
 (Full details on the API are forthcoming, for now there is only an unfinished [page on the wiki](https://github.com/Adasha/proximity-effect/wiki/API-reference))
 
 
