@@ -33,11 +33,13 @@ function _extendableBuiltin(cls) {
     return ExtendableBuiltin;
 }
 
-// PROXIMITYEFFECT CLASS by Adasha
-// v2.1.7-alpha
-// Repository: https://github.com/Adasha/mousefader
-// Demos: http://lab.adasha.com/mousefader
-
+/*
+    PROXIMITYEFFECT CLASS by Adasha
+    v2.1.7-alpha
+    Licensed under MPL-2.0
+    Repository: https://github.com/Adasha/mousefader
+    Demos: http://lab.adasha.com/mousefader
+*/
 
 var VALID_MODES = new Set(['mousemove', 'enterframe', 'redraw']),
     VALID_DIRECTIONS = new Set(['both', 'horizontal', 'vertical']),
@@ -97,9 +99,8 @@ var roundTo = function roundTo(num) {
     return Math.round(num * mult) / mult;
 };
 
-// TODO: uncaught range error when num<0 or num>1
 var delta = function delta(num, a, b) {
-    return (b - a) * num + a;
+    return (b - a) * constrain(num, 0, 1) + a;
 };
 
 var map = function map(num, inMin, inMax, outMin, outMax) {
@@ -122,23 +123,23 @@ var isVisibleInViewport = function isVisibleInViewport(el) {
 var ProximityEffect = function (_extendableBuiltin2) {
     _inherits(ProximityEffect, _extendableBuiltin2);
 
-    function ProximityEffect(target) {
+    function ProximityEffect(nodes) {
         var params = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
         _classCallCheck(this, ProximityEffect);
 
         var _this = _possibleConstructorReturn(this, (ProximityEffect.__proto__ || Object.getPrototypeOf(ProximityEffect)).call(this));
 
-        if (!target) {
+        if (!nodes) {
             var _ret;
 
-            console.log('MouseFader: target argument is required');
+            console.log('ProximityEffect: nodes argument is required');
             return _ret = null, _possibleConstructorReturn(_this, _ret);
         }
 
         _this.preventCenterCalculations = true;
 
-        _this.target = target;
+        _this.nodes = nodes;
         _params = params;
 
         _this.threshold = _params.hasOwnProperty('threshold') ? _params.threshold : 0;
@@ -321,8 +322,20 @@ var ProximityEffect = function (_extendableBuiltin2) {
                     var centerX = _centers[i].x - (node.dataset['offsetx'] || 0),
                         centerY = _centers[i].y - (node.dataset['offsety'] || 0);
 
-                    var dx = _pointer.x - centerX,
-                        dy = _pointer.y - centerY,
+                    var tx = void 0,
+                        ty = void 0;
+
+                    if (this.target) {
+                        var b = this.target.getBoundingClientRect();
+                        tx = (b.left + b.right) * 0.5;
+                        ty = (b.top + b.bottom) * 0.5;
+                    } else {
+                        tx = _pointer.x;
+                        ty = _pointer.y;
+                    }
+
+                    var dx = tx - centerX,
+                        dy = ty - centerY,
                         dd = void 0,
                         td = void 0,
                         d = void 0;
@@ -381,33 +394,46 @@ var ProximityEffect = function (_extendableBuiltin2) {
             return _target;
         },
         set: function set(t) {
+            _target = t;
+        }
+
+        // NODES
+
+    }, {
+        key: 'nodes',
+        get: function get() {
+            return _nodes;
+        },
+        set: function set(n) {
             var nodes = void 0;
 
-            // TODO: get rid of all of this. just accept a NodeList
-
-            if (t instanceof HTMLElement) {
-                console.log('HTMLElement with ' + t.children.length + ' children found');
-                if (t.children.length < 1) {
-                    var h = document.createElement('span');
-                    t.parentNode.insertBefore(h, t);
-                    h.appendChild(t);
-                    t = h;
-                }
-                nodes = t.children;
-            } else if (t instanceof NodeList) {
-                console.log('NodeList with ' + t.length + ' childNodes found');
-                nodes = t;
-            } else {
-                console.log(t + ' is not a suitable target');
-                return;
+            if (n instanceof NodeList) {
+                console.log('NodeList with ' + n.length + ' childNodes found');
+                nodes = n;
             }
+            // else if(n instanceof HTMLElement)
+            // {
+            //     console.log(`HTMLElement with ${n.children.length} children found`);
+            //     if(n.children.length<1)
+            //     {
+            //         let h = document.createElement('span');
+            //         n.parentNode.insertBefore(h, n);
+            //         h.appendChild(n);
+            //         n = h;
+            //     }
+            //     nodes = n.children;
+            // }
+            else {
+                    console.log(n + ' is not a node list');
+                    return;
+                }
 
             if (nodes.length < 1) {
-                console.log('No children found on ' + t);
+                console.log('No nodes found in ' + n);
                 return;
             }
 
-            this.nodes = nodes;
+            _nodes = nodes;
             if (_params && !this.preventCenterCalculations) this.setCenterPoints();
             _lastDeltas = new Array(this.nodes.length);
         }
@@ -559,6 +585,18 @@ var ProximityEffect = function (_extendableBuiltin2) {
         },
         set: function set(num) {
             _params.accuracy = Math.floor(constrain(num, 0));
+        }
+
+        // POINTER
+        // convenience property
+
+    }, {
+        key: 'pointer',
+        get: function get() {
+            return {
+                x: _pointer.x,
+                y: _pointer.y
+            };
         }
     }]);
 

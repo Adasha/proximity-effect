@@ -75,6 +75,14 @@
             align-self: center;
         }
 
+        #alttarget
+        {
+            width: 20px;
+            height: 20px;
+            background: #559;
+            position: absolute;
+        }
+
     </style>
 </head>
 
@@ -91,7 +99,7 @@
 
     </div>
 
-
+    <div id="alttarget"></div>
 
 	<script src="../src/ProximityEffect.js"></script>
     <script>
@@ -118,7 +126,7 @@
             decay:       0.2
         };
 
-        let fader = new ProximityEffect(document.getElementById('sampleelement'), params);
+        let fader = new ProximityEffect(document.querySelectorAll('*.childelement'), params);
 
 
         //fader.addEffect('opacity',      1,    0.7);
@@ -133,6 +141,12 @@
         //fader.addEffect(null, 10, 0, 'margin-top', null, 'px')
         //fader.addEffect(null, 10, 0, 'margin-left', null, 'px')
 
+        fader.target = document.querySelector('#alttarget');
+        window.setInterval(() => {
+            var alttarget = document.querySelector('#alttarget');
+            alttarget.style.left = fader.pointer.x+'px';
+            alttarget.style.top  = fader.pointer.y+'px';
+        }, 200);
 
     </script>
 </body>

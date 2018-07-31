@@ -1,8 +1,10 @@
-﻿// PROXIMITYEFFECT CLASS by Adasha
-// v2.1.7-alpha
-// Repository: https://github.com/Adasha/mousefader
-// Demos: http://lab.adasha.com/mousefader
-
+﻿/*
+    PROXIMITYEFFECT CLASS by Adasha
+    v2.1.7-alpha
+    Licensed under MPL-2.0
+    Repository: https://github.com/Adasha/mousefader
+    Demos: http://lab.adasha.com/mousefader
+*/
 
 const VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
       VALID_DIRECTIONS  = new Set(['both', 'horizontal', 'vertical']),
@@ -63,8 +65,7 @@ const roundTo = (num, dp = 0) => {
     return Math.round(num*mult)/mult;
 };
 
-// TODO: uncaught range error when num<0 or num>1
-const delta = (num, a, b) => (b-a)*num+a;
+const delta = (num, a, b) => (b-a)*constrain(num, 0, 1)+a;
 
 const map = (num, inMin, inMax, outMin, outMax) => (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 
@@ -86,19 +87,19 @@ const isVisibleInViewport = (el) => {
 class ProximityEffect extends EventTarget
 {
 
-    constructor(target, params = {})
+    constructor(nodes, params = {})
     {
         super();
 
-        if(!target)
+        if(!nodes)
         {
-            console.log('MouseFader: target argument is required');
+            console.log('ProximityEffect: nodes argument is required');
             return null;
         }
 
         this.preventCenterCalculations = true;
 
-        this.target = target;
+        this.nodes = nodes;
         _params = params;
 
 
@@ -131,6 +132,7 @@ class ProximityEffect extends EventTarget
     /////////////////////////
 
 
+
     // TARGET
 
     get target()
@@ -140,40 +142,53 @@ class ProximityEffect extends EventTarget
 
     set target(t)
     {
+        _target = t;
+    }
+
+
+
+    // NODES
+
+    get nodes()
+    {
+        return _nodes;
+    }
+
+    set nodes(n)
+    {
         let nodes;
 
-        // TODO: get rid of all of this. just accept a NodeList
 
-        if(t instanceof HTMLElement)
+        if(n instanceof NodeList)
         {
-            console.log(`HTMLElement with ${t.children.length} children found`);
-            if(t.children.length<1)
-            {
-                let h = document.createElement('span');
-                t.parentNode.insertBefore(h, t);
-                h.appendChild(t);
-                t = h;
-            }
-            nodes = t.children;
+            console.log(`NodeList with ${n.length} childNodes found`);
+            nodes = n;
         }
-        else if(t instanceof NodeList)
-        {
-            console.log(`NodeList with ${t.length} childNodes found`);
-            nodes = t;
-        }
+        // else if(n instanceof HTMLElement)
+        // {
+        //     console.log(`HTMLElement with ${n.children.length} children found`);
+        //     if(n.children.length<1)
+        //     {
+        //         let h = document.createElement('span');
+        //         n.parentNode.insertBefore(h, n);
+        //         h.appendChild(n);
+        //         n = h;
+        //     }
+        //     nodes = n.children;
+        // }
         else
       	{
-    		console.log(`${t} is not a suitable target`);
+    		console.log(`${n} is not a node list`);
     		return;
       	}
 
         if(nodes.length<1)
       	{
-    		console.log(`No children found on ${t}`);
+    		console.log(`No nodes found in ${n}`);
     		return;
       	}
 
-        this.nodes = nodes;
+        _nodes = nodes;
 		if(_params && !this.preventCenterCalculations) this.setCenterPoints();
         _lastDeltas = new Array(this.nodes.length);
     }
@@ -370,6 +385,16 @@ class ProximityEffect extends EventTarget
 
 
 
+    // POINTER
+    // convenience property
+
+    get pointer()
+    {
+        return {
+            x: _pointer.x,
+            y: _pointer.y
+        }
+    }
 
 
     /////////////////
@@ -544,8 +569,22 @@ class ProximityEffect extends EventTarget
 				let centerX = _centers[i].x - (node.dataset['offsetx']||0),
                     centerY = _centers[i].y - (node.dataset['offsety']||0);
 
-                let dx = _pointer.x - centerX,
-                    dy = _pointer.y - centerY,
+                let tx, ty;
+
+                if(this.target)
+                {
+                    let b = this.target.getBoundingClientRect();
+                    tx = (b.left + b.right)*0.5;
+                    ty = (b.top + b.bottom)*0.5;
+                }
+                else
+                {
+                    tx = _pointer.x;
+                    ty = _pointer.y;
+                }
+
+                let dx = tx - centerX,
+                    dy = ty - centerY,
                     dd, td, d;
 
                 if(this.direction==='both') dd = Math.sqrt(dx*dx+dy*dy);
