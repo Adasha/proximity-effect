@@ -1,17 +1,17 @@
 # <del>MouseFader.js</del> ProximityEffect.js
 
 
-Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Does not modify existing style sheets.
+Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Does not override existing style sheets.
 
-<del>Fairly widely compatible but</del> effects are dependent on browser support. ***NOTE: current version requires capability to extend built-in objects - this knocks out Edge and Firefox before v59 until polyfills are implemented***
+<del>Fairly widely compatible but</del> effects are dependent on browser support. ***NOTE: current version requires capability to extend built-in objects - this knocks out Edge and Firefox before v59 until backwards compatibility is given more thought***
 
-[View demos on adasha.com](http://www.adasha.com/lab/mousefader)
+[View demos on adasha.com](http://lab.adasha.com/proximity-effect)
 
 ## Installation
 
 Just a .js file - no Bower or npm or repositories (yet). Download your version of choice and embed in your HTML:
 ```html
-<script src="mousefader.min.js"></script>
+<script src="ProximityEffect.min.js"></script>
 ```
 
 ## To use
@@ -20,15 +20,18 @@ Just a .js file - no Bower or npm or repositories (yet). Download your version o
 ### Add some content to affect
 In your `<body>` content add some elements you want to affect:
 ```html
-<div class="targetName">
-   ... child elements ...
+<div>
+   <div class=="foo">...</div>
+   <div class=="foo">...</div>
+   <div class=="foo">...</div>
+   ...
 </div>
 ```
 
 ### Set-up
 Remaining set-up should be done after content has loaded. Store a reference to the chosen target:
 ```javascript
-let target = document.querySelectorAll("*.targetName"); // requires NodeList at present
+let elements = document.querySelectorAll("*.foo"); // requires NodeList at present
 ```
 
 Then define parameters in an object:
@@ -43,16 +46,20 @@ let params = {
    FPS: 30; // [n>0] 'enterframe' mode only, up to refresh rate
 }
 ```
-(Details on the API are forthcoming)
+These parameters can also be accessed as properties on the ProximityEffect instance.
 
 Finally add effects as you see fit:
 
 ```javascript
-let myFader = new MouseFader(target, params);
-myFader.addEffect('opacity', 1, 0.5); // effect, near val, far val
-myFader.addEffect('scale',   1, 2); // effect, near val, far val
+let myEffect = new ProximityEffect(elements, params);
+myEffect.addEffect('opacity', 1,  0.5); // effect, near val, far val
+myEffect.addEffect('scale',   1,  2);   // effect, near val, far val
+myEffect.addEffect('blur',    0, 10);   // effect, near val, far val
 ...
 ```
+
+(Full details on the API are forthcoming, for now there is only an unfinished [page on the wiki](https://github.com/Adasha/proximity-effect/wiki/API-reference))
+
 
 ## License:
 
