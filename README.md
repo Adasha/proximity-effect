@@ -21,9 +21,9 @@ Just a .js file - no Bower or npm or repositories (yet). Download your version o
 In your `<body>` content add some elements you want to affect:
 ```html
 <div>
-   <div class=="foo">...</div>
-   <div class=="foo">...</div>
-   <div class=="foo">...</div>
+   <div class="foo">...</div>
+   <div class="foo">...</div>
+   <div class="foo">...</div>
    ...
 </div>
 ```
