@@ -1,4 +1,4 @@
-# <del>MouseFader.js</del> ProximityEffect.js
+# ProximityEffect.js
 
 
 Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Does not override existing style sheets.
