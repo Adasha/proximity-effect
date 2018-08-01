@@ -330,8 +330,8 @@ var ProximityEffect = function (_extendableBuiltin2) {
                         tx = (b.left + b.right) * 0.5;
                         ty = (b.top + b.bottom) * 0.5;
                     } else {
-                        tx = _pointer.x;
-                        ty = _pointer.y;
+                        tx = this.pointer.x;
+                        ty = this.pointer.y;
                     }
 
                     var dx = tx - centerX,
@@ -394,7 +394,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
             return _target;
         },
         set: function set(t) {
-            _target = t;
+            if (typeof t === 'Element') _target = t;else console.log(t + ' is not a valid target');
         }
 
         // NODES

@@ -9,7 +9,14 @@ Bulk modify CSS properties on elements based on mouse pointer or other arbitrary
 
 ## Installation
 
-Just a .js file - no Bower or npm or repositories (yet). Download your version of choice and embed in your HTML:
+### npm
+
+```
+npm install --save proximity-effect
+```
+
+### Native
+Latest ES6 version is in `src`, ES5/minified versions are in `dist`. Download your version of choice and embed in your HTML:
 ```html
 <script src="ProximityEffect.min.js"></script>
 ```
@@ -56,9 +63,10 @@ Finally add effects as you see fit:
 
 ```javascript
 let myEffect = new ProximityEffect(elements, params);
-myEffect.addEffect('opacity', 1,  0.5); // effect, near val, far val
-myEffect.addEffect('scale',   1,  2);   // effect, near val, far val
-myEffect.addEffect('blur',    0, 10);   // effect, near val, far val
+
+myEffect.addEffect('opacity', 1,  0.5);
+myEffect.addEffect('scale',   1,  2);
+myEffect.addEffect('blur',    0, 10);
 
 myEffect.addEffect(null,    100, 50, null,        'left',        'em');
 myEffect.addEffect(null,    100, 50, 'transform', 'perspective', 'px');

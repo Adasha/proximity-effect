@@ -1,14 +1,16 @@
 {
 	"name": "proximity-effect",
-	"version": "v2.1.7-alpha",
+	"version": "v2.1.8-alpha",
 	"description": "Mass modify CSS properties based on mouse proximity.",
 	"author": {
 		"name": "Adam Shailer",
-		"email": "",
+		"email": "adasha76@outlook.com",
 		"url": "http://adasha.com"
 	},
 	"keywords": [
 		"mouse",
+		"movement",
+		"tracking",
 		"distance",
 		"range",
 		"proximity",
@@ -16,18 +18,21 @@
 		"position",
 		"approach",
 		"animate",
+		"tween",
+		"eye-candy",
 		"CSS",
 		"style",
-		"stylesheet"
+		"stylesheet",
+		"effect"
 	],
-	"homepage": "http://lab.adasha.com/mousefader",
+	"homepage": "http://lab.adasha.com/proximity-effect",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Adasha/mousefader"
+		"url": "https://github.com/Adasha/proximity-effect"
 	},
 	"bugs": {
-		"url": "https://github.com/Adasha/mousefader/issues",
-		"email": ""
+		"url": "https://github.com/Adasha/proximity-effect/issues",
+		"email": "adasha76@outlook.com"
 	},
 	"browser": "src/ProximityEffect.js",
 	"license": "MPL-2.0",

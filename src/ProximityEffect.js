@@ -1,9 +1,9 @@
 ﻿/*
     PROXIMITYEFFECT CLASS by Adasha
-    v2.1.7-alpha
+    v2.1.8-alpha
     Licensed under MPL-2.0
-    Repository: https://github.com/Adasha/mousefader
-    Demos: http://lab.adasha.com/mousefader
+    Repository: https://github.com/Adasha/proximity-effect
+    Demos: http://lab.adasha.com/proximity-effect
 */
 
 const VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
@@ -28,7 +28,7 @@ const VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
         scaleZ:      {                  default:   1, rule: 'transform', func: 'scaleZ'},
         skewX:       {                  default:   0, rule: 'transform', func: 'skewX',       unit: 'deg'},
         skewY:       {                  default:   0, rule: 'transform', func: 'skewY',       unit: 'deg'},
-        perspective: {                  default:   0, rule: 'transform', func: 'perspective', unit: 'px'},
+        //perspective: {                  default:   0, rule: 'transform', func: 'perspective', unit: 'px'},
         blur:        {min: 0,           default:   0, rule: 'filter',    func: 'blur',        unit: 'px'},
         brightness:  {min: 0,           default: 100, rule: 'filter',    func: 'brightness',  unit: '%'},
         contrast:    {min: 0,           default: 100, rule: 'filter',    func: 'contrast',    unit: '%'},
@@ -142,7 +142,8 @@ class ProximityEffect extends EventTarget
 
     set target(t)
     {
-        _target = t;
+        if(typeof t === 'Element') _target = t;
+        else console.log(`${t} is not a valid target`);
     }
 
 
@@ -386,7 +387,7 @@ class ProximityEffect extends EventTarget
 
 
     // POINTER
-    // convenience property
+    // Convenience property, provides mouse coordinates without requiring MouseEvent
 
     get pointer()
     {
@@ -395,6 +396,10 @@ class ProximityEffect extends EventTarget
             y: _pointer.y
         }
     }
+
+
+
+
 
 
     /////////////////
@@ -579,8 +584,8 @@ class ProximityEffect extends EventTarget
                 }
                 else
                 {
-                    tx = _pointer.x;
-                    ty = _pointer.y;
+                    tx = this.pointer.x;
+                    ty = this.pointer.y;
                 }
 
                 let dx = tx - centerX,
