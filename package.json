@@ -1,6 +1,6 @@
 {
 	"name": "proximity-effect",
-	"version": "v2.1.8-alpha",
+	"version": "v2.1.9-alpha",
 	"description": "Mass modify CSS properties based on mouse proximity.",
 	"author": {
 		"name": "Adam Shailer",
@@ -34,7 +34,8 @@
 		"url": "https://github.com/Adasha/proximity-effect/issues",
 		"email": "adasha76@outlook.com"
 	},
-	"browser": "src/ProximityEffect.js",
+	"main": "dist/ProximityEffect.js",
+	"unpkg": "dist/ProximityEffect.min.js",
 	"license": "MPL-2.0",
 	"dependencies": {},
 	"devDependencies": {
