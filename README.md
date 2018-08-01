@@ -60,11 +60,11 @@ myEffect.addEffect('opacity', 1,  0.5); // effect, near val, far val
 myEffect.addEffect('scale',   1,  2);   // effect, near val, far val
 myEffect.addEffect('blur',    0, 10);   // effect, near val, far val
 
-myEffect.addEffect(null,    100, 50, null,        'left',        'px');
-myEffect.addEffect(null,    100, 50, 'transform', 'perspective', '%');
+myEffect.addEffect(null,    100, 50, null,        'left',        'em');
+myEffect.addEffect(null,    100, 50, 'transform', 'perspective', 'px');
 ...
 ```
-ProximityEffect directly supports most permitted functions of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-value CSS rule.
+ProximityEffect directly supports [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-value CSS rule.
 23
 (Full details on the API are forthcoming, for now there is only an unfinished [page on the wiki](https://github.com/Adasha/proximity-effect/wiki/API-reference))
 
