@@ -34,11 +34,10 @@ function _extendableBuiltin(cls) {
 }
 
 /*
-    PROXIMITYEFFECT CLASS by Adasha
-    v2.1.7-alpha
+    ProximityEfect class by Adasha
     Licensed under MPL-2.0
-    Repository: https://github.com/Adasha/mousefader
-    Demos: http://lab.adasha.com/mousefader
+    Repository: https://github.com/Adasha/proximity-effect
+    Demos: http://lab.adasha.com/proximity-effect
 */
 
 var VALID_MODES = new Set(['mousemove', 'enterframe', 'redraw']),
@@ -63,7 +62,7 @@ var VALID_MODES = new Set(['mousemove', 'enterframe', 'redraw']),
     scaleZ: { default: 1, rule: 'transform', func: 'scaleZ' },
     skewX: { default: 0, rule: 'transform', func: 'skewX', unit: 'deg' },
     skewY: { default: 0, rule: 'transform', func: 'skewY', unit: 'deg' },
-    perspective: { default: 0, rule: 'transform', func: 'perspective', unit: 'px' },
+    //perspective: {                  default:   0, rule: 'transform', func: 'perspective', unit: 'px'},
     blur: { min: 0, default: 0, rule: 'filter', func: 'blur', unit: 'px' },
     brightness: { min: 0, default: 100, rule: 'filter', func: 'brightness', unit: '%' },
     contrast: { min: 0, default: 100, rule: 'filter', func: 'contrast', unit: '%' },
@@ -588,7 +587,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
         }
 
         // POINTER
-        // convenience property
+        // Convenience property, provides mouse coordinates without requiring MouseEvent
 
     }, {
         key: 'pointer',

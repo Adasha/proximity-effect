@@ -1,6 +1,5 @@
 ﻿/*
-    PROXIMITYEFFECT CLASS by Adasha
-    v2.1.8-alpha
+    ProximityEfect class by Adasha
     Licensed under MPL-2.0
     Repository: https://github.com/Adasha/proximity-effect
     Demos: http://lab.adasha.com/proximity-effect
