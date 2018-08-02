@@ -20,8 +20,8 @@ npm install --save proximity-effect
 <script src="https://unpkg.com/proximity-effect"></script>
 ```
 
-### Native
-Latest ES6 version is in `src`, ES5/minified versions are in `dist`. Download your version of choice and embed in your HTML:
+### Vanilla
+Latest ES6+ version is in `src`, ES5/minified versions are in `dist`. Download your version of choice and embed in your HTML:
 ```html
 <script src="ProximityEffect.min.js"></script>
 ```
@@ -43,7 +43,7 @@ In your `<body>` content add some elements you want to affect:
 ### Set-up
 Remaining set-up should be done after content has loaded. Store a reference to the chosen target:
 ```javascript
-let elements = document.querySelectorAll("*.foo"); // requires NodeList at present
+let elements = document.querySelectorAll("*.foo"); // requires NodeList
 ```
 
 Then define parameters in an object:
@@ -62,13 +62,20 @@ let params = {
    accuracy;         5; // [n>0] rounds internal calculations to reduce CPU load
 }
 ```
-These parameters can also be accessed as individual properties on the ProximityEffect instance.
+
+Then create instance:
+```javascript
+let myEffect = new ProximityEffect(elements, params);
+```
+
+Parameters can also be accessed as individual properties on the ProximityEffect instance:
+```javascript
+myEffect.invert = true;
+```
 
 Finally add effects as you see fit:
 
 ```javascript
-let myEffect = new ProximityEffect(elements, params);
-
 myEffect.addEffect('opacity', 1,  0.5);
 myEffect.addEffect('scale',   1,  2);
 myEffect.addEffect('blur',    0, 10);
