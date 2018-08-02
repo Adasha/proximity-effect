@@ -146,7 +146,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
         _this.attack = _params.hasOwnProperty('attack') ? _params.attack : 1;
         _this.decay = _params.hasOwnProperty('decay') ? _params.decay : 1;
         _this.accuracy = _params.hasOwnProperty('accuracy') ? _params.accuracy : DEFAULT_ACCURACY;
-        _this.invert = _params.invert || false;
+        _this.reverse = _params.reverse || false;
         _this.offsetX = _params.offsetX || 0;
         _this.offsetY = _params.offsetY || 0;
         _this.jitter = _params.jitter || 0;
@@ -342,10 +342,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
                     if (this.direction === 'both') dd = Math.sqrt(dx * dx + dy * dy);else dd = Math.abs(this.direction === 'horizontal' ? dx : dy);
 
                     td = constrain((dd - this.threshold) * _invRunoff, 0, 1);
-                    if (this.invert) td = 1 - td;
+                    if (this.reverse) td = 1 - td;
 
                     if (last) {
-                        d = last + (td - last) * (XOR(td > last, this.invert) ? this.decay : this.attack);
+                        d = last + (td - last) * (XOR(td > last, this.reverse) ? this.decay : this.attack);
                     } else d = td;
 
                     node.dataset['distance'] = d;
@@ -468,15 +468,15 @@ var ProximityEffect = function (_extendableBuiltin2) {
             return this.threshold + this.runoff;
         }
 
-        // INVERT [Boolean]
+        // REVERSE [Boolean]
 
     }, {
-        key: 'invert',
+        key: 'reverse',
         get: function get() {
-            return _params.invert;
+            return _params.reverse;
         },
         set: function set(bool) {
-            _params.invert = !!bool;
+            _params.reverse = !!bool;
         }
 
         // ATTACK [0>=Number>=1]

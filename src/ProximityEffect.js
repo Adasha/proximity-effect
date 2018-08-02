@@ -107,7 +107,7 @@ class ProximityEffect extends EventTarget
         this.attack    = _params.hasOwnProperty('attack')    ? _params.attack    : 1;
         this.decay     = _params.hasOwnProperty('decay')     ? _params.decay     : 1;
         this.accuracy  = _params.hasOwnProperty('accuracy')  ? _params.accuracy  : DEFAULT_ACCURACY;
-        this.invert    = _params.invert    || false;
+        this.reverse   = _params.reverse   || false;
         this.offsetX   = _params.offsetX   || 0;
         this.offsetY   = _params.offsetY   || 0;
         this.jitter    = _params.jitter    || 0;
@@ -231,16 +231,16 @@ class ProximityEffect extends EventTarget
 
 
 
-    // INVERT [Boolean]
+    // REVERSE [Boolean]
 
-    get invert()
+    get reverse()
     {
-        return _params.invert;
+        return _params.reverse;
     }
 
-    set invert(bool)
+    set reverse(bool)
     {
-        _params.invert = !!bool;
+        _params.reverse = !!bool;
     }
 
 
@@ -595,11 +595,11 @@ class ProximityEffect extends EventTarget
                 else dd = Math.abs(this.direction==='horizontal' ? dx : dy);
 
         		td = constrain((dd-this.threshold)*_invRunoff, 0, 1);
-                if(this.invert) td = 1 - td;
+                if(this.reverse) td = 1 - td;
 
                 if(last)
                 {
-                    d = last+(td-last)*(XOR(td>last, this.invert) ? this.decay : this.attack);
+                    d = last+(td-last)*(XOR(td>last, this.reverse) ? this.decay : this.attack);
                 }
                 else d = td;
 
