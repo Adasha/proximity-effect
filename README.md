@@ -15,14 +15,10 @@ Bulk modify CSS properties on elements based on mouse pointer or other arbitrary
 npm install --save proximity-effect
 ```
 
-<<<<<<< HEAD
 ### CDN
 ```html
 <script src="https://unpkg.com/proximity-effect"></script>
 ```
-
-=======
->>>>>>> 3d7976683a852dcc5556d51f72745247a39f327f
 
 ### Native
 Latest ES6 version is in `src`, ES5/minified versions are in `dist`. Download your version of choice and embed in your HTML:
