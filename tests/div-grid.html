@@ -169,17 +169,23 @@
 
         //fader1.addEffect('opacity',      1,    0.3);
         //fader2.addEffect('scale',        1,    0.5);
-        fader1.addEffect('opacity',  1,  0.5);
-        fader2.addEffect('scale',    1,  0);
-        fader1.addEffect('blur',     0,  5);
+        fader1.addEffect('opacity', 1, 0.5);
+        fader2.addEffect('scale',   1, 0);
+        fader1.addEffect('blur',    0, 5);
         //fader.addEffect('grayscale', 0,  100);
         //fader.addEffect('hueRotate',    0, 180);
         //fader.addEffect(null, 0, 10, 'padding', null, 'px')
         //fader.addEffect(null, 10, 0, 'margin-top', null, 'px')
         //fader.addEffect(null, 10, 0, 'margin-left', null, 'px')
 
+        let counter = 0;
+        window.setInterval(() => {
+            fader2.offsetY = Math.cos(counter)*50;
+            //fader2.jitter = (Math.cos(counter/10)+1) * 50;
+            counter += 0.05;
+        }, 16);
 
-        fader1.target = fader2.target = document.querySelector('#alttarget');
+        //fader1.target = fader2.target = document.querySelector('#alttarget');
 
         window.setInterval(() => {
             var alttarget = document.querySelector('#alttarget');

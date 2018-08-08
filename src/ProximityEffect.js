@@ -100,7 +100,6 @@ class ProximityEffect extends EventTarget
         this.attack    = this._params.hasOwnProperty('attack')    ? this._params.attack    : 1;
         this.decay     = this._params.hasOwnProperty('decay')     ? this._params.decay     : 1;
         this.accuracy  = this._params.hasOwnProperty('accuracy')  ? this._params.accuracy  : DEFAULT_ACCURACY;
-        this.reverse   = this._params.reverse   || false;
         this.invert    = this._params.invert    || false;
         this.offsetX   = this._params.offsetX   || 0;
         this.offsetY   = this._params.offsetY   || 0;
@@ -225,7 +224,7 @@ class ProximityEffect extends EventTarget
     }
 
 
-
+/*
     // REVERSE [Boolean]
 
     get reverse()
@@ -237,7 +236,7 @@ class ProximityEffect extends EventTarget
     {
         this._params.reverse = !!bool;
     }
-
+*/
 
 
     // INVERT [Boolean]
@@ -318,6 +317,13 @@ class ProximityEffect extends EventTarget
   	set jitter(num)
   	{
         this._params.jitter = constrain(num, 0);
+        for(let i=0; i<this.nodes.length; i++)
+        {
+            this.setNodeData(i, 'jitter', {
+                x: (Math.random()-0.5) * this.jitter,
+                y: (Math.random()-0.5) * this.jitter
+            });
+        }
         if(!this.preventCenterCalculations) this.setCenterPoints();
   	}
 
@@ -397,6 +403,7 @@ class ProximityEffect extends EventTarget
     // POINTER
     // Convenience property, provides mouse coordinates without requiring MouseEvent
 
+    // TODO: should/can this be static?
     get pointer()
     {
         return {
@@ -525,21 +532,31 @@ class ProximityEffect extends EventTarget
     		let node   = this.nodes[i],
     			bounds = node.getBoundingClientRect(),
                 x      = (bounds.left+bounds.right )*0.5 - this.offsetX,
-                y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY;
+                y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY,
+                nd     = this.getNodeData(i, 'jitter');
 
-            // TODO: modifying global offsets shouldn't automatically recalculate jitter
-            if(this.jitter>0)
+            if(this.jitter>0 && nd)
             {
-                x += (Math.random()-0.5) * this.jitter;
-                y += (Math.random()-0.5) * this.jitter;
+                x += nd.x;
+                y += nd.y;
             }
 
-            if(!this._nodeData[i]) this._nodeData[i] = {};
-    		this._nodeData[i].center = {x: x, y: y};
+    		this.setNodeData(i, 'center', {x: x, y: y});
         }
     }
 
 
+
+    getNodeData(i, prop)
+    {
+        return this._nodeData[i][prop];
+    }
+
+    setNodeData(i, prop, val)
+    {
+        if(!this._nodeData[i]) this._nodeData[i] = {};
+        this._nodeData[i][prop] = val;
+    }
 
 
 
@@ -573,16 +590,17 @@ class ProximityEffect extends EventTarget
         for(let i=0; i<this.nodes.length; i++)
         {
             let node   = this.nodes[i],
-                last   = this._nodeData[i].lastDelta,
-                bounds = node.getBoundingClientRect();
+                last   = this.getNodeData(i, 'lastDelta'),
+                bounds = node.getBoundingClientRect(),
+                center = this.getNodeData(i, 'center');
 
             // TODO: optimise to update only visible elements
             // WORKAROUND FOR ISSUE #10
             //if(isVisibleInViewport(node) || last<1)
             if(true)
     		{
-				let centerX = this._nodeData[i].center.x - (node.dataset['offsetx']||0),
-                    centerY = this._nodeData[i].center.y - (node.dataset['offsety']||0);
+				let centerX = center.x - (node.dataset['offsetx']||0),
+                    centerY = center.y - (node.dataset['offsety']||0);
 
                 let tx, ty;
 
@@ -609,7 +627,9 @@ class ProximityEffect extends EventTarget
                 if(this.invert) td = 1 - td;
 
                 // TODO: move into this._nodeData
+                // TODO: before or after attack/decay?
                 node.dataset['distance'] = td;
+                this.setNodeData(i, 'distance', td);
 
                 if(last)
                 {
@@ -618,7 +638,7 @@ class ProximityEffect extends EventTarget
                 else d = td;
 
                 d = roundTo(d, this.accuracy);
-                this._nodeData[i].lastDelta = d;
+                this.setNodeData(i, 'lastDelta', d);
 
     			if(d<=1 && this._effects)
     			{

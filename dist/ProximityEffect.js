@@ -140,7 +140,6 @@ var ProximityEffect = function (_extendableBuiltin2) {
         _this.attack = _this._params.hasOwnProperty('attack') ? _this._params.attack : 1;
         _this.decay = _this._params.hasOwnProperty('decay') ? _this._params.decay : 1;
         _this.accuracy = _this._params.hasOwnProperty('accuracy') ? _this._params.accuracy : DEFAULT_ACCURACY;
-        _this.reverse = _this._params.reverse || false;
         _this.invert = _this._params.invert || false;
         _this.offsetX = _this._params.offsetX || 0;
         _this.offsetY = _this._params.offsetY || 0;
@@ -267,17 +266,27 @@ var ProximityEffect = function (_extendableBuiltin2) {
                 var node = this.nodes[i],
                     bounds = node.getBoundingClientRect(),
                     x = (bounds.left + bounds.right) * 0.5 - this.offsetX,
-                    y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY;
+                    y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY,
+                    nd = this.getNodeData(i, 'jitter');
 
-                // TODO: modifying global offsets shouldn't automatically recalculate jitter
-                if (this.jitter > 0) {
-                    x += (Math.random() - 0.5) * this.jitter;
-                    y += (Math.random() - 0.5) * this.jitter;
+                if (this.jitter > 0 && nd) {
+                    x += nd.x;
+                    y += nd.y;
                 }
 
-                if (!this._nodeData[i]) this._nodeData[i] = {};
-                this._nodeData[i].center = { x: x, y: y };
+                this.setNodeData(i, 'center', { x: x, y: y });
             }
+        }
+    }, {
+        key: 'getNodeData',
+        value: function getNodeData(i, prop) {
+            return this._nodeData[i][prop];
+        }
+    }, {
+        key: 'setNodeData',
+        value: function setNodeData(i, prop, val) {
+            if (!this._nodeData[i]) this._nodeData[i] = {};
+            this._nodeData[i][prop] = val;
         }
 
         ////////////
@@ -308,15 +317,16 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
             for (var i = 0; i < this.nodes.length; i++) {
                 var node = this.nodes[i],
-                    last = this._nodeData[i].lastDelta,
-                    bounds = node.getBoundingClientRect();
+                    last = this.getNodeData(i, 'lastDelta'),
+                    bounds = node.getBoundingClientRect(),
+                    center = this.getNodeData(i, 'center');
 
                 // TODO: optimise to update only visible elements
                 // WORKAROUND FOR ISSUE #10
                 //if(isVisibleInViewport(node) || last<1)
                 if (true) {
-                    var centerX = this._nodeData[i].center.x - (node.dataset['offsetx'] || 0),
-                        centerY = this._nodeData[i].center.y - (node.dataset['offsety'] || 0);
+                    var centerX = center.x - (node.dataset['offsetx'] || 0),
+                        centerY = center.y - (node.dataset['offsety'] || 0);
 
                     var tx = void 0,
                         ty = void 0;
@@ -342,14 +352,16 @@ var ProximityEffect = function (_extendableBuiltin2) {
                     if (this.invert) td = 1 - td;
 
                     // TODO: move into this._nodeData
+                    // TODO: before or after attack/decay?
                     node.dataset['distance'] = td;
+                    this.setNodeData(i, 'distance', td);
 
                     if (last) {
                         d = last + (td - last) * (XOR(td > last, this.invert) ? this.decay : this.attack);
                     } else d = td;
 
                     d = roundTo(d, this.accuracy);
-                    this._nodeData[i].lastDelta = d;
+                    this.setNodeData(i, 'lastDelta', d);
 
                     if (d <= 1 && this._effects) {
                         var styles = {};
@@ -466,16 +478,19 @@ var ProximityEffect = function (_extendableBuiltin2) {
             return this.threshold + this.runoff;
         }
 
-        // REVERSE [Boolean]
-
-    }, {
-        key: 'reverse',
-        get: function get() {
-            return this._params.reverse;
-        },
-        set: function set(bool) {
-            this._params.reverse = !!bool;
-        }
+        /*
+            // REVERSE [Boolean]
+        
+            get reverse()
+            {
+                return this._params.reverse;
+            }
+        
+            set reverse(bool)
+            {
+                this._params.reverse = !!bool;
+            }
+        */
 
         // INVERT [Boolean]
 
@@ -540,6 +555,12 @@ var ProximityEffect = function (_extendableBuiltin2) {
         },
         set: function set(num) {
             this._params.jitter = constrain(num, 0);
+            for (var i = 0; i < this.nodes.length; i++) {
+                this.setNodeData(i, 'jitter', {
+                    x: (Math.random() - 0.5) * this.jitter,
+                    y: (Math.random() - 0.5) * this.jitter
+                });
+            }
             if (!this.preventCenterCalculations) this.setCenterPoints();
         }
 
@@ -597,6 +618,8 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         // POINTER
         // Convenience property, provides mouse coordinates without requiring MouseEvent
+
+        // TODO: should/can this be static?
 
     }, {
         key: 'pointer',
