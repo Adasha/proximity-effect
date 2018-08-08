@@ -40,15 +40,7 @@ const VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
       };
 
 
-let _target,
-    _nodes,
-    _centers,
-    _params,
-    _effects,
-    _pointer = {},
-    _lastDeltas,
-    _frameLoop,
-    _invRunoff;
+let _pointer = {};
 
 
 
@@ -99,22 +91,22 @@ class ProximityEffect extends EventTarget
         this.preventCenterCalculations = true;
 
         this.nodes = nodes;
-        _params = params;
+        this._params = params;
 
 
-        this.threshold = _params.hasOwnProperty('threshold') ? _params.threshold : 0;
-        this.runoff    = _params.hasOwnProperty('runoff')    ? _params.runoff    : DEFAULT_RUNOFF;
-        this.attack    = _params.hasOwnProperty('attack')    ? _params.attack    : 1;
-        this.decay     = _params.hasOwnProperty('decay')     ? _params.decay     : 1;
-        this.accuracy  = _params.hasOwnProperty('accuracy')  ? _params.accuracy  : DEFAULT_ACCURACY;
-        this.reverse   = _params.reverse   || false;
-        this.invert    = _params.invert    || false;
-        this.offsetX   = _params.offsetX   || 0;
-        this.offsetY   = _params.offsetY   || 0;
-        this.jitter    = _params.jitter    || 0;
-        this.direction = _params.direction || DEFAULT_DIRECTION;
-        this.FPS       = _params.FPS       || DEFAULT_FPS;
-        this.mode      = _params.mode      || DEFAULT_MODE;
+        this.threshold = this._params.hasOwnProperty('threshold') ? this._params.threshold : 0;
+        this.runoff    = this._params.hasOwnProperty('runoff')    ? this._params.runoff    : DEFAULT_RUNOFF;
+        this.attack    = this._params.hasOwnProperty('attack')    ? this._params.attack    : 1;
+        this.decay     = this._params.hasOwnProperty('decay')     ? this._params.decay     : 1;
+        this.accuracy  = this._params.hasOwnProperty('accuracy')  ? this._params.accuracy  : DEFAULT_ACCURACY;
+        this.reverse   = this._params.reverse   || false;
+        this.invert    = this._params.invert    || false;
+        this.offsetX   = this._params.offsetX   || 0;
+        this.offsetY   = this._params.offsetY   || 0;
+        this.jitter    = this._params.jitter    || 0;
+        this.direction = this._params.direction || DEFAULT_DIRECTION;
+        this.FPS       = this._params.FPS       || DEFAULT_FPS;
+        this.mode      = this._params.mode      || DEFAULT_MODE;
 
         this.preventCenterCalculations = false;
         this.setCenterPoints();
@@ -137,12 +129,12 @@ class ProximityEffect extends EventTarget
 
     get target()
     {
-        return _target;
+        return this._target;
     }
 
     set target(t)
     {
-        if(typeof t === 'Element') _target = t;
+        if(typeof t === 'Element') this._target = t;
         else console.log(`${t} is not a valid target`);
     }
 
@@ -152,7 +144,7 @@ class ProximityEffect extends EventTarget
 
     get nodes()
     {
-        return _nodes;
+        return this._nodes;
     }
 
     set nodes(n)
@@ -189,9 +181,10 @@ class ProximityEffect extends EventTarget
     		return;
       	}
 
-        _nodes = nodes;
-		if(_params && !this.preventCenterCalculations) this.setCenterPoints();
-        _lastDeltas = new Array(this.nodes.length);
+        this._nodes = nodes;
+        this._nodeData = new Array(nodes.length);
+
+		if(this._params && !this.preventCenterCalculations) this.setCenterPoints();
     }
 
 
@@ -200,12 +193,12 @@ class ProximityEffect extends EventTarget
 
     get threshold()
     {
-    	return _params.threshold;
+    	return this._params.threshold;
     }
 
     set threshold(num)
     {
-    	_params.threshold = constrain(num, 0);
+    	this._params.threshold = constrain(num, 0);
     }
 
 
@@ -213,13 +206,13 @@ class ProximityEffect extends EventTarget
 
     get runoff()
     {
-    	return _params.runoff;
+    	return this._params.runoff;
     }
 
     set runoff(num)
     {
-    	_params.runoff = constrain(num, 0);
-        _invRunoff = 1/_params.runoff;
+    	this._params.runoff = constrain(num, 0);
+        this._invRunoff = 1/this._params.runoff;
     }
 
 
@@ -236,12 +229,12 @@ class ProximityEffect extends EventTarget
 
     get reverse()
     {
-        return _params.reverse;
+        return this._params.reverse;
     }
 
     set reverse(bool)
     {
-        _params.reverse = !!bool;
+        this._params.reverse = !!bool;
     }
 
 
@@ -250,12 +243,12 @@ class ProximityEffect extends EventTarget
 
     get invert()
     {
-        return _params.invert;
+        return this._params.invert;
     }
 
     set invert(bool)
     {
-        _params.invert = !!bool;
+        this._params.invert = !!bool;
     }
 
 
@@ -264,12 +257,12 @@ class ProximityEffect extends EventTarget
 
     get attack()
     {
-    	return _params.attack;
+    	return this._params.attack;
     }
 
     set attack(num)
     {
-    	_params.attack = constrain(num, 0, 1);
+    	this._params.attack = constrain(num, 0, 1);
     }
 
 
@@ -277,12 +270,12 @@ class ProximityEffect extends EventTarget
 
     get decay()
     {
-    	return _params.decay;
+    	return this._params.decay;
     }
 
     set decay(num)
     {
-    	_params.decay = constrain(num, 0, 1);
+    	this._params.decay = constrain(num, 0, 1);
     }
 
 
@@ -291,24 +284,24 @@ class ProximityEffect extends EventTarget
 
   	get offsetX()
   	{
-        return _params.offsetX;
+        return this._params.offsetX;
   	}
 
   	get offsetY()
   	{
-        return _params.offsetY;
+        return this._params.offsetY;
   	}
 
 
   	set offsetX(num)
   	{
-        _params.offsetX = num;
+        this._params.offsetX = num;
         if(!this.preventCenterCalculations) this.setCenterPoints();
   	}
 
   	set offsetY(num)
   	{
-        _params.offsetY = num;
+        this._params.offsetY = num;
         if(!this.preventCenterCalculations) this.setCenterPoints();
   	}
 
@@ -318,12 +311,12 @@ class ProximityEffect extends EventTarget
 
   	get jitter()
   	{
-        return _params.jitter;
+        return this._params.jitter;
   	}
 
   	set jitter(num)
   	{
-        _params.jitter = constrain(num, 0);
+        this._params.jitter = constrain(num, 0);
         if(!this.preventCenterCalculations) this.setCenterPoints();
   	}
 
@@ -333,14 +326,14 @@ class ProximityEffect extends EventTarget
 
     get direction()
     {
-        return _params.direction;
+        return this._params.direction;
     }
 
     set direction(str)
     {
         if(VALID_DIRECTIONS.has(str))
         {
-        	_params.direction = str;
+        	this._params.direction = str;
         }
         else console.log(`${str} not a valid direction.`);
     }
@@ -351,14 +344,14 @@ class ProximityEffect extends EventTarget
 
     get FPS()
     {
-    	return _params.FPS;
+    	return this._params.FPS;
     }
 
     set FPS(num)
     {
         if(num>0)
         {
-            _params.FPS = constrain(num, 0);
+            this._params.FPS = constrain(num, 0);
         }
         else console.log('Invalid FPS requested');
     }
@@ -369,16 +362,16 @@ class ProximityEffect extends EventTarget
 
     get mode()
     {
-        return _params.mode;
+        return this._params.mode;
     }
 
     set mode(str)
     {
-        if(str!==_params.mode)
+        if(str!==this._params.mode)
         {
             if(VALID_MODES.has(str))
             {
-                _params.mode = str;
+                this._params.mode = str;
             }
             else console.log(`${str} not a recognised mode.`);
         }
@@ -390,12 +383,12 @@ class ProximityEffect extends EventTarget
 
     get accuracy()
     {
-        return _params.accuracy;
+        return this._params.accuracy;
     }
 
     set accuracy(num)
     {
-        _params.accuracy = Math.floor(constrain(num, 0));
+        this._params.accuracy = Math.floor(constrain(num, 0));
     }
 
 
@@ -439,8 +432,8 @@ class ProximityEffect extends EventTarget
             return;
         }
 
-        _effects = _effects || [];
-        _effects.push({
+        this._effects = this._effects || [];
+        this._effects.push({
             type: str,
             near: constrain(near, template.min, template.max),
             far:  (far!==undefined && far!==null) ? constrain(far, template.min, template.max) : near,
@@ -454,13 +447,13 @@ class ProximityEffect extends EventTarget
 
     hasEffect(str)
     {
-        //return _effects.find(str)!==undefined;
+        //return this._effects.find(str)!==undefined;
     }
 
 
     effect(str)
     {
-        //return _effects[str];
+        //return this._effects[str];
     }
 
 
@@ -468,13 +461,14 @@ class ProximityEffect extends EventTarget
     {
         // if(this.hasEffect(str))
         // {
-        //     delete _effects[str];
+        //     delete this._effects[str];
         // }
     }
 
 
     distanceFrom(node)
     {
+        // TODO: move into this._nodeData
         return this.nodes[node].dataset['distance'];
     }
 
@@ -525,21 +519,22 @@ class ProximityEffect extends EventTarget
 
     setCenterPoints()
     {
-    	_centers = [];
     	for(let i=0; i<this.nodes.length; i++)
     	{
     		let node   = this.nodes[i],
     			bounds = node.getBoundingClientRect(),
-                x      = (bounds.left+bounds.right )*0.5 - this.offsetX - (node.dataset['jitterx']||0),
-                y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY - (node.dataset['jittery']||0);
+                x      = (bounds.left+bounds.right )*0.5 - this.offsetX,
+                y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY;
 
+            // TODO: modifying global offsets shouldn't automatically recalculate jitter
             if(this.jitter>0)
             {
                 x += (Math.random()-0.5) * this.jitter;
                 y += (Math.random()-0.5) * this.jitter;
             }
 
-    		_centers.push({x: x, y: y});
+            if(!this._nodeData[i]) this._nodeData[i] = {};
+    		this._nodeData[i].center = {x: x, y: y};
         }
     }
 
@@ -577,7 +572,7 @@ class ProximityEffect extends EventTarget
         for(let i=0; i<this.nodes.length; i++)
         {
             let node   = this.nodes[i],
-                last   = _lastDeltas[i],
+                last   = this._nodeData[i].lastDelta,
                 bounds = node.getBoundingClientRect();
 
             // TODO: optimise to update only visible elements
@@ -585,8 +580,8 @@ class ProximityEffect extends EventTarget
             //if(isVisibleInViewport(node) || last<1)
             if(true)
     		{
-				let centerX = _centers[i].x - (node.dataset['offsetx']||0),
-                    centerY = _centers[i].y - (node.dataset['offsety']||0);
+				let centerX = this._nodeData[i].center.x - (node.dataset['offsetx']||0),
+                    centerY = this._nodeData[i].center.y - (node.dataset['offsety']||0);
 
                 let tx, ty;
 
@@ -609,8 +604,11 @@ class ProximityEffect extends EventTarget
                 if(this.direction==='both') dd = Math.sqrt(dx*dx+dy*dy);
                 else dd = Math.abs(this.direction==='horizontal' ? dx : dy);
 
-        		td = constrain((dd-this.threshold)*_invRunoff, 0, 1);
+        		td = constrain((dd-this.threshold)*this._invRunoff, 0, 1);
                 if(this.invert) td = 1 - td;
+
+                // TODO: move into this._nodeData
+                node.dataset['distance'] = td;
 
                 if(last)
                 {
@@ -618,17 +616,16 @@ class ProximityEffect extends EventTarget
                 }
                 else d = td;
 
-                node.dataset['distance'] = d;
-
                 d = roundTo(d, this.accuracy);
+                this._nodeData[i].lastDelta = d;
 
-    			if(d<=1 && _effects)
+    			if(d<=1 && this._effects)
     			{
         			let styles = {};
 
-        			for(let i=0; i<_effects.length; i++)
+        			for(let i=0; i<this._effects.length; i++)
         			{
-        				let effect = _effects[i],
+        				let effect = this._effects[i],
                         type   = effect.type,
                         near   = effect.near,
                         far    = effect.far,
@@ -636,6 +633,7 @@ class ProximityEffect extends EventTarget
                         func   = effect.func,
                         unit   = effect.unit || '',
                         val    = delta(d, near, far);
+
 
                         if(!func)
                         {
@@ -653,8 +651,6 @@ class ProximityEffect extends EventTarget
                     }
                     node.style.zIndex = 1000-Math.floor(d*1000);
                 }
-
-                _lastDeltas[i] = d;
             }
         }
 

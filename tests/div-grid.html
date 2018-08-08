@@ -81,6 +81,7 @@
             height: 20px;
             background: #559;
             position: absolute;
+            pointer-events: none;
         }
 
     </style>
@@ -120,9 +121,9 @@
         let t = document.querySelector('#parentelement'),
             n = t.removeChild(t.querySelector('*.childelement'));
 
-        let pos = 32,
-            rows = 16,
-            cols = 16;
+        let pos = 50,
+            rows = 10,
+            cols = 10;
 
         for(let i=0; i<cols; i++)
         {
@@ -136,28 +137,30 @@
 
 
         let params1 = {
-                threshold:  20,
-                runoff:     0,
+                threshold:  50,
+                runoff:     100,
                 direction: 'horizontal',
                 offsetX:     0,
                 offsetY:     0,
     			jitter:      0,
-                attack:      0.9,
-                decay:       0.9,
+                attack:      1,
+                decay:       1,
                 reverse: false,
-                invert:  false
+                invert:  false,
+                accuracy: 1
             };
         let params2 = {
-                threshold:  0,
-                runoff:     30,
+                threshold:  25,
+                runoff:     50,
                 direction: 'vertical',
                 offsetX:     0,
                 offsetY:     0,
-    			jitter:      0,
-                attack:      0.1,
-                decay:       0.8,
+    			jitter:     50,
+                attack:      1,
+                decay:       1,
                 reverse: false,
-                invert:  false
+                invert:  false,
+                accuracy: 1
             };
 
         let fader1 = new ProximityEffect(document.querySelectorAll('*.childelement'), params1);
@@ -166,9 +169,9 @@
 
         //fader1.addEffect('opacity',      1,    0.3);
         //fader2.addEffect('scale',        1,    0.5);
-        fader1.addEffect('scaleX',    1,   0);
-        fader2.addEffect('scaleY',    1,   0);
-        //fader2.addEffect('blur',         0,    5);
+        fader1.addEffect('opacity',  1,  0.5);
+        fader2.addEffect('scale',    1,  0);
+        fader1.addEffect('blur',     0,  5);
         //fader.addEffect('grayscale', 0,  100);
         //fader.addEffect('hueRotate',    0, 180);
         //fader.addEffect(null, 0, 10, 'padding', null, 'px')

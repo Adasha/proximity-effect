@@ -74,15 +74,7 @@ var VALID_MODES = new Set(['mousemove', 'enterframe', 'redraw']),
     sepia: { min: 0, max: 100, default: 0, rule: 'filter', func: 'sepia', unit: '%' }
 };
 
-var _target = void 0,
-    _nodes = void 0,
-    _centers = void 0,
-    _params = void 0,
-    _effects = void 0,
-    _pointer = {},
-    _lastDeltas = void 0,
-    _frameLoop = void 0,
-    _invRunoff = void 0;
+var _pointer = {};
 
 var constrain = function constrain(num, min, max) {
     if (typeof num !== 'number') return NaN;
@@ -139,21 +131,21 @@ var ProximityEffect = function (_extendableBuiltin2) {
         _this.preventCenterCalculations = true;
 
         _this.nodes = nodes;
-        _params = params;
+        _this._params = params;
 
-        _this.threshold = _params.hasOwnProperty('threshold') ? _params.threshold : 0;
-        _this.runoff = _params.hasOwnProperty('runoff') ? _params.runoff : DEFAULT_RUNOFF;
-        _this.attack = _params.hasOwnProperty('attack') ? _params.attack : 1;
-        _this.decay = _params.hasOwnProperty('decay') ? _params.decay : 1;
-        _this.accuracy = _params.hasOwnProperty('accuracy') ? _params.accuracy : DEFAULT_ACCURACY;
-        _this.reverse = _params.reverse || false;
-        _this.invert = _params.invert || false;
-        _this.offsetX = _params.offsetX || 0;
-        _this.offsetY = _params.offsetY || 0;
-        _this.jitter = _params.jitter || 0;
-        _this.direction = _params.direction || DEFAULT_DIRECTION;
-        _this.FPS = _params.FPS || DEFAULT_FPS;
-        _this.mode = _params.mode || DEFAULT_MODE;
+        _this.threshold = _this._params.hasOwnProperty('threshold') ? _this._params.threshold : 0;
+        _this.runoff = _this._params.hasOwnProperty('runoff') ? _this._params.runoff : DEFAULT_RUNOFF;
+        _this.attack = _this._params.hasOwnProperty('attack') ? _this._params.attack : 1;
+        _this.decay = _this._params.hasOwnProperty('decay') ? _this._params.decay : 1;
+        _this.accuracy = _this._params.hasOwnProperty('accuracy') ? _this._params.accuracy : DEFAULT_ACCURACY;
+        _this.reverse = _this._params.reverse || false;
+        _this.invert = _this._params.invert || false;
+        _this.offsetX = _this._params.offsetX || 0;
+        _this.offsetY = _this._params.offsetY || 0;
+        _this.jitter = _this._params.jitter || 0;
+        _this.direction = _this._params.direction || DEFAULT_DIRECTION;
+        _this.FPS = _this._params.FPS || DEFAULT_FPS;
+        _this.mode = _this._params.mode || DEFAULT_MODE;
 
         _this.preventCenterCalculations = false;
         _this.setCenterPoints();
@@ -191,8 +183,8 @@ var ProximityEffect = function (_extendableBuiltin2) {
                 return;
             }
 
-            _effects = _effects || [];
-            _effects.push({
+            this._effects = this._effects || [];
+            this._effects.push({
                 type: str,
                 near: constrain(near, template.min, template.max),
                 far: far !== undefined && far !== null ? constrain(far, template.min, template.max) : near,
@@ -207,24 +199,25 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'hasEffect',
         value: function hasEffect(str) {
-            //return _effects.find(str)!==undefined;
+            //return this._effects.find(str)!==undefined;
         }
     }, {
         key: 'effect',
         value: function effect(str) {
-            //return _effects[str];
+            //return this._effects[str];
         }
     }, {
         key: 'removeEffect',
         value: function removeEffect(str) {
             // if(this.hasEffect(str))
             // {
-            //     delete _effects[str];
+            //     delete this._effects[str];
             // }
         }
     }, {
         key: 'distanceFrom',
         value: function distanceFrom(node) {
+            // TODO: move into this._nodeData
             return this.nodes[node].dataset['distance'];
         }
 
@@ -268,19 +261,20 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'setCenterPoints',
         value: function setCenterPoints() {
-            _centers = [];
             for (var i = 0; i < this.nodes.length; i++) {
                 var node = this.nodes[i],
                     bounds = node.getBoundingClientRect(),
-                    x = (bounds.left + bounds.right) * 0.5 - this.offsetX - (node.dataset['jitterx'] || 0),
-                    y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY - (node.dataset['jittery'] || 0);
+                    x = (bounds.left + bounds.right) * 0.5 - this.offsetX,
+                    y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY;
 
+                // TODO: modifying global offsets shouldn't automatically recalculate jitter
                 if (this.jitter > 0) {
                     x += (Math.random() - 0.5) * this.jitter;
                     y += (Math.random() - 0.5) * this.jitter;
                 }
 
-                _centers.push({ x: x, y: y });
+                if (!this._nodeData[i]) this._nodeData[i] = {};
+                this._nodeData[i].center = { x: x, y: y };
             }
         }
 
@@ -312,15 +306,15 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
             for (var i = 0; i < this.nodes.length; i++) {
                 var node = this.nodes[i],
-                    last = _lastDeltas[i],
+                    last = this._nodeData[i].lastDelta,
                     bounds = node.getBoundingClientRect();
 
                 // TODO: optimise to update only visible elements
                 // WORKAROUND FOR ISSUE #10
                 //if(isVisibleInViewport(node) || last<1)
                 if (true) {
-                    var centerX = _centers[i].x - (node.dataset['offsetx'] || 0),
-                        centerY = _centers[i].y - (node.dataset['offsety'] || 0);
+                    var centerX = this._nodeData[i].center.x - (node.dataset['offsetx'] || 0),
+                        centerY = this._nodeData[i].center.y - (node.dataset['offsety'] || 0);
 
                     var tx = void 0,
                         ty = void 0;
@@ -342,22 +336,24 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
                     if (this.direction === 'both') dd = Math.sqrt(dx * dx + dy * dy);else dd = Math.abs(this.direction === 'horizontal' ? dx : dy);
 
-                    td = constrain((dd - this.threshold) * _invRunoff, 0, 1);
+                    td = constrain((dd - this.threshold) * this._invRunoff, 0, 1);
                     if (this.invert) td = 1 - td;
+
+                    // TODO: move into this._nodeData
+                    node.dataset['distance'] = td;
 
                     if (last) {
                         d = last + (td - last) * (XOR(td > last, this.invert) ? this.decay : this.attack);
                     } else d = td;
 
-                    node.dataset['distance'] = d;
-
                     d = roundTo(d, this.accuracy);
+                    this._nodeData[i].lastDelta = d;
 
-                    if (d <= 1 && _effects) {
+                    if (d <= 1 && this._effects) {
                         var styles = {};
 
-                        for (var _i = 0; _i < _effects.length; _i++) {
-                            var effect = _effects[_i],
+                        for (var _i = 0; _i < this._effects.length; _i++) {
+                            var effect = this._effects[_i],
                                 type = effect.type,
                                 near = effect.near,
                                 far = effect.far,
@@ -378,8 +374,6 @@ var ProximityEffect = function (_extendableBuiltin2) {
                         }
                         node.style.zIndex = 1000 - Math.floor(d * 1000);
                     }
-
-                    _lastDeltas[i] = d;
                 }
             }
 
@@ -391,10 +385,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'target',
         get: function get() {
-            return _target;
+            return this._target;
         },
         set: function set(t) {
-            if (typeof t === 'Element') _target = t;else console.log(t + ' is not a valid target');
+            if (typeof t === 'Element') this._target = t;else console.log(t + ' is not a valid target');
         }
 
         // NODES
@@ -402,7 +396,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'nodes',
         get: function get() {
-            return _nodes;
+            return this._nodes;
         },
         set: function set(n) {
             var nodes = void 0;
@@ -433,9 +427,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
                 return;
             }
 
-            _nodes = nodes;
-            if (_params && !this.preventCenterCalculations) this.setCenterPoints();
-            _lastDeltas = new Array(this.nodes.length);
+            this._nodes = nodes;
+            this._nodeData = new Array(nodes.length);
+
+            if (this._params && !this.preventCenterCalculations) this.setCenterPoints();
         }
 
         // THRESHOLD [Number>=0]
@@ -443,10 +438,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'threshold',
         get: function get() {
-            return _params.threshold;
+            return this._params.threshold;
         },
         set: function set(num) {
-            _params.threshold = constrain(num, 0);
+            this._params.threshold = constrain(num, 0);
         }
 
         // RUNOFF [Number>=0]
@@ -454,11 +449,11 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'runoff',
         get: function get() {
-            return _params.runoff;
+            return this._params.runoff;
         },
         set: function set(num) {
-            _params.runoff = constrain(num, 0);
-            _invRunoff = 1 / _params.runoff;
+            this._params.runoff = constrain(num, 0);
+            this._invRunoff = 1 / this._params.runoff;
         }
 
         // BOUNDARY [READ-ONLY Number]
@@ -474,10 +469,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'reverse',
         get: function get() {
-            return _params.reverse;
+            return this._params.reverse;
         },
         set: function set(bool) {
-            _params.reverse = !!bool;
+            this._params.reverse = !!bool;
         }
 
         // INVERT [Boolean]
@@ -485,10 +480,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'invert',
         get: function get() {
-            return _params.invert;
+            return this._params.invert;
         },
         set: function set(bool) {
-            _params.invert = !!bool;
+            this._params.invert = !!bool;
         }
 
         // ATTACK [0>=Number>=1]
@@ -496,10 +491,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'attack',
         get: function get() {
-            return _params.attack;
+            return this._params.attack;
         },
         set: function set(num) {
-            _params.attack = constrain(num, 0, 1);
+            this._params.attack = constrain(num, 0, 1);
         }
 
         // DECAY [0>=Number>=1]
@@ -507,10 +502,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'decay',
         get: function get() {
-            return _params.decay;
+            return this._params.decay;
         },
         set: function set(num) {
-            _params.decay = constrain(num, 0, 1);
+            this._params.decay = constrain(num, 0, 1);
         }
 
         // OFFSET [Number]
@@ -518,19 +513,19 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'offsetX',
         get: function get() {
-            return _params.offsetX;
+            return this._params.offsetX;
         },
         set: function set(num) {
-            _params.offsetX = num;
+            this._params.offsetX = num;
             if (!this.preventCenterCalculations) this.setCenterPoints();
         }
     }, {
         key: 'offsetY',
         get: function get() {
-            return _params.offsetY;
+            return this._params.offsetY;
         },
         set: function set(num) {
-            _params.offsetY = num;
+            this._params.offsetY = num;
             if (!this.preventCenterCalculations) this.setCenterPoints();
         }
 
@@ -539,10 +534,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'jitter',
         get: function get() {
-            return _params.jitter;
+            return this._params.jitter;
         },
         set: function set(num) {
-            _params.jitter = constrain(num, 0);
+            this._params.jitter = constrain(num, 0);
             if (!this.preventCenterCalculations) this.setCenterPoints();
         }
 
@@ -551,11 +546,11 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'direction',
         get: function get() {
-            return _params.direction;
+            return this._params.direction;
         },
         set: function set(str) {
             if (VALID_DIRECTIONS.has(str)) {
-                _params.direction = str;
+                this._params.direction = str;
             } else console.log(str + ' not a valid direction.');
         }
 
@@ -564,11 +559,11 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'FPS',
         get: function get() {
-            return _params.FPS;
+            return this._params.FPS;
         },
         set: function set(num) {
             if (num > 0) {
-                _params.FPS = constrain(num, 0);
+                this._params.FPS = constrain(num, 0);
             } else console.log('Invalid FPS requested');
         }
 
@@ -577,12 +572,12 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'mode',
         get: function get() {
-            return _params.mode;
+            return this._params.mode;
         },
         set: function set(str) {
-            if (str !== _params.mode) {
+            if (str !== this._params.mode) {
                 if (VALID_MODES.has(str)) {
-                    _params.mode = str;
+                    this._params.mode = str;
                 } else console.log(str + ' not a recognised mode.');
             } else console.log('Already in ' + str + ' mode. Mode not changed.');
         }
@@ -592,10 +587,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'accuracy',
         get: function get() {
-            return _params.accuracy;
+            return this._params.accuracy;
         },
         set: function set(num) {
-            _params.accuracy = Math.floor(constrain(num, 0));
+            this._params.accuracy = Math.floor(constrain(num, 0));
         }
 
         // POINTER
