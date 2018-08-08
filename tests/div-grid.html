@@ -96,7 +96,7 @@
                 <div><span>B</span></div>
             </div>
         </div>
-        <div id="alttarget"></div>
+        <div id="alttarget">&nbsp;</div>
     </section>
 
     <section id="controls">
@@ -179,13 +179,13 @@
         //fader.addEffect(null, 10, 0, 'margin-left', null, 'px')
 
 
-        //fader1.target = fader2.target = document.querySelector('#alttarget');
+        fader1.target = fader2.target = document.querySelector('#alttarget');
 
         window.setInterval(() => {
             var alttarget = document.querySelector('#alttarget');
             alttarget.style.left = fader1.pointer.x+'px';
             alttarget.style.top  = fader1.pointer.y+'px';
-        }, 32);
+        }, 160);
 
     </script>
 </body>

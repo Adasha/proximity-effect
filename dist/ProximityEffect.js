@@ -114,6 +114,8 @@ var isVisibleInViewport = function isVisibleInViewport(el) {
 var ProximityEffect = function (_extendableBuiltin2) {
     _inherits(ProximityEffect, _extendableBuiltin2);
 
+    // TODO: private vars
+
     function ProximityEffect(nodes) {
         var params = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
@@ -388,7 +390,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
             return this._target;
         },
         set: function set(t) {
-            if (typeof t === 'Element') this._target = t;else console.log(t + ' is not a valid target');
+            if (t.getBoundingClientRect()) this._target = t;else console.log(t + ' is not a valid target');
         }
 
         // NODES

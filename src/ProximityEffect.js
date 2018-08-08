@@ -77,6 +77,7 @@ const isVisibleInViewport = (el) => {
 
 class ProximityEffect extends EventTarget
 {
+    // TODO: private vars
 
     constructor(nodes, params = {})
     {
@@ -134,7 +135,7 @@ class ProximityEffect extends EventTarget
 
     set target(t)
     {
-        if(typeof t === 'Element') this._target = t;
+        if(t.getBoundingClientRect()) this._target = t;
         else console.log(`${t} is not a valid target`);
     }
 
