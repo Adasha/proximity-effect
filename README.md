@@ -51,7 +51,7 @@ Then define parameters in an object:
 let params = {
    attack:           1, // [0<=n>=1] rate of change when approaching, 1=full speed 0=no movement
    decay:            1, // [0<=n>=1] rate of change when receding, 1=full speed 0=no movement
-   reverse       false, // [Boolean] swap near and far distances
+   invert:       false, // [Boolean] swap near and far distances
    threshold:        0, // [n>=0] minimum distance (from element's mathematical centre) before effect starts
    runoff:         100, // [n>=0] distance over which styles are interpolated
    direction:   'both', // 'both' | 'horizontal' | 'vertical'
@@ -59,7 +59,7 @@ let params = {
    offsetY:          0, // [n>=0] global vertical centrepoint offset
    mode:      'redraw', // 'redraw' <del>| 'mousemove' | 'enterframe'</del>
    FPS:             30, // [n>0] 'enterframe' mode only, up to refresh rate
-   accuracy;         5; // [n>0] rounds internal calculations to reduce CPU load
+   accuracy:         5  // [n>0] rounds internal calculations to reduce CPU load
 }
 ```
 
