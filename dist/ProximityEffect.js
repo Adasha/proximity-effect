@@ -62,19 +62,20 @@ var VALID_MODES = new Set(['mousemove', 'enterframe', 'redraw']),
     scaleZ: { default: 1, rule: 'transform', func: 'scaleZ' },
     skewX: { default: 0, rule: 'transform', func: 'skewX', unit: 'deg' },
     skewY: { default: 0, rule: 'transform', func: 'skewY', unit: 'deg' },
-    //perspective: {                  default:   0, rule: 'transform', func: 'perspective', unit: 'px'},
+    //perspective:     {                  default:       0, rule: 'transform',       func: 'perspective', unit: 'px'},
     blur: { min: 0, default: 0, rule: 'filter', func: 'blur', unit: 'px' },
     brightness: { min: 0, default: 100, rule: 'filter', func: 'brightness', unit: '%' },
     contrast: { min: 0, default: 100, rule: 'filter', func: 'contrast', unit: '%' },
     grayscale: { min: 0, max: 100, default: 0, rule: 'filter', func: 'grayscale', unit: '%' },
     hueRotate: { default: 0, rule: 'filter', func: 'hue-rotate', unit: 'deg' },
     invert: { min: 0, max: 100, default: 0, rule: 'filter', func: 'invert', unit: '%' },
-    //opacity:     {min: 0, max: 100, default: 100, rule: 'filter',    func: 'opacity',     unit: '%'},
+    //opacity:         {min: 0, max: 100, default:     100, rule: 'filter',          func: 'opacity',     unit: '%'},
     saturate: { min: 0, max: 100, default: 100, rule: 'filter', func: 'saturate', unit: '%' },
-    sepia: { min: 0, max: 100, default: 0, rule: 'filter', func: 'sepia', unit: '%' }
-};
+    sepia: { min: 0, max: 100, default: 0, rule: 'filter', func: 'sepia', unit: '%' },
 
-var _pointer = {};
+    backgroundColor: { min: 0, max: 255, default: [0, 0, 0], rule: 'backgroundColor', func: 'rgb', args: 3 },
+    scale3D: { default: [1, 1, 1], rule: 'transform', func: 'scale3D', args: 3 }
+};
 
 var constrain = function constrain(num, min, max) {
     if (typeof num !== 'number') return NaN;
@@ -134,6 +135,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         _this.nodes = nodes;
         _this._params = params;
+        _this._pointer = {};
 
         _this.threshold = _this._params.hasOwnProperty('threshold') ? _this._params.threshold : 0;
         _this.runoff = _this._params.hasOwnProperty('runoff') ? _this._params.runoff : DEFAULT_RUNOFF;
@@ -218,8 +220,14 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'distanceFrom',
         value: function distanceFrom(node) {
-            // TODO: move into this._nodeData
-            return this.nodes[node].dataset['distance'];
+            return this.getNodeData(this.nodes.findIndex(function (n) {
+                return n === node;
+            }), 'distance');
+        }
+    }, {
+        key: 'distanceFromIndex',
+        value: function distanceFromIndex(i) {
+            return this.getNodeData(i, 'distance');
         }
 
         ////////////
@@ -230,7 +238,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'init',
         value: function init() {
-            document.addEventListener('mousemove', this.updatePointer);
+            document.addEventListener('mousemove', this.updatePointer.bind(this));
             document.dispatchEvent(new MouseEvent('mousemove'));
 
             window.addEventListener('scroll', this.windowEvent.bind(this));
@@ -297,8 +305,8 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'updatePointer',
         value: function updatePointer(evt) {
-            _pointer.x = evt.clientX;
-            _pointer.y = evt.clientY;
+            this._pointer.x = evt.clientX;
+            this._pointer.y = evt.clientY;
         }
     }, {
         key: 'windowEvent',
@@ -351,9 +359,6 @@ var ProximityEffect = function (_extendableBuiltin2) {
                     td = constrain((dd - this.threshold) * this._invRunoff, 0, 1);
                     if (this.invert) td = 1 - td;
 
-                    // TODO: move into this._nodeData
-                    // TODO: before or after attack/decay?
-                    node.dataset['distance'] = td;
                     this.setNodeData(i, 'distance', td);
 
                     if (last) {
@@ -386,7 +391,8 @@ var ProximityEffect = function (_extendableBuiltin2) {
                         for (var _rule in styles) {
                             node.style[_rule] = styles[_rule].join(' ');
                         }
-                        node.style.zIndex = 1000 - Math.floor(d * 1000);
+                        var ix = Math.floor(d * 1000);
+                        node.style.zIndex = this.invert ? ix : 1000 - ix;
                     }
                 }
             }
@@ -441,8 +447,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
                 return;
             }
 
-            this._nodes = nodes;
-            this._nodeData = new Array(nodes.length);
+            this._nodes = [].slice.call(nodes);
+            this._nodeData = this._nodes.map(function (n) {
+                node: n;
+            });
 
             if (this._params && !this.preventCenterCalculations) this.setCenterPoints();
         }
@@ -619,14 +627,12 @@ var ProximityEffect = function (_extendableBuiltin2) {
         // POINTER
         // Convenience property, provides mouse coordinates without requiring MouseEvent
 
-        // TODO: should/can this be static?
-
     }, {
         key: 'pointer',
         get: function get() {
             return {
-                x: _pointer.x,
-                y: _pointer.y
+                x: this._pointer.x,
+                y: this._pointer.y
             };
         }
     }]);

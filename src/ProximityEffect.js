@@ -13,34 +13,36 @@ const VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
       DEFAULT_FPS       =  15,
       DEFAULT_RUNOFF    = 100,
       VALID_EFFECTS     = {
-        opacity:     {min: 0, max:   1, default:   1, rule: 'opacity'},
-        translateX:  {                  default:   0, rule: 'transform', func: 'translateX',  unit: 'px'},
-        translateY:  {                  default:   0, rule: 'transform', func: 'translateY',  unit: 'px'},
-        translateZ:  {                  default:   0, rule: 'transform', func: 'translateZ',  unit: 'px'},
-        rotate:      {                  default:   0, rule: 'transform', func: 'rotate',      unit: 'deg'},
-        rotateX:     {                  default:   0, rule: 'transform', func: 'rotateX',     unit: 'deg'},
-        rotateY:     {                  default:   0, rule: 'transform', func: 'rotateY',     unit: 'deg'},
-        rotateZ:     {                  default:   0, rule: 'transform', func: 'rotateZ',     unit: 'deg'},
-        scale:       {                  default:   1, rule: 'transform', func: 'scale'},
-        scaleX:      {                  default:   1, rule: 'transform', func: 'scaleX'},
-        scaleY:      {                  default:   1, rule: 'transform', func: 'scaleY'},
-        scaleZ:      {                  default:   1, rule: 'transform', func: 'scaleZ'},
-        skewX:       {                  default:   0, rule: 'transform', func: 'skewX',       unit: 'deg'},
-        skewY:       {                  default:   0, rule: 'transform', func: 'skewY',       unit: 'deg'},
-        //perspective: {                  default:   0, rule: 'transform', func: 'perspective', unit: 'px'},
-        blur:        {min: 0,           default:   0, rule: 'filter',    func: 'blur',        unit: 'px'},
-        brightness:  {min: 0,           default: 100, rule: 'filter',    func: 'brightness',  unit: '%'},
-        contrast:    {min: 0,           default: 100, rule: 'filter',    func: 'contrast',    unit: '%'},
-        grayscale:   {min: 0, max: 100, default:   0, rule: 'filter',    func: 'grayscale',   unit: '%'},
-        hueRotate:   {                  default:   0, rule: 'filter',    func: 'hue-rotate',  unit: 'deg'},
-        invert:      {min: 0, max: 100, default:   0, rule: 'filter',    func: 'invert',      unit: '%'},
-        //opacity:     {min: 0, max: 100, default: 100, rule: 'filter',    func: 'opacity',     unit: '%'},
-        saturate:    {min: 0, max: 100, default: 100, rule: 'filter',    func: 'saturate',    unit: '%'},
-        sepia:       {min: 0, max: 100, default:   0, rule: 'filter',    func: 'sepia',       unit: '%'}
+        opacity:         {min: 0, max:   1, default:       1, rule: 'opacity'},
+        translateX:      {                  default:       0, rule: 'transform',       func: 'translateX',  unit: 'px'},
+        translateY:      {                  default:       0, rule: 'transform',       func: 'translateY',  unit: 'px'},
+        translateZ:      {                  default:       0, rule: 'transform',       func: 'translateZ',  unit: 'px'},
+        rotate:          {                  default:       0, rule: 'transform',       func: 'rotate',      unit: 'deg'},
+        rotateX:         {                  default:       0, rule: 'transform',       func: 'rotateX',     unit: 'deg'},
+        rotateY:         {                  default:       0, rule: 'transform',       func: 'rotateY',     unit: 'deg'},
+        rotateZ:         {                  default:       0, rule: 'transform',       func: 'rotateZ',     unit: 'deg'},
+        scale:           {                  default:       1, rule: 'transform',       func: 'scale'},
+        scaleX:          {                  default:       1, rule: 'transform',       func: 'scaleX'},
+        scaleY:          {                  default:       1, rule: 'transform',       func: 'scaleY'},
+        scaleZ:          {                  default:       1, rule: 'transform',       func: 'scaleZ'},
+        skewX:           {                  default:       0, rule: 'transform',       func: 'skewX',       unit: 'deg'},
+        skewY:           {                  default:       0, rule: 'transform',       func: 'skewY',       unit: 'deg'},
+        //perspective:     {                  default:       0, rule: 'transform',       func: 'perspective', unit: 'px'},
+        blur:            {min: 0,           default:       0, rule: 'filter',          func: 'blur',        unit: 'px'},
+        brightness:      {min: 0,           default:     100, rule: 'filter',          func: 'brightness',  unit: '%'},
+        contrast:        {min: 0,           default:     100, rule: 'filter',          func: 'contrast',    unit: '%'},
+        grayscale:       {min: 0, max: 100, default:       0, rule: 'filter',          func: 'grayscale',   unit: '%'},
+        hueRotate:       {                  default:       0, rule: 'filter',          func: 'hue-rotate',  unit: 'deg'},
+        invert:          {min: 0, max: 100, default:       0, rule: 'filter',          func: 'invert',      unit: '%'},
+        //opacity:         {min: 0, max: 100, default:     100, rule: 'filter',          func: 'opacity',     unit: '%'},
+        saturate:        {min: 0, max: 100, default:     100, rule: 'filter',          func: 'saturate',    unit: '%'},
+        sepia:           {min: 0, max: 100, default:       0, rule: 'filter',          func: 'sepia',       unit: '%'},
+
+        backgroundColor: {min: 0, max: 255, default: [0,0,0], rule: 'backgroundColor', func: 'rgb',                      args: 3},
+        scale3D:         {                  default: [1,1,1], rule: 'transform',       func: 'scale3D',                  args: 3}
       };
 
 
-let _pointer = {};
 
 
 
@@ -93,6 +95,7 @@ class ProximityEffect extends EventTarget
 
         this.nodes = nodes;
         this._params = params;
+        this._pointer = {};
 
 
         this.threshold = this._params.hasOwnProperty('threshold') ? this._params.threshold : 0;
@@ -181,8 +184,8 @@ class ProximityEffect extends EventTarget
     		return;
       	}
 
-        this._nodes = nodes;
-        this._nodeData = new Array(nodes.length);
+        this._nodes = [].slice.call(nodes);
+        this._nodeData = this._nodes.map(n => {node: n});
 
 		if(this._params && !this.preventCenterCalculations) this.setCenterPoints();
     }
@@ -386,6 +389,7 @@ class ProximityEffect extends EventTarget
     }
 
 
+
     // ACCURACY [Number>=0]
 
     get accuracy()
@@ -403,12 +407,11 @@ class ProximityEffect extends EventTarget
     // POINTER
     // Convenience property, provides mouse coordinates without requiring MouseEvent
 
-    // TODO: should/can this be static?
     get pointer()
     {
         return {
-            x: _pointer.x,
-            y: _pointer.y
+            x: this._pointer.x,
+            y: this._pointer.y
         }
     }
 
@@ -476,11 +479,13 @@ class ProximityEffect extends EventTarget
 
     distanceFrom(node)
     {
-        // TODO: move into this._nodeData
-        return this.nodes[node].dataset['distance'];
+        return this.getNodeData(this.nodes.findIndex(n => n===node), 'distance');
     }
 
-
+    distanceFromIndex(i)
+    {
+        return this.getNodeData(i, 'distance');
+    }
 
 
 
@@ -492,7 +497,7 @@ class ProximityEffect extends EventTarget
 
     init()
     {
-        document.addEventListener('mousemove', this.updatePointer);
+        document.addEventListener('mousemove', this.updatePointer.bind(this));
         document.dispatchEvent(new MouseEvent('mousemove'));
 
         window.addEventListener('scroll', this.windowEvent.bind(this));
@@ -569,8 +574,8 @@ class ProximityEffect extends EventTarget
 
     updatePointer(evt)
     {
-        _pointer.x = evt.clientX;
-        _pointer.y = evt.clientY;
+        this._pointer.x = evt.clientX;
+        this._pointer.y = evt.clientY;
     }
 
 
@@ -626,9 +631,6 @@ class ProximityEffect extends EventTarget
         		td = constrain((dd-this.threshold)*this._invRunoff, 0, 1);
                 if(this.invert) td = 1 - td;
 
-                // TODO: move into this._nodeData
-                // TODO: before or after attack/decay?
-                node.dataset['distance'] = td;
                 this.setNodeData(i, 'distance', td);
 
                 if(last)
@@ -670,7 +672,8 @@ class ProximityEffect extends EventTarget
                     {
                       node.style[rule] = styles[rule].join(' ');
                     }
-                    node.style.zIndex = 1000-Math.floor(d*1000);
+                    let ix = Math.floor(d*1000);
+                    node.style.zIndex = this.invert ? ix : 1000-ix;
                 }
             }
         }

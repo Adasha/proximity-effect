@@ -82,6 +82,7 @@
             background: #559;
             position: absolute;
             pointer-events: none;
+            display: none;
         }
 
     </style>
@@ -139,7 +140,7 @@
         let params1 = {
                 threshold:  50,
                 runoff:     100,
-                direction: 'horizontal',
+                //direction: 'horizontal',
                 offsetX:     0,
                 offsetY:     0,
     			jitter:      0,
@@ -147,12 +148,12 @@
                 decay:       1,
                 reverse: false,
                 invert:  false,
-                accuracy: 1
+                accuracy: 2
             };
         let params2 = {
-                threshold:  25,
+                threshold:  50,
                 runoff:     50,
-                direction: 'vertical',
+                //direction: 'vertical',
                 offsetX:     0,
                 offsetY:     0,
     			jitter:     50,
@@ -160,29 +161,35 @@
                 decay:       1,
                 reverse: false,
                 invert:  false,
-                accuracy: 1
+                accuracy: 2
             };
 
         let fader1 = new ProximityEffect(document.querySelectorAll('*.childelement'), params1);
         let fader2 = new ProximityEffect(document.querySelectorAll('*.childelement'), params2);
 
 
-        //fader1.addEffect('opacity',      1,    0.3);
-        //fader2.addEffect('scale',        1,    0.5);
-        fader1.addEffect('opacity', 1, 0.5);
-        fader2.addEffect('scale',   1, 0);
-        fader1.addEffect('blur',    0, 5);
-        //fader.addEffect('grayscale', 0,  100);
-        //fader.addEffect('hueRotate',    0, 180);
-        //fader.addEffect(null, 0, 10, 'padding', null, 'px')
-        //fader.addEffect(null, 10, 0, 'margin-top', null, 'px')
-        //fader.addEffect(null, 10, 0, 'margin-left', null, 'px')
+        fader1.addEffect('opacity', 1, 0.3);
+        fader2.addEffect('scale',   1, 0.5);
+
+        //fader1.addEffect('opacity', 1, 0.5);
+        //fader2.addEffect('scale',   1, 0);
+        //fader1.addEffect('blur',    0, 5);
+
+        //fader2.addEffect('scale', 0, 2);
+        //fader2.addEffect('hueRotate', 0, 180);
+
+        // individual scale functions risking overwriting
+        //fader1.addEffect('scaleX custom', 1, 0, 'transform', 'scaleX');
+        //fader2.addEffect('scaleY custom', 1, 0, 'transform', 'scaleY');
+
+        // experimental transform functions as separate rules
+        //fader1.addEffect(null, 1, 0, 'scaleX');
+        //fader2.addEffect(null, 1, 0, 'scaleY');
 
         let counter = 0;
         window.setInterval(() => {
-            fader2.offsetY = Math.cos(counter)*50;
-            //fader2.jitter = (Math.cos(counter/10)+1) * 50;
-            counter += 0.05;
+            fader1.offsetX = fader2.offsetX = Math.cos(counter++*0.05)*100;
+            fader1.offsetY = fader2.offsetY = Math.sin(counter++*0.05)*100;
         }, 16);
 
         //fader1.target = fader2.target = document.querySelector('#alttarget');
