@@ -79,10 +79,13 @@
         {
             width: 20px;
             height: 20px;
+            border-radius: 10px;
             background: #559;
             position: absolute;
+            margin-top: -10px;
+            margin-left: -10px;
             pointer-events: none;
-            display: none;
+            //display: none;
         }
 
     </style>
@@ -138,12 +141,12 @@
 
 
         let params1 = {
-                threshold:  50,
-                runoff:     100,
-                //direction: 'horizontal',
+                threshold:  00,
+                runoff:     50,
+                direction: 'horizontal',
                 offsetX:     0,
                 offsetY:     0,
-    			jitter:      0,
+    			jitter:    100,
                 attack:      1,
                 decay:       1,
                 reverse: false,
@@ -153,10 +156,10 @@
         let params2 = {
                 threshold:  50,
                 runoff:     50,
-                //direction: 'vertical',
+                direction: 'vertical',
                 offsetX:     0,
                 offsetY:     0,
-    			jitter:     50,
+    			jitter:    100,
                 attack:      1,
                 decay:       1,
                 reverse: false,
@@ -167,6 +170,9 @@
         let fader1 = new ProximityEffect(document.querySelectorAll('*.childelement'), params1);
         let fader2 = new ProximityEffect(document.querySelectorAll('*.childelement'), params2);
 
+
+        fader1.target = fader2.target = document.querySelector('#alttarget');
+        fader1.target = null;
 
         fader1.addEffect('opacity', 1, 0.3);
         fader2.addEffect('scale',   1, 0.5);
@@ -186,13 +192,17 @@
         //fader1.addEffect(null, 1, 0, 'scaleX');
         //fader2.addEffect(null, 1, 0, 'scaleY');
 
-        let counter = 0;
-        window.setInterval(() => {
-            fader1.offsetX = fader2.offsetX = Math.cos(counter++*0.05)*100;
-            fader1.offsetY = fader2.offsetY = Math.sin(counter++*0.05)*100;
-        }, 16);
 
-        //fader1.target = fader2.target = document.querySelector('#alttarget');
+        //fader1.removeEffect('opacity');
+        //console.log(fader1.hasEffect('opacity'));
+
+
+        // let counter = 0;
+        // window.setInterval(() => {
+        //     fader1.offsetX = fader2.offsetX = Math.cos(counter++*0.05)*100;
+        //     fader1.offsetY = fader2.offsetY = Math.sin(counter++*0.05)*100;
+        // }, 16);
+
 
         window.setInterval(() => {
             var alttarget = document.querySelector('#alttarget');

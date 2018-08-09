@@ -53,7 +53,7 @@ const constrain = (num, min, max) => {
     return num;
 };
 
-const roundTo = (num, dp = 0) => {
+const roundTo = (num, dp=0) => {
     let mult = Math.pow(dp+1,10);
     return Math.round(num*mult)/mult;
 };
@@ -111,24 +111,57 @@ class ProximityEffect extends EventTarget
         this.FPS       = this._params.FPS       || DEFAULT_FPS;
         this.mode      = this._params.mode      || DEFAULT_MODE;
 
+
         this.preventCenterCalculations = false;
         this.setCenterPoints();
 
         this.update = this.update.bind(this);
-      	this.init();
+
+        window.addEventListener('scroll', this.windowEvent.bind(this));
+        window.addEventListener('resize', this.windowEvent.bind(this));
+
+        document.addEventListener('mousemove', this.updatePointer.bind(this));
+        document.dispatchEvent(new MouseEvent('mousemove'));
+
+        // TODO: add alternative trigger modes
+
+    	/*let b = document.body;
+    	b.removeEventListener('mousemove',  update());
+    	b.removeEventListener('enterframe', update());
+    	window.clearInterval(_frameLoop);
+
+    	switch(mode)
+    	{
+    		case 'mousemove' :
+    			b.addEventListener('mousemove', update());
+    			break;
+    		case 'enterframe' :
+    			b.addEventListener('enterframe', update());
+    			_frameLoop = window.setInterval(() =>
+    				b.dispatchEvent(new Event('enterframe'));
+    			, 1000/params.FPS);
+    			break;
+    		case 'redraw' :
+    			break;
+    	}*/
+
+        window.requestAnimationFrame(this.update);
     }
 
 
 
 
 
-    /////////////////////////
-    // GETTER/SETTER PROPS //
-    /////////////////////////
+    /////////////////////////////////
+    //                             //
+    //     GETTER/SETTER PROPS     //
+    //                             //
+    /////////////////////////////////
 
 
 
-    // TARGET
+    // TARGET [Element||falsy]
+    // Specify an Element to track, or set to falsy for mouse
 
     get target()
     {
@@ -137,13 +170,15 @@ class ProximityEffect extends EventTarget
 
     set target(t)
     {
-        if(t.getBoundingClientRect()) this._target = t;
+        if(!t || t.getBoundingClientRect()) this._target = t;
         else console.log(`${t} is not a valid target`);
     }
 
 
 
-    // NODES
+
+
+    // NODES [NodeList]
 
     get nodes()
     {
@@ -192,6 +227,8 @@ class ProximityEffect extends EventTarget
 
 
 
+
+
     // THRESHOLD [Number>=0]
 
     get threshold()
@@ -203,6 +240,9 @@ class ProximityEffect extends EventTarget
     {
     	this._params.threshold = constrain(num, 0);
     }
+
+
+
 
 
     // RUNOFF [Number>=0]
@@ -219,12 +259,17 @@ class ProximityEffect extends EventTarget
     }
 
 
+
+
+
     // BOUNDARY [READ-ONLY Number]
 
     get boundary()
     {
     	return this.threshold + this.runoff;
     }
+
+
 
 
 /*
@@ -242,6 +287,8 @@ class ProximityEffect extends EventTarget
 */
 
 
+
+
     // INVERT [Boolean]
 
     get invert()
@@ -253,6 +300,8 @@ class ProximityEffect extends EventTarget
     {
         this._params.invert = !!bool;
     }
+
+
 
 
 
@@ -269,6 +318,8 @@ class ProximityEffect extends EventTarget
     }
 
 
+
+
     // DECAY [0>=Number>=1]
 
     get decay()
@@ -280,6 +331,8 @@ class ProximityEffect extends EventTarget
     {
     	this._params.decay = constrain(num, 0, 1);
     }
+
+
 
 
 
@@ -296,6 +349,7 @@ class ProximityEffect extends EventTarget
   	}
 
 
+
   	set offsetX(num)
   	{
         this._params.offsetX = num;
@@ -307,6 +361,8 @@ class ProximityEffect extends EventTarget
         this._params.offsetY = num;
         if(!this.preventCenterCalculations) this.setCenterPoints();
   	}
+
+
 
 
 
@@ -322,13 +378,15 @@ class ProximityEffect extends EventTarget
         this._params.jitter = constrain(num, 0);
         for(let i=0; i<this.nodes.length; i++)
         {
-            this.setNodeData(i, 'jitter', {
+            this._setNodeData(i, 'jitter', {
                 x: (Math.random()-0.5) * this.jitter,
                 y: (Math.random()-0.5) * this.jitter
             });
         }
         if(!this.preventCenterCalculations) this.setCenterPoints();
   	}
+
+
 
 
 
@@ -350,6 +408,8 @@ class ProximityEffect extends EventTarget
 
 
 
+
+
     // FPS [Number>0]
 
     get FPS()
@@ -365,6 +425,8 @@ class ProximityEffect extends EventTarget
         }
         else console.log('Invalid FPS requested');
     }
+
+
 
 
 
@@ -390,6 +452,8 @@ class ProximityEffect extends EventTarget
 
 
 
+
+
     // ACCURACY [Number>=0]
 
     get accuracy()
@@ -401,6 +465,8 @@ class ProximityEffect extends EventTarget
     {
         this._params.accuracy = Math.floor(constrain(num, 0));
     }
+
+
 
 
 
@@ -420,9 +486,13 @@ class ProximityEffect extends EventTarget
 
 
 
-    /////////////////
-    // API METHODS //
-    /////////////////
+
+    ////////////////////////////
+    //                        //
+    //     PUBLIC METHODS     //
+    //                        //
+    ////////////////////////////
+
 
 
     addEffect(str, near, far, ...rest)
@@ -454,79 +524,47 @@ class ProximityEffect extends EventTarget
         });
     }
 
-    // TODO: implement full API
+
 
     hasEffect(str)
     {
-        //return this._effects.find(str)!==undefined;
+        return this._effects.find(eff => eff['type']===str)!==undefined;
     }
 
-
-    effect(str)
-    {
-        //return this._effects[str];
-    }
 
 
     removeEffect(str)
     {
-        // if(this.hasEffect(str))
-        // {
-        //     delete this._effects[str];
-        // }
+        if(this.hasEffect(str))
+        {
+            for(let i=0; i<this._effects.length; i++)
+            {
+                let eff = this._effects[i];
+                if(eff['type']===str)
+                {
+                    this._effects.splice(i, 1);
+                }
+            }
+        }
     }
+
+
+
 
 
     distanceFrom(node)
     {
-        return this.getNodeData(this.nodes.findIndex(n => n===node), 'distance');
+        return this._getNodeData(this.nodes.findIndex(n => n===node), 'distance');
     }
+
+
 
     distanceFromIndex(i)
     {
-        return this.getNodeData(i, 'distance');
+        return this._getNodeData(i, 'distance');
     }
 
 
-
-
-	////////////
-	// SET-UP //
-	////////////
-
-
-    init()
-    {
-        document.addEventListener('mousemove', this.updatePointer.bind(this));
-        document.dispatchEvent(new MouseEvent('mousemove'));
-
-        window.addEventListener('scroll', this.windowEvent.bind(this));
-        window.addEventListener('resize', this.windowEvent.bind(this));
-
-        // TODO: add alternative trigger modes
-
-    	/*let b = document.body;
-    	b.removeEventListener('mousemove',  update());
-    	b.removeEventListener('enterframe', update());
-    	window.clearInterval(_frameLoop);
-
-    	switch(mode)
-    	{
-    		case 'mousemove' :
-    			b.addEventListener('mousemove', update());
-    			break;
-    		case 'enterframe' :
-    			b.addEventListener('enterframe', update());
-    			_frameLoop = window.setInterval(() =>
-    				b.dispatchEvent(new Event('enterframe'));
-    			, 1000/params.FPS);
-    			break;
-    		case 'redraw' :
-    			break;
-    	}*/
-
-        window.requestAnimationFrame(this.update);
-    }
 
 
 
@@ -538,7 +576,7 @@ class ProximityEffect extends EventTarget
     			bounds = node.getBoundingClientRect(),
                 x      = (bounds.left+bounds.right )*0.5 - this.offsetX,
                 y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY,
-                nd     = this.getNodeData(i, 'jitter');
+                nd     = this._getNodeData(i, 'jitter');
 
             if(this.jitter>0 && nd)
             {
@@ -546,18 +584,32 @@ class ProximityEffect extends EventTarget
                 y += nd.y;
             }
 
-    		this.setNodeData(i, 'center', {x: x, y: y});
+    		this._setNodeData(i, 'center', {x: x, y: y});
         }
     }
 
 
 
-    getNodeData(i, prop)
+
+
+
+
+	///////////////////////////////
+    //                           //
+	//     'PRIVATE' METHODS     //
+    //                           //
+	///////////////////////////////
+
+
+
+    _getNodeData(i, prop)
     {
         return this._nodeData[i][prop];
     }
 
-    setNodeData(i, prop, val)
+
+
+    _setNodeData(i, prop, val)
     {
         if(!this._nodeData[i]) this._nodeData[i] = {};
         this._nodeData[i][prop] = val;
@@ -567,9 +619,14 @@ class ProximityEffect extends EventTarget
 
 
 
-    ////////////
-    // EVENTS //
-    ////////////
+
+
+    ////////////////////
+    //                //
+    //     EVENTS     //
+    //                //
+    ////////////////////
+
 
 
     updatePointer(evt)
@@ -577,6 +634,8 @@ class ProximityEffect extends EventTarget
         this._pointer.x = evt.clientX;
         this._pointer.y = evt.clientY;
     }
+
+
 
 
 
@@ -588,6 +647,8 @@ class ProximityEffect extends EventTarget
 
 
 
+
+
     update(timestamp)
     {
         let view = document.documentElement;
@@ -595,9 +656,9 @@ class ProximityEffect extends EventTarget
         for(let i=0; i<this.nodes.length; i++)
         {
             let node   = this.nodes[i],
-                last   = this.getNodeData(i, 'lastDelta'),
+                last   = this._getNodeData(i, 'lastDelta'),
                 bounds = node.getBoundingClientRect(),
-                center = this.getNodeData(i, 'center');
+                center = this._getNodeData(i, 'center');
 
             // TODO: optimise to update only visible elements
             // WORKAROUND FOR ISSUE #10
@@ -631,7 +692,7 @@ class ProximityEffect extends EventTarget
         		td = constrain((dd-this.threshold)*this._invRunoff, 0, 1);
                 if(this.invert) td = 1 - td;
 
-                this.setNodeData(i, 'distance', td);
+                this._setNodeData(i, 'distance', td);
 
                 if(last)
                 {
@@ -640,7 +701,7 @@ class ProximityEffect extends EventTarget
                 else d = td;
 
                 d = roundTo(d, this.accuracy);
-                this.setNodeData(i, 'lastDelta', d);
+                this._setNodeData(i, 'lastDelta', d);
 
     			if(d<=1 && this._effects)
     			{

@@ -154,24 +154,57 @@ var ProximityEffect = function (_extendableBuiltin2) {
         _this.setCenterPoints();
 
         _this.update = _this.update.bind(_this);
-        _this.init();
+
+        window.addEventListener('scroll', _this.windowEvent.bind(_this));
+        window.addEventListener('resize', _this.windowEvent.bind(_this));
+
+        document.addEventListener('mousemove', _this.updatePointer.bind(_this));
+        document.dispatchEvent(new MouseEvent('mousemove'));
+
+        // TODO: add alternative trigger modes
+
+        /*let b = document.body;
+        b.removeEventListener('mousemove',  update());
+        b.removeEventListener('enterframe', update());
+        window.clearInterval(_frameLoop);
+         	switch(mode)
+        {
+        	case 'mousemove' :
+        		b.addEventListener('mousemove', update());
+        		break;
+        	case 'enterframe' :
+        		b.addEventListener('enterframe', update());
+        		_frameLoop = window.setInterval(() =>
+        			b.dispatchEvent(new Event('enterframe'));
+        		, 1000/params.FPS);
+        		break;
+        	case 'redraw' :
+        		break;
+        }*/
+
+        window.requestAnimationFrame(_this.update);
         return _this;
     }
 
-    /////////////////////////
-    // GETTER/SETTER PROPS //
-    /////////////////////////
+    /////////////////////////////////
+    //                             //
+    //     GETTER/SETTER PROPS     //
+    //                             //
+    /////////////////////////////////
 
 
-    // TARGET
+    // TARGET [Element||falsy]
+    // Specify an Element to track, or set to falsy for mouse
 
     _createClass(ProximityEffect, [{
         key: 'addEffect',
 
 
-        /////////////////
-        // API METHODS //
-        /////////////////
+        ////////////////////////////
+        //                        //
+        //     PUBLIC METHODS     //
+        //                        //
+        ////////////////////////////
 
 
         value: function addEffect(str, near, far) {
@@ -196,76 +229,36 @@ var ProximityEffect = function (_extendableBuiltin2) {
                 unit: template.unit
             });
         }
-
-        // TODO: implement full API
-
     }, {
         key: 'hasEffect',
         value: function hasEffect(str) {
-            //return this._effects.find(str)!==undefined;
-        }
-    }, {
-        key: 'effect',
-        value: function effect(str) {
-            //return this._effects[str];
+            return this._effects.find(function (eff) {
+                return eff['type'] === str;
+            }) !== undefined;
         }
     }, {
         key: 'removeEffect',
         value: function removeEffect(str) {
-            // if(this.hasEffect(str))
-            // {
-            //     delete this._effects[str];
-            // }
+            if (this.hasEffect(str)) {
+                for (var i = 0; i < this._effects.length; i++) {
+                    var eff = this._effects[i];
+                    if (eff['type'] === str) {
+                        this._effects.splice(i, 1);
+                    }
+                }
+            }
         }
     }, {
         key: 'distanceFrom',
         value: function distanceFrom(node) {
-            return this.getNodeData(this.nodes.findIndex(function (n) {
+            return this._getNodeData(this.nodes.findIndex(function (n) {
                 return n === node;
             }), 'distance');
         }
     }, {
         key: 'distanceFromIndex',
         value: function distanceFromIndex(i) {
-            return this.getNodeData(i, 'distance');
-        }
-
-        ////////////
-        // SET-UP //
-        ////////////
-
-
-    }, {
-        key: 'init',
-        value: function init() {
-            document.addEventListener('mousemove', this.updatePointer.bind(this));
-            document.dispatchEvent(new MouseEvent('mousemove'));
-
-            window.addEventListener('scroll', this.windowEvent.bind(this));
-            window.addEventListener('resize', this.windowEvent.bind(this));
-
-            // TODO: add alternative trigger modes
-
-            /*let b = document.body;
-            b.removeEventListener('mousemove',  update());
-            b.removeEventListener('enterframe', update());
-            window.clearInterval(_frameLoop);
-             	switch(mode)
-            {
-            	case 'mousemove' :
-            		b.addEventListener('mousemove', update());
-            		break;
-            	case 'enterframe' :
-            		b.addEventListener('enterframe', update());
-            		_frameLoop = window.setInterval(() =>
-            			b.dispatchEvent(new Event('enterframe'));
-            		, 1000/params.FPS);
-            		break;
-            	case 'redraw' :
-            		break;
-            }*/
-
-            window.requestAnimationFrame(this.update);
+            return this._getNodeData(i, 'distance');
         }
     }, {
         key: 'setCenterPoints',
@@ -275,31 +268,41 @@ var ProximityEffect = function (_extendableBuiltin2) {
                     bounds = node.getBoundingClientRect(),
                     x = (bounds.left + bounds.right) * 0.5 - this.offsetX,
                     y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY,
-                    nd = this.getNodeData(i, 'jitter');
+                    nd = this._getNodeData(i, 'jitter');
 
                 if (this.jitter > 0 && nd) {
                     x += nd.x;
                     y += nd.y;
                 }
 
-                this.setNodeData(i, 'center', { x: x, y: y });
+                this._setNodeData(i, 'center', { x: x, y: y });
             }
         }
+
+        ///////////////////////////////
+        //                           //
+        //     'PRIVATE' METHODS     //
+        //                           //
+        ///////////////////////////////
+
+
     }, {
-        key: 'getNodeData',
-        value: function getNodeData(i, prop) {
+        key: '_getNodeData',
+        value: function _getNodeData(i, prop) {
             return this._nodeData[i][prop];
         }
     }, {
-        key: 'setNodeData',
-        value: function setNodeData(i, prop, val) {
+        key: '_setNodeData',
+        value: function _setNodeData(i, prop, val) {
             if (!this._nodeData[i]) this._nodeData[i] = {};
             this._nodeData[i][prop] = val;
         }
 
-        ////////////
-        // EVENTS //
-        ////////////
+        ////////////////////
+        //                //
+        //     EVENTS     //
+        //                //
+        ////////////////////
 
 
     }, {
@@ -325,9 +328,9 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
             for (var i = 0; i < this.nodes.length; i++) {
                 var node = this.nodes[i],
-                    last = this.getNodeData(i, 'lastDelta'),
+                    last = this._getNodeData(i, 'lastDelta'),
                     bounds = node.getBoundingClientRect(),
-                    center = this.getNodeData(i, 'center');
+                    center = this._getNodeData(i, 'center');
 
                 // TODO: optimise to update only visible elements
                 // WORKAROUND FOR ISSUE #10
@@ -359,14 +362,14 @@ var ProximityEffect = function (_extendableBuiltin2) {
                     td = constrain((dd - this.threshold) * this._invRunoff, 0, 1);
                     if (this.invert) td = 1 - td;
 
-                    this.setNodeData(i, 'distance', td);
+                    this._setNodeData(i, 'distance', td);
 
                     if (last) {
                         d = last + (td - last) * (XOR(td > last, this.invert) ? this.decay : this.attack);
                     } else d = td;
 
                     d = roundTo(d, this.accuracy);
-                    this.setNodeData(i, 'lastDelta', d);
+                    this._setNodeData(i, 'lastDelta', d);
 
                     if (d <= 1 && this._effects) {
                         var styles = {};
@@ -408,10 +411,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
             return this._target;
         },
         set: function set(t) {
-            if (t.getBoundingClientRect()) this._target = t;else console.log(t + ' is not a valid target');
+            if (!t || t.getBoundingClientRect()) this._target = t;else console.log(t + ' is not a valid target');
         }
 
-        // NODES
+        // NODES [NodeList]
 
     }, {
         key: 'nodes',
@@ -564,7 +567,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
         set: function set(num) {
             this._params.jitter = constrain(num, 0);
             for (var i = 0; i < this.nodes.length; i++) {
-                this.setNodeData(i, 'jitter', {
+                this._setNodeData(i, 'jitter', {
                     x: (Math.random() - 0.5) * this.jitter,
                     y: (Math.random() - 0.5) * this.jitter
                 });
