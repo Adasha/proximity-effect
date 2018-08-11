@@ -111,6 +111,17 @@ var isVisibleInViewport = function isVisibleInViewport(el) {
 
 //const startTimer = (delay) =>
 
+var valToObj = function valToObj(val) {
+    var key = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'value';
+
+    var obj = {};
+    obj[key] = val;
+    return obj;
+};
+
+var isObject = function isObject(obj) {
+    return obj == Object(obj);
+};
 
 var ProximityEffect = function (_extendableBuiltin2) {
     _inherits(ProximityEffect, _extendableBuiltin2);
@@ -207,27 +218,31 @@ var ProximityEffect = function (_extendableBuiltin2) {
         ////////////////////////////
 
 
-        value: function addEffect(str, near, far) {
-            var template = void 0;
+        value: function addEffect(str, near, far, params) {
+            if (VALID_EFFECTS.hasOwnProperty(str)) {
+                params = VALID_EFFECTS[str];
+            } else if (params && isObject(params) && typeof params.name === 'string' && typeof params.rule === 'string') {
+                VALID_EFFECTS[str] = params;
+            } else return void console.log(str + ' is not a valid effect type');
 
-            if ((arguments.length <= 3 ? 0 : arguments.length - 3) > 0) {
-                template = { rule: arguments.length <= 3 ? undefined : arguments[3], func: arguments.length <= 4 ? undefined : arguments[4], unit: arguments.length <= 5 ? undefined : arguments[5] };
-            } else if (VALID_EFFECTS.hasOwnProperty(str)) {
-                template = VALID_EFFECTS[str];
-            } else {
-                console.log(str + ' is not a supported effect type');
-                return;
-            }
+            if (typeof near === 'number') near = valToObj(constrain(near, params.min, params.max));
+            if (typeof far === 'number') far = valToObj(constrain(far, params.min, params.max));
 
             this._effects = this._effects || [];
             this._effects.push({
                 type: str,
-                near: constrain(near, template.min, template.max),
-                far: far !== undefined && far !== null ? constrain(far, template.min, template.max) : near,
-                rule: template.rule,
-                func: template.func,
-                unit: template.unit
+                near: near,
+                far: far,
+                params: params
             });
+
+            for (var i = 0; i < this._nodeData.length; i++) {
+                var effects = this._getNodeData(i, 'effects') || this._setNodeData(i, 'effects', [])['effects'];
+                effects.push({
+                    near: near.scatter ? near.value + (Math.random() - 0.5) * near.scatter : near.value,
+                    far: far.scatter ? far.value + (Math.random() - 0.5) * far.scatter : far.value
+                });
+            }
         }
     }, {
         key: 'hasEffect',
@@ -263,19 +278,19 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'setCenterPoints',
         value: function setCenterPoints() {
-            for (var i = 0; i < this.nodes.length; i++) {
-                var node = this.nodes[i],
+            for (var n = 0; n < this.nodes.length; n++) {
+                var node = this.nodes[n],
                     bounds = node.getBoundingClientRect(),
                     x = (bounds.left + bounds.right) * 0.5 - this.offsetX,
                     y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY,
-                    nd = this._getNodeData(i, 'jitter');
+                    jit = this._getNodeData(n, 'jitter');
 
-                if (this.jitter > 0 && nd) {
-                    x += nd.x;
-                    y += nd.y;
+                if (this.jitter > 0 && jit) {
+                    x += jit.x;
+                    y += jit.y;
                 }
 
-                this._setNodeData(i, 'center', { x: x, y: y });
+                this._setNodeData(n, 'center', { x: x, y: y });
             }
         }
 
@@ -288,14 +303,15 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
     }, {
         key: '_getNodeData',
-        value: function _getNodeData(i, prop) {
-            return this._nodeData[i][prop];
+        value: function _getNodeData(n, prop) {
+            return this._nodeData[n][prop];
         }
     }, {
         key: '_setNodeData',
-        value: function _setNodeData(i, prop, val) {
-            if (!this._nodeData[i]) this._nodeData[i] = {};
-            this._nodeData[i][prop] = val;
+        value: function _setNodeData(n, prop, val) {
+            if (!this._nodeData[n]) this._nodeData[n] = {};
+            this._nodeData[n][prop] = val;
+            return this._nodeData[n];
         }
 
         ////////////////////
@@ -326,11 +342,11 @@ var ProximityEffect = function (_extendableBuiltin2) {
         value: function update(timestamp) {
             var view = document.documentElement;
 
-            for (var i = 0; i < this.nodes.length; i++) {
-                var node = this.nodes[i],
-                    last = this._getNodeData(i, 'lastDelta'),
+            for (var n = 0; n < this.nodes.length; n++) {
+                var node = this.nodes[n],
+                    last = this._getNodeData(n, 'lastDelta'),
                     bounds = node.getBoundingClientRect(),
-                    center = this._getNodeData(i, 'center');
+                    center = this._getNodeData(n, 'center');
 
                 // TODO: optimise to update only visible elements
                 // WORKAROUND FOR ISSUE #10
@@ -362,26 +378,26 @@ var ProximityEffect = function (_extendableBuiltin2) {
                     td = constrain((dd - this.threshold) * this._invRunoff, 0, 1);
                     if (this.invert) td = 1 - td;
 
-                    this._setNodeData(i, 'distance', td);
+                    this._setNodeData(n, 'distance', td);
 
-                    if (last) {
-                        d = last + (td - last) * (XOR(td > last, this.invert) ? this.decay : this.attack);
-                    } else d = td;
+                    if (last) d = last + (td - last) * (XOR(td > last, this.invert) ? this.decay : this.attack);else d = td;
 
                     d = roundTo(d, this.accuracy);
-                    this._setNodeData(i, 'lastDelta', d);
+                    this._setNodeData(n, 'lastDelta', d);
 
                     if (d <= 1 && this._effects) {
                         var styles = {};
 
-                        for (var _i = 0; _i < this._effects.length; _i++) {
-                            var effect = this._effects[_i],
-                                type = effect.type,
-                                near = effect.near,
-                                far = effect.far,
-                                rule = effect.rule,
-                                func = effect.func,
-                                unit = effect.unit || '',
+                        for (var f = 0; f < this._effects.length; f++) {
+                            var effect = this._effects[f],
+                                nodeVals = this._getNodeData(n, 'effects')[f];
+
+                            var type = effect.type,
+                                near = nodeVals.near,
+                                far = nodeVals.far,
+                                rule = effect.params.rule,
+                                func = effect.params.func,
+                                unit = effect.params.unit || '',
                                 val = delta(d, near, far);
 
                             if (!func) {

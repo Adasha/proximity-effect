@@ -5,14 +5,16 @@
     Demos: http://lab.adasha.com/proximity-effect
 */
 
-const VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
-      VALID_DIRECTIONS  = new Set(['both', 'horizontal', 'vertical']),
-      DEFAULT_DIRECTION = 'both',
-      DEFAULT_MODE      = 'redraw',
-      DEFAULT_ACCURACY  =   5,
-      DEFAULT_FPS       =  15,
-      DEFAULT_RUNOFF    = 100,
-      VALID_EFFECTS     = {
+
+
+let VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
+    VALID_DIRECTIONS  = new Set(['both', 'horizontal', 'vertical']),
+    DEFAULT_DIRECTION = 'both',
+    DEFAULT_MODE      = 'redraw',
+    DEFAULT_ACCURACY  =   5,
+    DEFAULT_FPS       =  15,
+    DEFAULT_RUNOFF    = 100,
+    VALID_EFFECTS     = {
         opacity:         {min: 0, max:   1, default:       1, rule: 'opacity'},
         translateX:      {                  default:       0, rule: 'transform',       func: 'translateX',  unit: 'px'},
         translateY:      {                  default:       0, rule: 'transform',       func: 'translateY',  unit: 'px'},
@@ -40,7 +42,9 @@ const VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
 
         backgroundColor: {min: 0, max: 255, default: [0,0,0], rule: 'backgroundColor', func: 'rgb',                      args: 3},
         scale3D:         {                  default: [1,1,1], rule: 'transform',       func: 'scale3D',                  args: 3}
-      };
+    };
+
+
 
 
 
@@ -70,8 +74,16 @@ const isVisibleInViewport = (el) => {
     return bounds.right>=0 && bounds.left<=view.clientWidth && bounds.bottom>=0 && bounds.top<=view.clientHeight;
 };
 
-
 //const startTimer = (delay) =>
+
+const valToObj = (val, key='value') => {
+    let obj = {};
+    obj[key] = val;
+    return obj;
+};
+
+const isObject = obj => obj==Object(obj);
+
 
 
 
@@ -495,33 +507,40 @@ class ProximityEffect extends EventTarget
 
 
 
-    addEffect(str, near, far, ...rest)
+    addEffect(str, near, far, params)
     {
-        let template;
+        if(VALID_EFFECTS.hasOwnProperty(str))
+        {
+            params = VALID_EFFECTS[str];
+        }
+        else if(params && isObject(params) && typeof params.name==='string' && typeof params.rule==='string')
+        {
+            VALID_EFFECTS[str] = params;
+        }
+        else return void console.log(`${str} is not a valid effect type`);
 
-        if(rest.length>0)
-        {
-            template = {rule: rest[0], func: rest[1], unit: rest[2]};
-        }
-        else if(VALID_EFFECTS.hasOwnProperty(str))
-        {
-            template = VALID_EFFECTS[str];
-        }
-        else
-        {
-            console.log(`${str} is not a supported effect type`);
-            return;
-        }
+
+        if(typeof near==='number') near = valToObj(constrain(near, params.min, params.max));
+        if(typeof far==='number') far = valToObj(constrain(far, params.min, params.max));
+
 
         this._effects = this._effects || [];
         this._effects.push({
             type: str,
-            near: constrain(near, template.min, template.max),
-            far:  (far!==undefined && far!==null) ? constrain(far, template.min, template.max) : near,
-            rule: template.rule,
-            func: template.func,
-            unit: template.unit
+            near: near,
+            far:  far,
+            params: params
         });
+
+
+        for(let i=0; i<this._nodeData.length; i++)
+        {
+            let effects = this._getNodeData(i, 'effects') || this._setNodeData(i, 'effects', [])['effects'];
+            effects.push({
+                near: near.scatter ? near.value+((Math.random()-0.5)*near.scatter) : near.value,
+                far: far.scatter ? far.value+((Math.random()-0.5)*far.scatter) : far.value
+            });
+        }
     }
 
 
@@ -570,21 +589,21 @@ class ProximityEffect extends EventTarget
 
     setCenterPoints()
     {
-    	for(let i=0; i<this.nodes.length; i++)
+    	for(let n=0; n<this.nodes.length; n++)
     	{
-    		let node   = this.nodes[i],
+    		let node   = this.nodes[n],
     			bounds = node.getBoundingClientRect(),
                 x      = (bounds.left+bounds.right )*0.5 - this.offsetX,
                 y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY,
-                nd     = this._getNodeData(i, 'jitter');
+                jit    = this._getNodeData(n, 'jitter');
 
-            if(this.jitter>0 && nd)
+            if(this.jitter>0 && jit)
             {
-                x += nd.x;
-                y += nd.y;
+                x += jit.x;
+                y += jit.y;
             }
 
-    		this._setNodeData(i, 'center', {x: x, y: y});
+    		this._setNodeData(n, 'center', {x: x, y: y});
         }
     }
 
@@ -602,17 +621,18 @@ class ProximityEffect extends EventTarget
 
 
 
-    _getNodeData(i, prop)
+    _getNodeData(n, prop)
     {
-        return this._nodeData[i][prop];
+        return this._nodeData[n][prop];
     }
 
 
 
-    _setNodeData(i, prop, val)
+    _setNodeData(n, prop, val)
     {
-        if(!this._nodeData[i]) this._nodeData[i] = {};
-        this._nodeData[i][prop] = val;
+        if(!this._nodeData[n]) this._nodeData[n] = {};
+        this._nodeData[n][prop] = val;
+        return this._nodeData[n];
     }
 
 
@@ -653,12 +673,12 @@ class ProximityEffect extends EventTarget
     {
         let view = document.documentElement;
 
-        for(let i=0; i<this.nodes.length; i++)
+        for(let n=0; n<this.nodes.length; n++)
         {
-            let node   = this.nodes[i],
-                last   = this._getNodeData(i, 'lastDelta'),
+            let node   = this.nodes[n],
+                last   = this._getNodeData(n, 'lastDelta'),
                 bounds = node.getBoundingClientRect(),
-                center = this._getNodeData(i, 'center');
+                center = this._getNodeData(n, 'center');
 
             // TODO: optimise to update only visible elements
             // WORKAROUND FOR ISSUE #10
@@ -682,6 +702,7 @@ class ProximityEffect extends EventTarget
                     ty = this.pointer.y;
                 }
 
+
                 let dx = tx - centerX,
                     dy = ty - centerY,
                     dd, td, d;
@@ -692,31 +713,31 @@ class ProximityEffect extends EventTarget
         		td = constrain((dd-this.threshold)*this._invRunoff, 0, 1);
                 if(this.invert) td = 1 - td;
 
-                this._setNodeData(i, 'distance', td);
+                this._setNodeData(n, 'distance', td);
 
-                if(last)
-                {
-                    d = last+(td-last)*(XOR(td>last, this.invert) ? this.decay : this.attack);
-                }
+                if(last) d = last+(td-last)*(XOR(td>last, this.invert) ? this.decay : this.attack);
                 else d = td;
 
                 d = roundTo(d, this.accuracy);
-                this._setNodeData(i, 'lastDelta', d);
+                this._setNodeData(n, 'lastDelta', d);
+
 
     			if(d<=1 && this._effects)
     			{
         			let styles = {};
 
-        			for(let i=0; i<this._effects.length; i++)
+        			for(let f=0; f<this._effects.length; f++)
         			{
-        				let effect = this._effects[i],
-                        type   = effect.type,
-                        near   = effect.near,
-                        far    = effect.far,
-                        rule   = effect.rule,
-                        func   = effect.func,
-                        unit   = effect.unit || '',
-                        val    = delta(d, near, far);
+        				let effect   = this._effects[f],
+                            nodeVals = this._getNodeData(n, 'effects')[f];
+
+                        let type     = effect.type,
+                            near     = nodeVals.near,
+                            far      = nodeVals.far,
+                            rule     = effect.params.rule,
+                            func     = effect.params.func,
+                            unit     = effect.params.unit || '',
+                            val      = delta(d, near, far);
 
 
                         if(!func)

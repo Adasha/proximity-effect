@@ -141,12 +141,12 @@
 
 
         let params1 = {
-                threshold:  00,
-                runoff:     50,
-                direction: 'horizontal',
+                threshold: 100,
+                runoff:    100,
+                //direction: 'horizontal',
                 offsetX:     0,
                 offsetY:     0,
-    			jitter:    100,
+    			jitter:      0,
                 attack:      1,
                 decay:       1,
                 reverse: false,
@@ -156,7 +156,7 @@
         let params2 = {
                 threshold:  50,
                 runoff:     50,
-                direction: 'vertical',
+                //direction: 'vertical',
                 offsetX:     0,
                 offsetY:     0,
     			jitter:    100,
@@ -168,14 +168,20 @@
             };
 
         let fader1 = new ProximityEffect(document.querySelectorAll('*.childelement'), params1);
-        let fader2 = new ProximityEffect(document.querySelectorAll('*.childelement'), params2);
+        //let fader2 = new ProximityEffect(document.querySelectorAll('*.childelement'), params2);
 
 
-        fader1.target = fader2.target = document.querySelector('#alttarget');
+        //fader1.target = fader2.target = document.querySelector('#alttarget');
         fader1.target = null;
 
         fader1.addEffect('opacity', 1, 0.3);
-        fader2.addEffect('scale',   1, 0.5);
+        //fader2.addEffect('scale',   1, 0.5);
+        fader1.addEffect('rotateX',    0, {value: 0, scatter: 360});
+        fader1.addEffect('rotateY',    0, {value: 0, scatter: 360});
+        fader1.addEffect('rotateZ',    0, {value: 0, scatter: 360});
+        fader1.addEffect('translateX', 0, {value: 0, scatter: 200});
+        fader1.addEffect('translateY', 0, {value: 0, scatter: 200});
+        fader1.addEffect('translateZ', 0, {value: 0, scatter: 200});
 
         //fader1.addEffect('opacity', 1, 0.5);
         //fader2.addEffect('scale',   1, 0);
@@ -185,12 +191,12 @@
         //fader2.addEffect('hueRotate', 0, 180);
 
         // individual scale functions risking overwriting
-        //fader1.addEffect('scaleX custom', 1, 0, 'transform', 'scaleX');
-        //fader2.addEffect('scaleY custom', 1, 0, 'transform', 'scaleY');
+        //fader1.addEffect('scaleX custom', 1, 0, {rule: 'transform', func: 'scaleX'});
+        //fader2.addEffect('scaleY custom', 1, 0, {rule: 'transform', func: 'scaleY'});
 
         // experimental transform functions as separate rules
-        //fader1.addEffect(null, 1, 0, 'scaleX');
-        //fader2.addEffect(null, 1, 0, 'scaleY');
+        //fader1.addEffect(null, 1, 0, {rule: 'scaleX'});
+        //fader2.addEffect(null, 1, 0, {rule: 'scaleY'});
 
 
         //fader1.removeEffect('opacity');
