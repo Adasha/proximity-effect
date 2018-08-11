@@ -70,7 +70,7 @@ let myEffect = new ProximityEffect(elements, params);
 
 Parameters can also be accessed as individual properties on the ProximityEffect instance:
 ```javascript
-myEffect.reverse = true;
+myEffect.invert = true;
 ```
 
 Finally add effects as you see fit:
@@ -80,8 +80,8 @@ myEffect.addEffect('opacity', 1,  0.5);
 myEffect.addEffect('scale',   1,  2);
 myEffect.addEffect('blur',    0, 10);
 
-myEffect.addEffect(null,    100, 50, null,        'left',        'em');
-myEffect.addEffect(null,    100, 50, 'transform', 'perspective', 'px');
+myEffect.addEffect('positionleft', 100, 50, {rule: 'left',      func: null,          unit: 'em'});
+myEffect.addEffect('perspective',  100, 50, {rule: 'transform', func: 'perspective', unit: 'px', min: 0});
 ...
 ```
 ProximityEffect directly supports [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-number CSS rule.
