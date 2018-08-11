@@ -84,7 +84,12 @@ myEffect.addEffect(null,    100, 50, null,        'left',        'em');
 myEffect.addEffect(null,    100, 50, 'transform', 'perspective', 'px');
 ...
 ```
-ProximityEffect directly supports [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-value CSS rule.
+ProximityEffect directly supports [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-number CSS rule.
+
+`near` and `far` can also be fed an object with a `value` key and other optional properties, including a `scatter` value:
+```javascript
+myEffect.addEffect('translateX', 0, {value: 50, scatter: 15});
+```
 
 Full details on the API are forthcoming, for now there is only an unfinished [page on the wiki](https://github.com/Adasha/proximity-effect/wiki/API-reference).
 
