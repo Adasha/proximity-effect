@@ -7,6 +7,15 @@
 		"email": "adasha76@outlook.com",
 		"url": "http://adasha.com"
 	},
+	"browser": "./dist/ProximityEffect.js",
+	"unpkg": "./dist/ProximityEffect.min.js",
+	"directories": {
+      "test": "tests"
+    },
+	"scripts": {
+		"build": "gulp babel && gulp minify",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
 	"keywords": [
 		"mouse",
 		"movement",
@@ -48,8 +57,6 @@
 		"url": "https://github.com/Adasha/proximity-effect/issues",
 		"email": "adasha76@outlook.com"
 	},
-	"browser": "./dist/ProximityEffect.js",
-	"unpkg": "./dist/ProximityEffect.min.js",
 	"license": "MPL-2.0",
 	"dependencies": {},
 	"devDependencies": {
@@ -61,9 +68,5 @@
 		"gulp-gzip": "^1.4.2",
 		"gulp-rename": "^1.4.0",
 		"gulp-uglify": "^3.0.1"
-	},
-	"scripts": {
-		"build": "gulp babel && gulp minify",
-		"test": "echo \"Error: no test specified\" && exit 1"
 	}
 }
