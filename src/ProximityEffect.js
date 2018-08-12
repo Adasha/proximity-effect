@@ -513,7 +513,7 @@ class ProximityEffect extends EventTarget
         {
             params = VALID_EFFECTS[str];
         }
-        else if(params && isObject(params) && typeof params.name==='string' && typeof params.rule==='string')
+        else if(params && isObject(params) && typeof params.rule==='string')
         {
             VALID_EFFECTS[str] = params;
         }
@@ -731,8 +731,7 @@ class ProximityEffect extends EventTarget
         				let effect   = this._effects[f],
                             nodeVals = this._getNodeData(n, 'effects')[f];
 
-                        let type     = effect.type,
-                            near     = nodeVals.near,
+                        let near     = nodeVals.near,
                             far      = nodeVals.far,
                             rule     = effect.params.rule,
                             func     = effect.params.func,

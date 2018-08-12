@@ -221,7 +221,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
         value: function addEffect(str, near, far, params) {
             if (VALID_EFFECTS.hasOwnProperty(str)) {
                 params = VALID_EFFECTS[str];
-            } else if (params && isObject(params) && typeof params.name === 'string' && typeof params.rule === 'string') {
+            } else if (params && isObject(params) && typeof params.rule === 'string') {
                 VALID_EFFECTS[str] = params;
             } else return void console.log(str + ' is not a valid effect type');
 
@@ -392,8 +392,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
                             var effect = this._effects[f],
                                 nodeVals = this._getNodeData(n, 'effects')[f];
 
-                            var type = effect.type,
-                                near = nodeVals.near,
+                            var near = nodeVals.near,
                                 far = nodeVals.far,
                                 rule = effect.params.rule,
                                 func = effect.params.func,

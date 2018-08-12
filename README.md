@@ -80,15 +80,16 @@ myEffect.addEffect('opacity', 1,  0.5);
 myEffect.addEffect('scale',   1,  2);
 myEffect.addEffect('blur',    0, 10);
 
-myEffect.addEffect('positionleft', 100, 50, {rule: 'left',      func: null,          unit: 'em'});
-myEffect.addEffect('perspective',  100, 50, {rule: 'transform', func: 'perspective', unit: 'px', min: 0});
+myEffect.addEffect('positionleft', 100, 50, {rule: 'left', unit: 'em'});
+myEffect.addEffect('perspective',  100, 50, {rule: 'transform', func: 'perspective', unit: 'px'});
 ...
 ```
-ProximityEffect directly supports [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-number CSS rule.
+ProximityEffect directly supports [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-number CSS rule. (Note: the syntax has changed since v2.1.10).
 
 `near` and `far` can also be fed an object with a `value` key and other optional properties, including a `scatter` value:
 ```javascript
 myEffect.addEffect('translateX', 0, {value: 50, scatter: 15});
+myEffect.addEffect('padding', {value: 20, scatter: 30}, {value: 100, scatter: 50}, {rule: 'padding', unit: 'px'});
 ```
 
 Full details on the API are forthcoming, for now there is only an unfinished [page on the wiki](https://github.com/Adasha/proximity-effect/wiki/API-reference).
