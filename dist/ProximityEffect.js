@@ -10,7 +10,9 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _extendableBuiltin(cls) {
     function ExtendableBuiltin() {
-        cls.apply(this, arguments);
+        var instance = Reflect.construct(cls, Array.from(arguments));
+        Object.setPrototypeOf(instance, Object.getPrototypeOf(this));
+        return instance;
     }
 
     ExtendableBuiltin.prototype = Object.create(cls.prototype, {

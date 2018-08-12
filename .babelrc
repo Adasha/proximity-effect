@@ -2,8 +2,7 @@
 	"presets": ["env"],
 	"plugins": [
 		["babel-plugin-transform-builtin-extend", {
-            globals: ["EventTarget"],
-			approximate: true
+            globals: ["EventTarget"]
         }]
 	]
 }
