@@ -3,7 +3,7 @@
 
 Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Does not override existing style sheets.
 
-**NOTE: current version requires capability to extend EventTarget - this knocks out Edge and Firefox before v59 until backwards compatibility is given more thought. To work around import a ponyfill such as `https://unpkg.com/event-target@latest/min.js`. This lets you be disappointed with how slow Edge is.***
+**NOTE: current version requires capability to extend EventTarget - this knocks out Edge and Firefox before v59 until backwards compatibility is given more thought. To work around import a ponyfill such as `https://unpkg.com/event-target@latest/min.js`. This lets you be disappointed with how slow Edge is.**
 
 [View live demos](http://lab.adasha.com/proximity-effect)
 
