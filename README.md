@@ -3,7 +3,7 @@
 
 Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Does not override existing style sheets.
 
-<del>Fairly widely compatible but</del> effects are dependent on browser support. ***NOTE: current version requires capability to extend built-in objects - this knocks out Edge and Firefox before v59 until backwards compatibility is given more thought***
+<del>Fairly widely compatible but</del> effects are dependent on browser support. ***NOTE: current version requires capability to extend EventTarget - this knocks out Edge and Firefox before v59 until backwards compatibility is given more thought***
 
 [View live demos](http://lab.adasha.com/proximity-effect)
 
