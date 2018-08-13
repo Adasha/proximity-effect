@@ -40,6 +40,8 @@ function _extendableBuiltin(cls) {
     Demos: http://lab.adasha.com/proximity-effect
 */
 
+// TODO: only build after page layout complete
+
 var VALID_MODES = new Set(['mousemove', 'enterframe', 'redraw']),
     VALID_DIRECTIONS = new Set(['both', 'horizontal', 'vertical']),
     DEFAULT_DIRECTION = 'both',
@@ -237,7 +239,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
             });
 
             for (var i = 0; i < this._nodeData.length; i++) {
-                var effects = this._getNodeData(i, 'effects') || this._setNodeData(i, 'effects', [])['effects'];
+                var effects = this.getNodeData(i, 'effects') || this._setNodeData(i, 'effects', [])['effects'];
                 effects.push({
                     near: near.scatter ? near.value + (Math.random() - 0.5) * near.scatter : near.value,
                     far: far.scatter ? far.value + (Math.random() - 0.5) * far.scatter : far.value
@@ -266,14 +268,14 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'distanceFrom',
         value: function distanceFrom(node) {
-            return this._getNodeData(this.nodes.findIndex(function (n) {
+            return this.getNodeData(this.nodes.findIndex(function (n) {
                 return n === node;
             }), 'distance');
         }
     }, {
         key: 'distanceFromIndex',
         value: function distanceFromIndex(i) {
-            return this._getNodeData(i, 'distance');
+            return this.getNodeData(i, 'distance');
         }
     }, {
         key: 'setCenterPoints',
@@ -283,7 +285,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
                     bounds = node.getBoundingClientRect(),
                     x = (bounds.left + bounds.right) * 0.5 - this.offsetX,
                     y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY,
-                    jit = this._getNodeData(n, 'jitter');
+                    jit = this.getNodeData(n, 'jitter');
 
                 if (this.jitter > 0 && jit) {
                     x += jit.x;
@@ -293,6 +295,11 @@ var ProximityEffect = function (_extendableBuiltin2) {
                 this._setNodeData(n, 'center', { x: x, y: y });
             }
         }
+    }, {
+        key: 'getNodeData',
+        value: function getNodeData(n, prop) {
+            return this._nodeData[n][prop];
+        }
 
         ///////////////////////////////
         //                           //
@@ -301,11 +308,6 @@ var ProximityEffect = function (_extendableBuiltin2) {
         ///////////////////////////////
 
 
-    }, {
-        key: '_getNodeData',
-        value: function _getNodeData(n, prop) {
-            return this._nodeData[n][prop];
-        }
     }, {
         key: '_setNodeData',
         value: function _setNodeData(n, prop, val) {
@@ -344,9 +346,9 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
             for (var n = 0; n < this.nodes.length; n++) {
                 var node = this.nodes[n],
-                    last = this._getNodeData(n, 'lastDelta'),
+                    last = this.getNodeData(n, 'lastDelta'),
                     bounds = node.getBoundingClientRect(),
-                    center = this._getNodeData(n, 'center');
+                    center = this.getNodeData(n, 'center');
 
                 // TODO: optimise to update only visible elements
                 // WORKAROUND FOR ISSUE #10
@@ -390,7 +392,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
                         for (var f = 0; f < this._effects.length; f++) {
                             var effect = this._effects[f],
-                                nodeVals = this._getNodeData(n, 'effects')[f];
+                                nodeVals = this.getNodeData(n, 'effects')[f];
 
                             var near = nodeVals.near,
                                 far = nodeVals.far,

@@ -1,6 +1,6 @@
 {
 	"name": "proximity-effect",
-	"version": "v2.1.11",
+	"version": "v2.1.12",
 	"description": "Mass animate CSS properties based on proximity of mouse or other target.",
 	"author": {
 		"name": "Adam Shailer",
@@ -10,8 +10,8 @@
 	"browser": "./dist/ProximityEffect.js",
 	"unpkg": "./dist/ProximityEffect.min.js",
 	"directories": {
-      "test": "tests"
-    },
+		"test": "tests"
+	},
 	"scripts": {
 		"build": "gulp babel && gulp minify",
 		"test": "echo \"Error: no test specified\" && exit 1"
@@ -58,7 +58,9 @@
 		"email": "adasha76@outlook.com"
 	},
 	"license": "MPL-2.0",
-	"dependencies": {},
+	"dependencies": {
+		"event-target": "^1.2.3"
+	},
 	"devDependencies": {
 		"babel-core": "^6.26.3",
 		"babel-plugin-transform-builtin-extend": "^1.1.2",

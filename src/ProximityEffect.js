@@ -5,7 +5,7 @@
     Demos: http://lab.adasha.com/proximity-effect
 */
 
-
+// TODO: only build after page layout complete
 
 let VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
     VALID_DIRECTIONS  = new Set(['both', 'horizontal', 'vertical']),
@@ -535,7 +535,7 @@ class ProximityEffect extends EventTarget
 
         for(let i=0; i<this._nodeData.length; i++)
         {
-            let effects = this._getNodeData(i, 'effects') || this._setNodeData(i, 'effects', [])['effects'];
+            let effects = this.getNodeData(i, 'effects') || this._setNodeData(i, 'effects', [])['effects'];
             effects.push({
                 near: near.scatter ? near.value+((Math.random()-0.5)*near.scatter) : near.value,
                 far: far.scatter ? far.value+((Math.random()-0.5)*far.scatter) : far.value
@@ -573,14 +573,14 @@ class ProximityEffect extends EventTarget
 
     distanceFrom(node)
     {
-        return this._getNodeData(this.nodes.findIndex(n => n===node), 'distance');
+        return this.getNodeData(this.nodes.findIndex(n => n===node), 'distance');
     }
 
 
 
     distanceFromIndex(i)
     {
-        return this._getNodeData(i, 'distance');
+        return this.getNodeData(i, 'distance');
     }
 
 
@@ -595,7 +595,7 @@ class ProximityEffect extends EventTarget
     			bounds = node.getBoundingClientRect(),
                 x      = (bounds.left+bounds.right )*0.5 - this.offsetX,
                 y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY,
-                jit    = this._getNodeData(n, 'jitter');
+                jit    = this.getNodeData(n, 'jitter');
 
             if(this.jitter>0 && jit)
             {
@@ -611,6 +611,15 @@ class ProximityEffect extends EventTarget
 
 
 
+    getNodeData(n, prop)
+    {
+        return this._nodeData[n][prop];
+    }
+
+
+
+
+
 
 
 	///////////////////////////////
@@ -618,13 +627,6 @@ class ProximityEffect extends EventTarget
 	//     'PRIVATE' METHODS     //
     //                           //
 	///////////////////////////////
-
-
-
-    _getNodeData(n, prop)
-    {
-        return this._nodeData[n][prop];
-    }
 
 
 
@@ -676,9 +678,9 @@ class ProximityEffect extends EventTarget
         for(let n=0; n<this.nodes.length; n++)
         {
             let node   = this.nodes[n],
-                last   = this._getNodeData(n, 'lastDelta'),
+                last   = this.getNodeData(n, 'lastDelta'),
                 bounds = node.getBoundingClientRect(),
-                center = this._getNodeData(n, 'center');
+                center = this.getNodeData(n, 'center');
 
             // TODO: optimise to update only visible elements
             // WORKAROUND FOR ISSUE #10
@@ -729,7 +731,7 @@ class ProximityEffect extends EventTarget
         			for(let f=0; f<this._effects.length; f++)
         			{
         				let effect   = this._effects[f],
-                            nodeVals = this._getNodeData(n, 'effects')[f];
+                            nodeVals = this.getNodeData(n, 'effects')[f];
 
                         let near     = nodeVals.near,
                             far      = nodeVals.far,
