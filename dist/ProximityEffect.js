@@ -168,11 +168,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         _this.update = _this.update.bind(_this);
 
-        window.addEventListener('scroll', _this.windowEvent.bind(_this));
-        window.addEventListener('resize', _this.windowEvent.bind(_this));
+        window.addEventListener('scroll', _this.reflowEvent.bind(_this));
+        window.addEventListener('resize', _this.reflowEvent.bind(_this));
 
         document.addEventListener('mousemove', _this.updatePointer.bind(_this));
-        document.dispatchEvent(new MouseEvent('mousemove'));
 
         // TODO: add alternative trigger modes
 
@@ -195,6 +194,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
         		break;
         }*/
 
+        document.dispatchEvent(new MouseEvent('mousemove'));
         window.requestAnimationFrame(_this.update);
         return _this;
     }
@@ -282,16 +282,21 @@ var ProximityEffect = function (_extendableBuiltin2) {
         value: function setCenterPoints() {
             for (var n = 0; n < this.nodes.length; n++) {
                 var node = this.nodes[n],
-                    bounds = node.getBoundingClientRect(),
+                    css = node.style.cssText;
+
+                node.style.cssText = '';
+
+                var bounds = node.getBoundingClientRect(),
                     x = (bounds.left + bounds.right) * 0.5 - this.offsetX,
                     y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY,
-                    jit = this.getNodeData(n, 'jitter');
+                    jitter = this.getNodeData(n, 'jitter');
 
-                if (this.jitter > 0 && jit) {
-                    x += jit.x;
-                    y += jit.y;
+                if (jitter && this.jitter > 0) {
+                    x += jitter.x;
+                    y += jitter.y;
                 }
 
+                node.style.cssText = css;
                 this._setNodeData(n, 'center', { x: x, y: y });
             }
         }
@@ -330,9 +335,11 @@ var ProximityEffect = function (_extendableBuiltin2) {
             this._pointer.y = evt.clientY;
         }
     }, {
-        key: 'windowEvent',
-        value: function windowEvent(evt) {
+        key: 'reflowEvent',
+        value: function reflowEvent(evt) {
             var _this2 = this;
+
+            if (evt.currentTarget !== this) this.dispatchEvent(new Event('reflow'));
 
             // TODO: is this a hack? or the best way to do it?
             if (!this.preventCenterCalculations) window.setTimeout(function () {

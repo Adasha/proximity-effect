@@ -129,11 +129,10 @@ class ProximityEffect extends EventTarget
 
         this.update = this.update.bind(this);
 
-        window.addEventListener('scroll', this.windowEvent.bind(this));
-        window.addEventListener('resize', this.windowEvent.bind(this));
+        window.addEventListener('scroll', this.reflowEvent.bind(this));
+        window.addEventListener('resize', this.reflowEvent.bind(this));
 
         document.addEventListener('mousemove', this.updatePointer.bind(this));
-        document.dispatchEvent(new MouseEvent('mousemove'));
 
         // TODO: add alternative trigger modes
 
@@ -157,6 +156,7 @@ class ProximityEffect extends EventTarget
     			break;
     	}*/
 
+        document.dispatchEvent(new MouseEvent('mousemove'));
         window.requestAnimationFrame(this.update);
     }
 
@@ -592,17 +592,22 @@ class ProximityEffect extends EventTarget
     	for(let n=0; n<this.nodes.length; n++)
     	{
     		let node   = this.nodes[n],
-    			bounds = node.getBoundingClientRect(),
+                css    = node.style.cssText;
+
+            node.style.cssText = '';
+
+    		let bounds = node.getBoundingClientRect(),
                 x      = (bounds.left+bounds.right )*0.5 - this.offsetX,
                 y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY,
-                jit    = this.getNodeData(n, 'jitter');
+                jitter = this.getNodeData(n, 'jitter');
 
-            if(this.jitter>0 && jit)
+            if(jitter && this.jitter>0)
             {
-                x += jit.x;
-                y += jit.y;
+                x += jitter.x;
+                y += jitter.y;
             }
 
+            node.style.cssText = css;
     		this._setNodeData(n, 'center', {x: x, y: y});
         }
     }
@@ -661,8 +666,10 @@ class ProximityEffect extends EventTarget
 
 
 
-    windowEvent(evt)
+    reflowEvent(evt)
     {
+        if(evt.currentTarget!==this) this.dispatchEvent(new Event('reflow'));
+
         // TODO: is this a hack? or the best way to do it?
         if(!this.preventCenterCalculations) window.setTimeout(() => this.setCenterPoints(), 1);
     }
