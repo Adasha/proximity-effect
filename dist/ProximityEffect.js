@@ -164,52 +164,62 @@ var ProximityEffect = function (_extendableBuiltin2) {
         _this.mode = _this._params.mode || DEFAULT_MODE;
 
         _this.preventCenterCalculations = false;
-        _this.setCenterPoints();
-
-        _this.update = _this.update.bind(_this);
-
-        window.addEventListener('scroll', _this.reflowEvent.bind(_this));
-        window.addEventListener('resize', _this.reflowEvent.bind(_this));
-
-        document.addEventListener('mousemove', _this.updatePointer.bind(_this));
-
-        // TODO: add alternative trigger modes
-
-        /*let b = document.body;
-        b.removeEventListener('mousemove',  update());
-        b.removeEventListener('enterframe', update());
-        window.clearInterval(_frameLoop);
-         	switch(mode)
-        {
-        	case 'mousemove' :
-        		b.addEventListener('mousemove', update());
-        		break;
-        	case 'enterframe' :
-        		b.addEventListener('enterframe', update());
-        		_frameLoop = window.setInterval(() =>
-        			b.dispatchEvent(new Event('enterframe'));
-        		, 1000/params.FPS);
-        		break;
-        	case 'redraw' :
-        		break;
-        }*/
-
-        document.dispatchEvent(new MouseEvent('mousemove'));
-        window.requestAnimationFrame(_this.update);
+        //fix for DOM readiness
+        if (document.readyState === 'completed') _this.init();else window.addEventListener('load', function () {
+            return _this.init();
+        });
         return _this;
     }
 
-    /////////////////////////////////
-    //                             //
-    //     GETTER/SETTER PROPS     //
-    //                             //
-    /////////////////////////////////
-
-
-    // TARGET [Element||falsy]
-    // Specify an Element to track, or set to falsy for mouse
-
     _createClass(ProximityEffect, [{
+        key: 'init',
+        value: function init() {
+            this.setCenterPoints();
+
+            this.update = this.update.bind(this);
+
+            window.addEventListener('scroll', this.reflowEvent.bind(this));
+            window.addEventListener('resize', this.reflowEvent.bind(this));
+
+            document.addEventListener('mousemove', this.updatePointer.bind(this));
+
+            // TODO: add alternative trigger modes
+
+            /*let b = document.body;
+            b.removeEventListener('mousemove',  update());
+            b.removeEventListener('enterframe', update());
+            window.clearInterval(_frameLoop);
+             	switch(mode)
+            {
+            	case 'mousemove' :
+            		b.addEventListener('mousemove', update());
+            		break;
+            	case 'enterframe' :
+            		b.addEventListener('enterframe', update());
+            		_frameLoop = window.setInterval(() =>
+            			b.dispatchEvent(new Event('enterframe'));
+            		, 1000/params.FPS);
+            		break;
+            	case 'redraw' :
+            		break;
+            }*/
+
+            document.dispatchEvent(new MouseEvent('mousemove'));
+            this.dispatchEvent(new Event('ready'));
+            window.requestAnimationFrame(this.update);
+        }
+
+        /////////////////////////////////
+        //                             //
+        //     GETTER/SETTER PROPS     //
+        //                             //
+        /////////////////////////////////
+
+
+        // TARGET [Element||falsy]
+        // Specify an Element to track, or set to falsy for mouse
+
+    }, {
         key: 'addEffect',
 
 
@@ -446,37 +456,20 @@ var ProximityEffect = function (_extendableBuiltin2) {
             return this._nodes;
         },
         set: function set(n) {
-            var nodes = void 0;
-
-            if (n instanceof NodeList) {
-                console.log('NodeList with ' + n.length + ' childNodes found');
-                nodes = n;
+            if (!(n instanceof NodeList)) {
+                //console.log(`NodeList with ${n.length} childNodes found`);
+                console.log(n + ' is not a node list');
+                return;
             }
-            // else if(n instanceof HTMLElement)
-            // {
-            //     console.log(`HTMLElement with ${n.children.length} children found`);
-            //     if(n.children.length<1)
-            //     {
-            //         let h = document.createElement('span');
-            //         n.parentNode.insertBefore(h, n);
-            //         h.appendChild(n);
-            //         n = h;
-            //     }
-            //     nodes = n.children;
-            // }
-            else {
-                    console.log(n + ' is not a node list');
-                    return;
-                }
 
-            if (nodes.length < 1) {
+            if (n.length < 1) {
                 console.log('No nodes found in ' + n);
                 return;
             }
 
-            this._nodes = [].slice.call(nodes);
-            this._nodeData = this._nodes.map(function (n) {
-                node: n;
+            this._nodes = [].slice.call(n);
+            this._nodeData = this._nodes.map(function (i) {
+                return { node: i };
             });
 
             if (this._params && !this.preventCenterCalculations) this.setCenterPoints();

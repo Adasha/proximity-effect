@@ -125,6 +125,14 @@ class ProximityEffect extends EventTarget
 
 
         this.preventCenterCalculations = false;
+        //fix for DOM readiness
+       	if(document.readyState==='completed') this.init();
+       	else window.addEventListener('load', () => this.init());
+    }
+
+
+    init()
+    {
         this.setCenterPoints();
 
         this.update = this.update.bind(this);
@@ -157,6 +165,7 @@ class ProximityEffect extends EventTarget
     	}*/
 
         document.dispatchEvent(new MouseEvent('mousemove'));
+        this.dispatchEvent(new Event('ready'));
         window.requestAnimationFrame(this.update);
     }
 
@@ -199,40 +208,21 @@ class ProximityEffect extends EventTarget
 
     set nodes(n)
     {
-        let nodes;
-
-
-        if(n instanceof NodeList)
+        if(!(n instanceof NodeList))
         {
-            console.log(`NodeList with ${n.length} childNodes found`);
-            nodes = n;
-        }
-        // else if(n instanceof HTMLElement)
-        // {
-        //     console.log(`HTMLElement with ${n.children.length} children found`);
-        //     if(n.children.length<1)
-        //     {
-        //         let h = document.createElement('span');
-        //         n.parentNode.insertBefore(h, n);
-        //         h.appendChild(n);
-        //         n = h;
-        //     }
-        //     nodes = n.children;
-        // }
-        else
-      	{
-    		console.log(`${n} is not a node list`);
+            //console.log(`NodeList with ${n.length} childNodes found`);
+            console.log(`${n} is not a node list`);
     		return;
-      	}
+        }
 
-        if(nodes.length<1)
+        if(n.length<1)
       	{
     		console.log(`No nodes found in ${n}`);
     		return;
       	}
 
-        this._nodes = [].slice.call(nodes);
-        this._nodeData = this._nodes.map(n => {node: n});
+        this._nodes = [].slice.call(n);
+        this._nodeData = this._nodes.map(i => ({node: i}));
 
 		if(this._params && !this.preventCenterCalculations) this.setCenterPoints();
     }
@@ -538,7 +528,7 @@ class ProximityEffect extends EventTarget
             let effects = this.getNodeData(i, 'effects') || this._setNodeData(i, 'effects', [])['effects'];
             effects.push({
                 near: near.scatter ? near.value+((Math.random()-0.5)*near.scatter) : near.value,
-                far: far.scatter ? far.value+((Math.random()-0.5)*far.scatter) : far.value
+                far:   far.scatter ?  far.value+((Math.random()-0.5)* far.scatter) : far.value
             });
         }
     }
