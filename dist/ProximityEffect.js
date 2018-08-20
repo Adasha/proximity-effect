@@ -292,9 +292,9 @@ var ProximityEffect = function (_extendableBuiltin2) {
         value: function setCenterPoints() {
             for (var n = 0; n < this.nodes.length; n++) {
                 var node = this.nodes[n],
-                    css = node.style.cssText;
+                    cssTxt = node.style.cssText;
 
-                node.style.cssText = '';
+                node.style.cssText = this.getNodeData(n, 'style');
 
                 var bounds = node.getBoundingClientRect(),
                     x = (bounds.left + bounds.right) * 0.5 - this.offsetX,
@@ -306,7 +306,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
                     y += jitter.y;
                 }
 
-                node.style.cssText = css;
+                node.style.cssText = cssTxt;
                 this._setNodeData(n, 'center', { x: x, y: y });
             }
         }
@@ -469,7 +469,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
             this._nodes = [].slice.call(n);
             this._nodeData = this._nodes.map(function (i) {
-                return { node: i };
+                return { node: i, style: i.style.cssText };
             });
 
             if (this._params && !this.preventCenterCalculations) this.setCenterPoints();

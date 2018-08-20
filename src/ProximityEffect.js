@@ -222,7 +222,7 @@ class ProximityEffect extends EventTarget
       	}
 
         this._nodes = [].slice.call(n);
-        this._nodeData = this._nodes.map(i => ({node: i}));
+        this._nodeData = this._nodes.map(i => ({node: i, style: i.style.cssText}));
 
 		if(this._params && !this.preventCenterCalculations) this.setCenterPoints();
     }
@@ -582,9 +582,9 @@ class ProximityEffect extends EventTarget
     	for(let n=0; n<this.nodes.length; n++)
     	{
     		let node   = this.nodes[n],
-                css    = node.style.cssText;
+                cssTxt = node.style.cssText;
 
-            node.style.cssText = '';
+            node.style.cssText = this.getNodeData(n, 'style');
 
     		let bounds = node.getBoundingClientRect(),
                 x      = (bounds.left+bounds.right )*0.5 - this.offsetX,
@@ -597,7 +597,7 @@ class ProximityEffect extends EventTarget
                 y += jitter.y;
             }
 
-            node.style.cssText = css;
+            node.style.cssText = cssTxt;
     		this._setNodeData(n, 'center', {x: x, y: y});
         }
     }
