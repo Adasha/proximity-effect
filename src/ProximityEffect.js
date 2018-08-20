@@ -122,6 +122,7 @@ class ProximityEffect extends EventTarget
         this.direction = this._params.direction || DEFAULT_DIRECTION;
         this.FPS       = this._params.FPS       || DEFAULT_FPS;
         this.mode      = this._params.mode      || DEFAULT_MODE;
+        this.target    = this._params.target;
 
 
         this.preventCenterCalculations = false;
@@ -186,12 +187,12 @@ class ProximityEffect extends EventTarget
 
     get target()
     {
-        return this._target;
+        return this._params.target;
     }
 
     set target(t)
     {
-        if(!t || t.getBoundingClientRect()) this._target = t;
+        if(!t || t.getBoundingClientRect()) this._params.target = t;
         else console.log(`${t} is not a valid target`);
     }
 
@@ -380,7 +381,7 @@ class ProximityEffect extends EventTarget
         this._params.jitter = constrain(num, 0);
         for(let i=0; i<this.nodes.length; i++)
         {
-            this._setNodeData(i, 'jitter', {
+            this._setNodeIndexData(i, 'jitter', {
                 x: (Math.random()-0.5) * this.jitter,
                 y: (Math.random()-0.5) * this.jitter
             });
@@ -525,7 +526,7 @@ class ProximityEffect extends EventTarget
 
         for(let i=0; i<this._nodeData.length; i++)
         {
-            let effects = this.getNodeData(i, 'effects') || this._setNodeData(i, 'effects', [])['effects'];
+            let effects = this.getNodeIndexData(i, 'effects') || this._setNodeIndexData(i, 'effects', [])['effects'];
             effects.push({
                 near: near.scatter ? near.value+((Math.random()-0.5)*near.scatter) : near.value,
                 far:   far.scatter ?  far.value+((Math.random()-0.5)* far.scatter) : far.value
@@ -563,14 +564,14 @@ class ProximityEffect extends EventTarget
 
     distanceFrom(node)
     {
-        return this.getNodeData(this.nodes.findIndex(n => n===node), 'distance');
+        return this.getNodeIndexData(this.nodes.findIndex(n => n===node), 'distance');
     }
 
 
 
     distanceFromIndex(i)
     {
-        return this.getNodeData(i, 'distance');
+        return this.getNodeIndexData(i, 'distance');
     }
 
 
@@ -584,12 +585,12 @@ class ProximityEffect extends EventTarget
     		let node   = this.nodes[n],
                 cssTxt = node.style.cssText;
 
-            node.style.cssText = this.getNodeData(n, 'style');
+            node.style.cssText = this.getNodeIndexData(n, 'style');
 
     		let bounds = node.getBoundingClientRect(),
                 x      = (bounds.left+bounds.right )*0.5 - this.offsetX,
                 y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY,
-                jitter = this.getNodeData(n, 'jitter');
+                jitter = this.getNodeIndexData(n, 'jitter');
 
             if(jitter && this.jitter>0)
             {
@@ -598,17 +599,24 @@ class ProximityEffect extends EventTarget
             }
 
             node.style.cssText = cssTxt;
-    		this._setNodeData(n, 'center', {x: x, y: y});
+    		this._setNodeIndexData(n, 'center', {x: x, y: y});
         }
     }
 
 
 
 
-
+    // TODO: node search
     getNodeData(n, prop)
     {
         return this._nodeData[n][prop];
+    }
+
+
+
+    getNodeIndexData(i, prop)
+    {
+        return this._nodeData[i][prop];
     }
 
 
@@ -625,7 +633,7 @@ class ProximityEffect extends EventTarget
 
 
 
-    _setNodeData(n, prop, val)
+    _setNodeIndexData(n, prop, val)
     {
         if(!this._nodeData[n]) this._nodeData[n] = {};
         this._nodeData[n][prop] = val;
@@ -675,9 +683,9 @@ class ProximityEffect extends EventTarget
         for(let n=0; n<this.nodes.length; n++)
         {
             let node   = this.nodes[n],
-                last   = this.getNodeData(n, 'lastDelta'),
+                last   = this.getNodeIndexData(n, 'lastDelta'),
                 bounds = node.getBoundingClientRect(),
-                center = this.getNodeData(n, 'center');
+                center = this.getNodeIndexData(n, 'center');
 
             // TODO: optimise to update only visible elements
             // WORKAROUND FOR ISSUE #10
@@ -712,13 +720,13 @@ class ProximityEffect extends EventTarget
         		td = constrain((dd-this.threshold)*this._invRunoff, 0, 1);
                 if(this.invert) td = 1 - td;
 
-                this._setNodeData(n, 'distance', td);
+                this._setNodeIndexData(n, 'distance', td);
 
                 if(last) d = last+(td-last)*(XOR(td>last, this.invert) ? this.decay : this.attack);
                 else d = td;
 
                 d = roundTo(d, this.accuracy);
-                this._setNodeData(n, 'lastDelta', d);
+                this._setNodeIndexData(n, 'lastDelta', d);
 
 
     			if(d<=1 && this._effects)
@@ -728,7 +736,7 @@ class ProximityEffect extends EventTarget
         			for(let f=0; f<this._effects.length; f++)
         			{
         				let effect   = this._effects[f],
-                            nodeVals = this.getNodeData(n, 'effects')[f];
+                            nodeVals = this.getNodeIndexData(n, 'effects')[f];
 
                         let near     = nodeVals.near,
                             far      = nodeVals.far,

@@ -162,6 +162,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
         _this.direction = _this._params.direction || DEFAULT_DIRECTION;
         _this.FPS = _this._params.FPS || DEFAULT_FPS;
         _this.mode = _this._params.mode || DEFAULT_MODE;
+        _this.target = _this._params.target;
 
         _this.preventCenterCalculations = false;
         //fix for DOM readiness
@@ -249,7 +250,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
             });
 
             for (var i = 0; i < this._nodeData.length; i++) {
-                var effects = this.getNodeData(i, 'effects') || this._setNodeData(i, 'effects', [])['effects'];
+                var effects = this.getNodeIndexData(i, 'effects') || this._setNodeIndexData(i, 'effects', [])['effects'];
                 effects.push({
                     near: near.scatter ? near.value + (Math.random() - 0.5) * near.scatter : near.value,
                     far: far.scatter ? far.value + (Math.random() - 0.5) * far.scatter : far.value
@@ -278,14 +279,14 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'distanceFrom',
         value: function distanceFrom(node) {
-            return this.getNodeData(this.nodes.findIndex(function (n) {
+            return this.getNodeIndexData(this.nodes.findIndex(function (n) {
                 return n === node;
             }), 'distance');
         }
     }, {
         key: 'distanceFromIndex',
         value: function distanceFromIndex(i) {
-            return this.getNodeData(i, 'distance');
+            return this.getNodeIndexData(i, 'distance');
         }
     }, {
         key: 'setCenterPoints',
@@ -294,12 +295,12 @@ var ProximityEffect = function (_extendableBuiltin2) {
                 var node = this.nodes[n],
                     cssTxt = node.style.cssText;
 
-                node.style.cssText = this.getNodeData(n, 'style');
+                node.style.cssText = this.getNodeIndexData(n, 'style');
 
                 var bounds = node.getBoundingClientRect(),
                     x = (bounds.left + bounds.right) * 0.5 - this.offsetX,
                     y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY,
-                    jitter = this.getNodeData(n, 'jitter');
+                    jitter = this.getNodeIndexData(n, 'jitter');
 
                 if (jitter && this.jitter > 0) {
                     x += jitter.x;
@@ -307,13 +308,21 @@ var ProximityEffect = function (_extendableBuiltin2) {
                 }
 
                 node.style.cssText = cssTxt;
-                this._setNodeData(n, 'center', { x: x, y: y });
+                this._setNodeIndexData(n, 'center', { x: x, y: y });
             }
         }
+
+        // TODO: node search
+
     }, {
         key: 'getNodeData',
         value: function getNodeData(n, prop) {
             return this._nodeData[n][prop];
+        }
+    }, {
+        key: 'getNodeIndexData',
+        value: function getNodeIndexData(i, prop) {
+            return this._nodeData[i][prop];
         }
 
         ///////////////////////////////
@@ -324,8 +333,8 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
 
     }, {
-        key: '_setNodeData',
-        value: function _setNodeData(n, prop, val) {
+        key: '_setNodeIndexData',
+        value: function _setNodeIndexData(n, prop, val) {
             if (!this._nodeData[n]) this._nodeData[n] = {};
             this._nodeData[n][prop] = val;
             return this._nodeData[n];
@@ -363,9 +372,9 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
             for (var n = 0; n < this.nodes.length; n++) {
                 var node = this.nodes[n],
-                    last = this.getNodeData(n, 'lastDelta'),
+                    last = this.getNodeIndexData(n, 'lastDelta'),
                     bounds = node.getBoundingClientRect(),
-                    center = this.getNodeData(n, 'center');
+                    center = this.getNodeIndexData(n, 'center');
 
                 // TODO: optimise to update only visible elements
                 // WORKAROUND FOR ISSUE #10
@@ -397,19 +406,19 @@ var ProximityEffect = function (_extendableBuiltin2) {
                     td = constrain((dd - this.threshold) * this._invRunoff, 0, 1);
                     if (this.invert) td = 1 - td;
 
-                    this._setNodeData(n, 'distance', td);
+                    this._setNodeIndexData(n, 'distance', td);
 
                     if (last) d = last + (td - last) * (XOR(td > last, this.invert) ? this.decay : this.attack);else d = td;
 
                     d = roundTo(d, this.accuracy);
-                    this._setNodeData(n, 'lastDelta', d);
+                    this._setNodeIndexData(n, 'lastDelta', d);
 
                     if (d <= 1 && this._effects) {
                         var styles = {};
 
                         for (var f = 0; f < this._effects.length; f++) {
                             var effect = this._effects[f],
-                                nodeVals = this.getNodeData(n, 'effects')[f];
+                                nodeVals = this.getNodeIndexData(n, 'effects')[f];
 
                             var near = nodeVals.near,
                                 far = nodeVals.far,
@@ -442,10 +451,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
     }, {
         key: 'target',
         get: function get() {
-            return this._target;
+            return this._params.target;
         },
         set: function set(t) {
-            if (!t || t.getBoundingClientRect()) this._target = t;else console.log(t + ' is not a valid target');
+            if (!t || t.getBoundingClientRect()) this._params.target = t;else console.log(t + ' is not a valid target');
         }
 
         // NODES [NodeList]
@@ -584,7 +593,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
         set: function set(num) {
             this._params.jitter = constrain(num, 0);
             for (var i = 0; i < this.nodes.length; i++) {
-                this._setNodeData(i, 'jitter', {
+                this._setNodeIndexData(i, 'jitter', {
                     x: (Math.random() - 0.5) * this.jitter,
                     y: (Math.random() - 0.5) * this.jitter
                 });
