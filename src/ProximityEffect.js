@@ -562,9 +562,9 @@ class ProximityEffect extends EventTarget
 
 
 
-    distanceFrom(node)
+    distanceFrom(n)
     {
-        return this.getNodeIndexData(this.nodes.findIndex(n => n===node), 'distance');
+        return this.getNodeData(n, 'distance');
     }
 
 
@@ -606,10 +606,10 @@ class ProximityEffect extends EventTarget
 
 
 
-    // TODO: node search
+
     getNodeData(n, prop)
     {
-        return this._nodeData[n][prop];
+        return this._nodeData[this.nodes.findIndex(n => n===node)][prop];
     }
 
 

@@ -278,10 +278,8 @@ var ProximityEffect = function (_extendableBuiltin2) {
         }
     }, {
         key: 'distanceFrom',
-        value: function distanceFrom(node) {
-            return this.getNodeIndexData(this.nodes.findIndex(function (n) {
-                return n === node;
-            }), 'distance');
+        value: function distanceFrom(n) {
+            return this.getNodeData(n, 'distance');
         }
     }, {
         key: 'distanceFromIndex',
@@ -292,12 +290,12 @@ var ProximityEffect = function (_extendableBuiltin2) {
         key: 'setCenterPoints',
         value: function setCenterPoints() {
             for (var n = 0; n < this.nodes.length; n++) {
-                var node = this.nodes[n],
-                    cssTxt = node.style.cssText;
+                var _node = this.nodes[n],
+                    cssTxt = _node.style.cssText;
 
-                node.style.cssText = this.getNodeIndexData(n, 'style');
+                _node.style.cssText = this.getNodeIndexData(n, 'style');
 
-                var bounds = node.getBoundingClientRect(),
+                var bounds = _node.getBoundingClientRect(),
                     x = (bounds.left + bounds.right) * 0.5 - this.offsetX,
                     y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY,
                     jitter = this.getNodeIndexData(n, 'jitter');
@@ -307,17 +305,16 @@ var ProximityEffect = function (_extendableBuiltin2) {
                     y += jitter.y;
                 }
 
-                node.style.cssText = cssTxt;
+                _node.style.cssText = cssTxt;
                 this._setNodeIndexData(n, 'center', { x: x, y: y });
             }
         }
-
-        // TODO: node search
-
     }, {
         key: 'getNodeData',
         value: function getNodeData(n, prop) {
-            return this._nodeData[n][prop];
+            return this._nodeData[this.nodes.findIndex(function (n) {
+                return n === node;
+            })][prop];
         }
     }, {
         key: 'getNodeIndexData',
@@ -371,17 +368,17 @@ var ProximityEffect = function (_extendableBuiltin2) {
             var view = document.documentElement;
 
             for (var n = 0; n < this.nodes.length; n++) {
-                var node = this.nodes[n],
+                var _node2 = this.nodes[n],
                     last = this.getNodeIndexData(n, 'lastDelta'),
-                    bounds = node.getBoundingClientRect(),
+                    bounds = _node2.getBoundingClientRect(),
                     center = this.getNodeIndexData(n, 'center');
 
                 // TODO: optimise to update only visible elements
                 // WORKAROUND FOR ISSUE #10
                 //if(isVisibleInViewport(node) || last<1)
                 if (true) {
-                    var centerX = center.x - (node.dataset['offsetx'] || 0),
-                        centerY = center.y - (node.dataset['offsety'] || 0);
+                    var centerX = center.x - (_node2.dataset['offsetx'] || 0),
+                        centerY = center.y - (_node2.dataset['offsety'] || 0);
 
                     var tx = void 0,
                         ty = void 0;
@@ -428,17 +425,17 @@ var ProximityEffect = function (_extendableBuiltin2) {
                                 val = delta(d, near, far);
 
                             if (!func) {
-                                node.style[rule] = '' + val + unit;
+                                _node2.style[rule] = '' + val + unit;
                             } else {
                                 if (!styles[rule]) styles[rule] = [];
                                 styles[rule].push(func + '(' + val + unit + ')');
                             }
                         }
                         for (var _rule in styles) {
-                            node.style[_rule] = styles[_rule].join(' ');
+                            _node2.style[_rule] = styles[_rule].join(' ');
                         }
                         var ix = Math.floor(d * 1000);
-                        node.style.zIndex = this.invert ? ix : 1000 - ix;
+                        _node2.style.zIndex = this.invert ? ix : 1000 - ix;
                     }
                 }
             }
