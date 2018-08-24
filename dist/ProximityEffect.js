@@ -34,7 +34,7 @@ function _extendableBuiltin(cls) {
 }
 
 /*
-    ProximityEfect class by Adasha
+    ProximityEffect class by Adasha
     Licensed under MPL-2.0
     Repository: https://github.com/Adasha/proximity-effect
     Demos: http://lab.adasha.com/proximity-effect
@@ -125,11 +125,32 @@ var isObject = function isObject(obj) {
     return obj == Object(obj);
 };
 
+/**
+ * Class representing a ProximityEffect.
+ * @extends EventTarget
+ */
+
 var ProximityEffect = function (_extendableBuiltin2) {
     _inherits(ProximityEffect, _extendableBuiltin2);
 
-    // TODO: private vars
+    // TODO: Private variables once possible.
 
+    /**
+     * Create a ProximityEffect instance.
+     * @param {NodeList} nodes - A list of nodes to control.
+     * @param {Object} [params={}] - An object containing effect parameters.
+     * @param {number} [params.threshold=0] - The effect threshold.
+     * @param {number} [params.runoff] - The effect runoff.
+     * @param {number} [params.attack=1] - The effect attack.
+     * @param {number} [params.decay=1] - The effect decay.
+     * @param {number} [params.accuracy] - The effect accuracy.
+     * @param {boolean} [params.invert=false] - Invert distance.
+     * @param {number} [params.offsetX=0] - The global horizontal offset.
+     * @param {number} [params.offsetY=0] - The global vertical offset.
+     * @param {number} [params.jitter=0] - The effect jitter.
+     * @param {string} [params.direction] - The effect direction.
+     * @param {Element} [params.target] - The effect tracker target.
+     */
     function ProximityEffect(nodes) {
         var params = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
@@ -137,12 +158,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         var _this = _possibleConstructorReturn(this, (ProximityEffect.__proto__ || Object.getPrototypeOf(ProximityEffect)).call(this));
 
-        if (!nodes) {
-            var _ret;
-
-            console.log('ProximityEffect: nodes argument is required');
-            return _ret = null, _possibleConstructorReturn(_this, _ret);
-        }
+        if (!nodes) throw new Error('ProximityEffect: nodes argument is required');
 
         _this.preventCenterCalculations = true;
 
@@ -155,6 +171,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
         _this.attack = _this._params.hasOwnProperty('attack') ? _this._params.attack : 1;
         _this.decay = _this._params.hasOwnProperty('decay') ? _this._params.decay : 1;
         _this.accuracy = _this._params.hasOwnProperty('accuracy') ? _this._params.accuracy : DEFAULT_ACCURACY;
+        //this.reverse   = this._params.reverse   || false;
         _this.invert = _this._params.invert || false;
         _this.offsetX = _this._params.offsetX || 0;
         _this.offsetY = _this._params.offsetY || 0;
@@ -164,8 +181,6 @@ var ProximityEffect = function (_extendableBuiltin2) {
         _this.mode = _this._params.mode || DEFAULT_MODE;
         _this.target = _this._params.target;
 
-        _this.preventCenterCalculations = false;
-        //fix for DOM readiness
         if (document.readyState === 'completed') _this.init();else window.addEventListener('load', function () {
             return _this.init();
         });
@@ -175,6 +190,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
     _createClass(ProximityEffect, [{
         key: 'init',
         value: function init() {
+            this.preventCenterCalculations = false;
             this.setCenterPoints();
 
             this.update = this.update.bind(this);
@@ -217,8 +233,10 @@ var ProximityEffect = function (_extendableBuiltin2) {
         /////////////////////////////////
 
 
-        // TARGET [Element||falsy]
-        // Specify an Element to track, or set to falsy for mouse
+        /**
+         * Get the current target
+         * @return {Element|falsy} The current target.
+         */
 
     }, {
         key: 'addEffect',
@@ -231,19 +249,39 @@ var ProximityEffect = function (_extendableBuiltin2) {
         ////////////////////////////
 
 
-        value: function addEffect(str, near, far, params) {
-            if (VALID_EFFECTS.hasOwnProperty(str)) {
-                params = VALID_EFFECTS[str];
-            } else if (params && isObject(params) && typeof params.rule === 'string') {
-                VALID_EFFECTS[str] = params;
-            } else return void console.log(str + ' is not a valid effect type');
+        /**
+         * Add a new effect to the effect stack.
+         * @param {string} name - The effect name.
+         * @param {number|Object} near - The effect value at the closest distance.
+         * @param {number} near.value - The effect value at closest distance, as a property of near.
+         * @param {number} [near.scatter] - The random distribution of the value at the closest distance.
+         * @param {number|Object} far - The effect value at the furthest distance.
+         * @param {number} far.value - The effect value at furthest distance, as a property of far.
+         * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
+         * @param {Object} [params] - An object containing additional effect parameters.
+         * @param {string} params.rule - The CSS style rule to use.
+         * @param {string} [params.func] - The CSS function of the given style.
+         * @param {number} [params.min] - The minimum effect value.
+         * @param {number} [params.max] - The maximum effect value.
+         * @param {number} [params.default] - The default effect value.
+         * @param {string} [params.unit] - The effect CSS unit.
+         */
+        value: function addEffect(name, near, far, params) {
+            if (VALID_EFFECTS.hasOwnProperty(name)) {
+                /** Effect already exists **/
+                params = VALID_EFFECTS[name];
+            } else if (params && isObject(params) && typeof params.rule === 'string') // TODO: do we need any deeper validation checks?
+                {
+                    /** Register custom effect **/
+                    VALID_EFFECTS[name] = params;
+                } else return void console.log(name + ' is not a valid effect type');
 
             if (typeof near === 'number') near = valToObj(constrain(near, params.min, params.max));
             if (typeof far === 'number') far = valToObj(constrain(far, params.min, params.max));
 
             this._effects = this._effects || [];
             this._effects.push({
-                type: str,
+                type: name,
                 near: near,
                 far: far,
                 params: params
@@ -257,35 +295,65 @@ var ProximityEffect = function (_extendableBuiltin2) {
                 });
             }
         }
+
+        /**
+         * Check if a named effect is already on the stack.
+         * @param {string} name - The name of the effect to check for.
+         * @return {boolean} True if the effect exists at least once.
+         */
+
     }, {
         key: 'hasEffect',
-        value: function hasEffect(str) {
-            return this._effects.find(function (eff) {
-                return eff['type'] === str;
+        value: function hasEffect(name) {
+            return this.effects.find(function (eff) {
+                return eff['type'] === name;
             }) !== undefined;
         }
+
+        /**
+         * Remove all instances of an effect from the stack.
+         * @param {string} name - The name of the effect to remove.
+         */
+
     }, {
         key: 'removeEffect',
-        value: function removeEffect(str) {
-            if (this.hasEffect(str)) {
-                for (var i = 0; i < this._effects.length; i++) {
-                    var eff = this._effects[i];
-                    if (eff['type'] === str) {
-                        this._effects.splice(i, 1);
+        value: function removeEffect(name) {
+            if (this.hasEffect(name)) {
+                for (var i = 0; i < this.effects.length; i++) {
+                    var eff = this.effects[i];
+                    if (eff['type'] === name) {
+                        this.effects.splice(i, 1);
                     }
                 }
             }
         }
+
+        /**
+         * Get the distance to the current target from the given node.
+         * @param {Element} n - The node to check.
+         */
+
     }, {
         key: 'distanceFrom',
         value: function distanceFrom(n) {
             return this.getNodeData(n, 'distance');
         }
+
+        /**
+         * Get the distance to the current target from the given node index.
+         * @param {number} i - The node index to check.
+         */
+
     }, {
         key: 'distanceFromIndex',
         value: function distanceFromIndex(i) {
             return this.getNodeIndexData(i, 'distance');
         }
+
+        /**
+         * Recalculate each node's centre point, including global offset and jitter.
+         */
+
     }, {
         key: 'setCenterPoints',
         value: function setCenterPoints() {
@@ -309,6 +377,14 @@ var ProximityEffect = function (_extendableBuiltin2) {
                 this._setNodeIndexData(n, 'center', { x: x, y: y });
             }
         }
+
+        /**
+         * Return an object containing the given node's effect data.
+         * @param {Element} n - The node to return data for.
+         * @param {string} prop - The data property to return.
+         * @return {Object} An object containing the node's data.
+         */
+
     }, {
         key: 'getNodeData',
         value: function getNodeData(n, prop) {
@@ -316,6 +392,14 @@ var ProximityEffect = function (_extendableBuiltin2) {
                 return n === node;
             })][prop];
         }
+
+        /**
+         * Return an object containing the given node index's effect data.
+         * @param {number} i - The node index to return data for.
+         * @param {string} prop - The data property to return.
+         * @return {Object} An object containing the node's data.
+         */
+
     }, {
         key: 'getNodeIndexData',
         value: function getNodeIndexData(i, prop) {
@@ -373,70 +457,65 @@ var ProximityEffect = function (_extendableBuiltin2) {
                     bounds = _node2.getBoundingClientRect(),
                     center = this.getNodeIndexData(n, 'center');
 
-                // TODO: optimise to update only visible elements
-                // WORKAROUND FOR ISSUE #10
-                //if(isVisibleInViewport(node) || last<1)
-                if (true) {
-                    var centerX = center.x - (_node2.dataset['offsetx'] || 0),
-                        centerY = center.y - (_node2.dataset['offsety'] || 0);
+                var centerX = center.x - (_node2.dataset['offsetx'] || 0),
+                    centerY = center.y - (_node2.dataset['offsety'] || 0);
 
-                    var tx = void 0,
-                        ty = void 0;
+                var tx = void 0,
+                    ty = void 0;
 
-                    if (this.target) {
-                        var b = this.target.getBoundingClientRect();
-                        tx = (b.left + b.right) * 0.5;
-                        ty = (b.top + b.bottom) * 0.5;
-                    } else {
-                        tx = this.pointer.x;
-                        ty = this.pointer.y;
-                    }
+                if (this.target) {
+                    var b = this.target.getBoundingClientRect();
+                    tx = (b.left + b.right) * 0.5;
+                    ty = (b.top + b.bottom) * 0.5;
+                } else {
+                    tx = this.pointer.x;
+                    ty = this.pointer.y;
+                }
 
-                    var dx = tx - centerX,
-                        dy = ty - centerY,
-                        dd = void 0,
-                        td = void 0,
-                        d = void 0;
+                var dx = tx - centerX,
+                    dy = ty - centerY,
+                    dd = void 0,
+                    td = void 0,
+                    d = void 0;
 
-                    if (this.direction === 'both') dd = Math.sqrt(dx * dx + dy * dy);else dd = Math.abs(this.direction === 'horizontal' ? dx : dy);
+                if (this.direction === 'both') dd = Math.sqrt(dx * dx + dy * dy);else dd = Math.abs(this.direction === 'horizontal' ? dx : dy);
 
-                    td = constrain((dd - this.threshold) * this._invRunoff, 0, 1);
-                    if (this.invert) td = 1 - td;
+                td = constrain((dd - this.threshold) * this._invRunoff, 0, 1);
+                if (this.invert) td = 1 - td;
 
-                    this._setNodeIndexData(n, 'distance', td);
+                this._setNodeIndexData(n, 'distance', td);
 
-                    if (last) d = last + (td - last) * (XOR(td > last, this.invert) ? this.decay : this.attack);else d = td;
+                if (last) d = last + (td - last) * (XOR(td > last, this.invert) ? this.decay : this.attack);else d = td;
 
-                    d = roundTo(d, this.accuracy);
-                    this._setNodeIndexData(n, 'lastDelta', d);
+                d = roundTo(d, this.accuracy);
+                this._setNodeIndexData(n, 'lastDelta', d);
 
-                    if (d <= 1 && this._effects) {
-                        var styles = {};
+                if (this.effects.length > 0) {
+                    var styles = {};
 
-                        for (var f = 0; f < this._effects.length; f++) {
-                            var effect = this._effects[f],
-                                nodeVals = this.getNodeIndexData(n, 'effects')[f];
+                    for (var f = 0; f < this._effects.length; f++) {
+                        var effect = this._effects[f],
+                            nodeVals = this.getNodeIndexData(n, 'effects')[f];
 
-                            var near = nodeVals.near,
-                                far = nodeVals.far,
-                                rule = effect.params.rule,
-                                func = effect.params.func,
-                                unit = effect.params.unit || '',
-                                val = delta(d, near, far);
+                        var near = nodeVals.near,
+                            far = nodeVals.far,
+                            rule = effect.params.rule,
+                            func = effect.params.func,
+                            unit = effect.params.unit || '',
+                            val = delta(d, near, far);
 
-                            if (!func) {
-                                _node2.style[rule] = '' + val + unit;
-                            } else {
-                                if (!styles[rule]) styles[rule] = [];
-                                styles[rule].push(func + '(' + val + unit + ')');
-                            }
+                        if (!func) {
+                            _node2.style[rule] = '' + val + unit;
+                        } else {
+                            if (!styles[rule]) styles[rule] = [];
+                            styles[rule].push(func + '(' + val + unit + ')');
                         }
-                        for (var _rule in styles) {
-                            _node2.style[_rule] = styles[_rule].join(' ');
-                        }
-                        var ix = Math.floor(d * 1000);
-                        _node2.style.zIndex = this.invert ? ix : 1000 - ix;
                     }
+                    for (var _rule in styles) {
+                        _node2.style[_rule] = styles[_rule].join(' ');
+                    }
+                    var ix = Math.floor(d * 1000);
+                    _node2.style.zIndex = this.invert ? ix : 1000 - ix;
                 }
             }
 
@@ -449,29 +528,36 @@ var ProximityEffect = function (_extendableBuiltin2) {
         key: 'target',
         get: function get() {
             return this._params.target;
-        },
-        set: function set(t) {
-            if (!t || t.getBoundingClientRect()) this._params.target = t;else console.log(t + ' is not a valid target');
         }
 
-        // NODES [NodeList]
+        /**
+         * Set the current target
+         * @param {Element|falsy} t - A reference to a DOM Element, or falsy to target mouse.
+         */
+        ,
+        set: function set(t) {
+            if (!t || t.getBoundingClientRect()) this._params.target = t;else return void console.log(t + ' is not a valid target');
+        }
+
+        /**
+         * Get the list of nodes.
+         * @return {Array.Node} The node array.
+         */
 
     }, {
         key: 'nodes',
         get: function get() {
             return this._nodes;
-        },
-        set: function set(n) {
-            if (!(n instanceof NodeList)) {
-                //console.log(`NodeList with ${n.length} childNodes found`);
-                console.log(n + ' is not a node list');
-                return;
-            }
+        }
 
-            if (n.length < 1) {
-                console.log('No nodes found in ' + n);
-                return;
-            }
+        /**
+         * Set the list of nodes.
+         * @param {NodeList.Element} n - The list of nodes.
+         */
+        ,
+        set: function set(n) {
+            if (!(n instanceof NodeList)) throw new Error(n + ' is not a node list');
+            if (n.length < 1) throw new Error('No nodes found in ' + n);
 
             this._nodes = [].slice.call(n);
             this._nodeData = this._nodes.map(function (i) {
@@ -481,30 +567,62 @@ var ProximityEffect = function (_extendableBuiltin2) {
             if (this._params && !this.preventCenterCalculations) this.setCenterPoints();
         }
 
-        // THRESHOLD [Number>=0]
+        /**
+         * Get the list of effects.
+         * @return {Array.Object} The effects array.
+         */
+
+    }, {
+        key: 'effects',
+        get: function get() {
+            return this._effects;
+        }
+
+        /**
+         * Get the effect threshold.
+         * @return {number} The threshold value, in pixels.
+         */
 
     }, {
         key: 'threshold',
         get: function get() {
             return this._params.threshold;
-        },
+        }
+
+        /**
+         * Set the effect threshold.
+         * @param {number} num - The new threshold value, in pixels.
+         */
+        ,
         set: function set(num) {
             this._params.threshold = constrain(num, 0);
         }
 
-        // RUNOFF [Number>=0]
+        /**
+         * Get the effect runoff.
+         * @return {number} The runoff value, in pixels.
+         */
 
     }, {
         key: 'runoff',
         get: function get() {
             return this._params.runoff;
-        },
+        }
+
+        /**
+         * Set the effect runoff.
+         * @param {number} num - The new runoff value, in pixels.
+         */
+        ,
         set: function set(num) {
             this._params.runoff = constrain(num, 0);
             this._invRunoff = 1 / this._params.runoff;
         }
 
-        // BOUNDARY [READ-ONLY Number]
+        /**
+         * Get the effect boundary.
+         * @return {number} The boundary value, in pixels.
+         */
 
     }, {
         key: 'boundary',
@@ -512,64 +630,98 @@ var ProximityEffect = function (_extendableBuiltin2) {
             return this.threshold + this.runoff;
         }
 
-        /*
-            // REVERSE [Boolean]
-        
-            get reverse()
-            {
-                return this._params.reverse;
-            }
-        
-            set reverse(bool)
-            {
-                this._params.reverse = !!bool;
-            }
-        */
-
-        // INVERT [Boolean]
+        /**
+         * Get the invert state.
+         * @return {boolean} The invert value.
+         */
 
     }, {
         key: 'invert',
         get: function get() {
             return this._params.invert;
-        },
+        }
+
+        /**
+         * Set the invert state.
+         * @param {boolean} bool - The new invert value.
+         */
+        ,
         set: function set(bool) {
             this._params.invert = !!bool;
         }
 
-        // ATTACK [0>=Number>=1]
+        /**
+         * Get the effect attack.
+         * @return {number} The attack value.
+         */
 
     }, {
         key: 'attack',
         get: function get() {
             return this._params.attack;
-        },
+        }
+
+        /**
+         * Set the effect attack.
+         * @param {number} num - The new attack value.
+         */
+        ,
         set: function set(num) {
             this._params.attack = constrain(num, 0, 1);
         }
 
-        // DECAY [0>=Number>=1]
+        /**
+         * Get the effect decay.
+         * @return {number} The decay value.
+         */
 
     }, {
         key: 'decay',
         get: function get() {
             return this._params.decay;
-        },
+        }
+
+        /**
+         * Set the effect decay.
+         * @param {number} num - The new decay value.
+         */
+        ,
         set: function set(num) {
             this._params.decay = constrain(num, 0, 1);
         }
 
-        // OFFSET [Number]
+        /**
+         * Get the global horizontal offset.
+         * @return {number} The offset value, in pixels.
+         */
 
     }, {
         key: 'offsetX',
         get: function get() {
             return this._params.offsetX;
-        },
+        }
+
+        /**
+         * Get the global vertical offset.
+         * @return {number} The offset value, in pixels.
+         */
+        ,
+
+
+        /**
+         * Set the global horizontal offset.
+         * @param {number} num - The new offset value, in pixels.
+         */
         set: function set(num) {
             this._params.offsetX = num;
             if (!this.preventCenterCalculations) this.setCenterPoints();
         }
+
+        /**
+         * Set the global vertical offset, in pixels.
+         * @param {number} num - The new offset value.
+         */
+
     }, {
         key: 'offsetY',
         get: function get() {
@@ -580,13 +732,22 @@ var ProximityEffect = function (_extendableBuiltin2) {
             if (!this.preventCenterCalculations) this.setCenterPoints();
         }
 
-        // JITTER [Number>=0]
+        /**
+         * Get the jitter value.
+         * @return {number} The jitter value, in pixels.
+         */
 
     }, {
         key: 'jitter',
         get: function get() {
             return this._params.jitter;
-        },
+        }
+
+        /**
+         * Set the jitter value.
+         * @param {number} num - The new jitter value, in pixels.
+         */
+        ,
         set: function set(num) {
             this._params.jitter = constrain(num, 0);
             for (var i = 0; i < this.nodes.length; i++) {
@@ -598,17 +759,26 @@ var ProximityEffect = function (_extendableBuiltin2) {
             if (!this.preventCenterCalculations) this.setCenterPoints();
         }
 
-        // DIRECTION [String]
+        /**
+         * Get the effect direction.
+         * @return {string} The direction value.
+         */
 
     }, {
         key: 'direction',
         get: function get() {
             return this._params.direction;
-        },
+        }
+
+        /**
+         * Set the effect direction.
+         * @param {string} str - The new direction value, both|horizontal|vertical.
+         */
+        ,
         set: function set(str) {
             if (VALID_DIRECTIONS.has(str)) {
                 this._params.direction = str;
-            } else console.log(str + ' not a valid direction.');
+            } else return void console.log(str + ' not a valid direction.');
         }
 
         // FPS [Number>0]
@@ -621,7 +791,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
         set: function set(num) {
             if (num > 0) {
                 this._params.FPS = constrain(num, 0);
-            } else console.log('Invalid FPS requested');
+            } else return void console.log('Invalid FPS requested');
         }
 
         // MODE [String]
@@ -635,23 +805,34 @@ var ProximityEffect = function (_extendableBuiltin2) {
             if (str !== this._params.mode) {
                 if (VALID_MODES.has(str)) {
                     this._params.mode = str;
-                } else console.log(str + ' not a recognised mode.');
-            } else console.log('Already in ' + str + ' mode. Mode not changed.');
+                } else return void console.log(str + ' not a recognised mode.');
+            } else return void console.log('Already in ' + str + ' mode. Mode not changed.');
         }
 
-        // ACCURACY [Number>=0]
+        /**
+         * Get the effect accuracy.
+         * @return {number} The accuracy value.
+         */
 
     }, {
         key: 'accuracy',
         get: function get() {
             return this._params.accuracy;
-        },
+        }
+
+        /**
+         * Set the effect accuracy.
+         * @param {number} num - The new accuracy value.
+         */
+        ,
         set: function set(num) {
             this._params.accuracy = Math.floor(constrain(num, 0));
         }
 
-        // POINTER
-        // Convenience property, provides mouse coordinates without requiring MouseEvent
+        /**
+         * Get the last known mouse pointer coordinates, relative to the viewport, in pixels.
+         * @return {Object} An object containing x and y properties.
+         */
 
     }, {
         key: 'pointer',

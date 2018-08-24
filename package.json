@@ -14,6 +14,7 @@
 	},
 	"scripts": {
 		"build": "gulp babel && gulp minify",
+		"build:docs": "jsdoc ./src/ProximityEffect.js -d docs",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"keywords": [
@@ -69,6 +70,7 @@
 		"gulp-babel": "^7.0.1",
 		"gulp-gzip": "^1.4.2",
 		"gulp-rename": "^1.4.0",
-		"gulp-uglify": "^3.0.1"
+		"gulp-uglify": "^3.0.1",
+		"jsdoc": "^3.5.5"
 	}
 }

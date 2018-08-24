@@ -1,11 +1,39 @@
-﻿/*
- * ProximityEffect class by Adasha
- * Licensed under MPL-2.0
- * Repository: https://github.com/Adasha/proximity-effect
- * Demos: http://lab.adasha.com/proximity-effect
- */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: ProximityEffect.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: ProximityEffect.js</h1>
+
+    
 
 
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>﻿/*
+    ProximityEffect class by Adasha
+    Licensed under MPL-2.0
+    Repository: https://github.com/Adasha/proximity-effect
+    Demos: http://lab.adasha.com/proximity-effect
+*/
+
+// TODO: only build after page layout complete
 
 let VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
     VALID_DIRECTIONS  = new Set(['both', 'horizontal', 'vertical']),
@@ -52,8 +80,8 @@ let VALID_MODES       = new Set(['mousemove', 'enterframe', 'redraw']),
 
 const constrain = (num, min, max) => {
     if(typeof num!=='number') return NaN;
-    if(min!==undefined && min!==null && typeof min==='number') num = Math.max(num, min);
-    if(max!==undefined && max!==null && typeof max==='number') num = Math.min(num, max);
+    if(min!==undefined &amp;&amp; min!==null &amp;&amp; typeof min==='number') num = Math.max(num, min);
+    if(max!==undefined &amp;&amp; max!==null &amp;&amp; typeof max==='number') num = Math.min(num, max);
     return num;
 };
 
@@ -66,12 +94,12 @@ const delta = (num, a, b) => (b-a)*constrain(num, 0, 1)+a;
 
 const map = (num, inMin, inMax, outMin, outMax) => (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 
-const XOR = (a, b) => (a || b) && !(a && b);
+const XOR = (a, b) => (a || b) &amp;&amp; !(a &amp;&amp; b);
 
 const isVisibleInViewport = (el) => {
     let bounds = el.getBoundingClientRect(),
         view   = document.documentElement;
-    return bounds.right>=0 && bounds.left<=view.clientWidth && bounds.bottom>=0 && bounds.top<=view.clientHeight;
+    return bounds.right>=0 &amp;&amp; bounds.left&lt;=view.clientWidth &amp;&amp; bounds.bottom>=0 &amp;&amp; bounds.top&lt;=view.clientHeight;
 };
 
 //const startTimer = (delay) =>
@@ -238,12 +266,12 @@ class ProximityEffect extends EventTarget
     set nodes(n)
     {
         if(!(n instanceof NodeList)) throw new Error(`${n} is not a node list`);
-        if(n.length<1) throw new Error(`No nodes found in ${n}`);
+        if(n.length&lt;1) throw new Error(`No nodes found in ${n}`);
 
         this._nodes = [].slice.call(n);
         this._nodeData = this._nodes.map(i => ({node: i, style: i.style.cssText}));
 
-		if(this._params && !this.preventCenterCalculations) this.setCenterPoints();
+		if(this._params &amp;&amp; !this.preventCenterCalculations) this.setCenterPoints();
     }
 
 
@@ -446,7 +474,7 @@ class ProximityEffect extends EventTarget
   	set jitter(num)
   	{
         this._params.jitter = constrain(num, 0);
-        for(let i=0; i<this.nodes.length; i++)
+        for(let i=0; i&lt;this.nodes.length; i++)
         {
             this._setNodeIndexData(i, 'jitter', {
                 x: (Math.random()-0.5) * this.jitter,
@@ -602,7 +630,7 @@ class ProximityEffect extends EventTarget
             /** Effect already exists **/
             params = VALID_EFFECTS[name];
         }
-        else if(params && isObject(params) && typeof params.rule==='string') // TODO: do we need any deeper validation checks?
+        else if(params &amp;&amp; isObject(params) &amp;&amp; typeof params.rule==='string') // TODO: do we need any deeper validation checks?
         {
             /** Register custom effect **/
             VALID_EFFECTS[name] = params;
@@ -622,7 +650,7 @@ class ProximityEffect extends EventTarget
         });
 
 
-        for(let i=0; i<this._nodeData.length; i++)
+        for(let i=0; i&lt;this._nodeData.length; i++)
         {
             let effects = this.getNodeIndexData(i, 'effects') || this._setNodeIndexData(i, 'effects', [])['effects'];
             effects.push({
@@ -654,7 +682,7 @@ class ProximityEffect extends EventTarget
     {
         if(this.hasEffect(name))
         {
-            for(let i=0; i<this.effects.length; i++)
+            for(let i=0; i&lt;this.effects.length; i++)
             {
                 let eff = this.effects[i];
                 if(eff['type']===name)
@@ -698,7 +726,7 @@ class ProximityEffect extends EventTarget
      */
     setCenterPoints()
     {
-    	for(let n=0; n<this.nodes.length; n++)
+    	for(let n=0; n&lt;this.nodes.length; n++)
     	{
     		let node   = this.nodes[n],
                 cssTxt = node.style.cssText;
@@ -710,7 +738,7 @@ class ProximityEffect extends EventTarget
                 y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY,
                 jitter = this.getNodeIndexData(n, 'jitter');
 
-            if(jitter && this.jitter>0)
+            if(jitter &amp;&amp; this.jitter>0)
             {
                 x += jitter.x;
                 y += jitter.y;
@@ -810,7 +838,7 @@ class ProximityEffect extends EventTarget
     {
         let view = document.documentElement;
 
-        for(let n=0; n<this.nodes.length; n++)
+        for(let n=0; n&lt;this.nodes.length; n++)
         {
             let node   = this.nodes[n],
                 last   = this.getNodeIndexData(n, 'lastDelta'),
@@ -858,7 +886,7 @@ class ProximityEffect extends EventTarget
 			{
     			let styles = {};
 
-    			for(let f=0; f<this._effects.length; f++)
+    			for(let f=0; f&lt;this._effects.length; f++)
     			{
     				let effect   = this._effects[f],
                         nodeVals = this.getNodeIndexData(n, 'effects')[f];
@@ -897,3 +925,26 @@ class ProximityEffect extends EventTarget
     } // update end
 
 }
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="ProximityEffect.html">ProximityEffect</a></li></ul><h3>Global</h3><ul><li><a href="global.html#VALID_EFFECTS%255Bundefined%255D">VALID_EFFECTS[undefined]</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Aug 25 2018 00:27:12 GMT+0100 (GMT Summer Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

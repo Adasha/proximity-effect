@@ -1,0 +1,106 @@
+﻿<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, user-scalable=no">
+
+    <title>offscreen</title>
+
+    <style>
+
+        #parentelement
+        {
+
+            width: 640px;
+			height: 640px;
+            margin-left: auto;
+            margin-right: auto;
+            position: relative;
+
+            -webkit-perspective: 500px;
+            -moz-perspective: 500px;
+            perspective: 500px;
+			-webkit-transform-style: preserve-3d;
+            -moz-transform-style: preserve-3d;
+            transform-style: preserve-3d;
+        }
+
+        *.childelement
+        {
+            width: 64px;
+            height: 64px;
+            position: absolute;
+			pointer-events: none;
+			background-color: #ccc;
+        }
+
+
+    </style>
+
+<!-- InstanceEndEditable -->
+	<!-- InstanceParam name="HasTitle" type="boolean" value="true" -->
+</head>
+
+<body>
+
+
+
+            <div id="parentelement" class="centerpiece">
+
+
+                <div class="childelement">
+                </div>
+
+
+            </div>
+
+
+
+<script src="https://unpkg.com/event-target@latest/min.js"></script>
+<script src="../src/ProximityEffect.js"></script>
+
+<script>
+
+function init() {
+	let cols = 10,
+		rows = 10,
+		tileSize = 64,
+    	t = document.querySelector('#parentelement'),
+    	n = t.removeChild(t.querySelector('*.childelement'));
+
+    for(let i=0; i<cols; i++)
+    {
+        for(let j=0; j<rows; j++)
+        {
+            let e = t.appendChild(n.cloneNode(true)),
+				x = i*tileSize,
+				y = j*tileSize;
+
+            e.style.left = x+'px';
+            e.style.top  = y+'px';
+        }
+    }
+
+    let params = {
+        threshold:  0,
+        runoff:   150,
+        attack:     0.6,
+        decay:      0.6,
+		accuracy:   1,
+		invert: true
+    };
+
+	let fader = new ProximityEffect(document.querySelectorAll('*.childelement'), params);
+	fader.addEffect('scaleX',       1,    0);
+	fader.addEffect('scaleY',       1,   10);
+	fader.addEffect('translateY',   0, 1000);
+	fader.addEffect('brightness', 100,    0);
+};
+
+init();
+
+</script>
+
+
+</body>
+</html>
