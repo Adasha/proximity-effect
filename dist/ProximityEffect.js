@@ -34,13 +34,11 @@ function _extendableBuiltin(cls) {
 }
 
 /*
-    ProximityEffect class by Adasha
-    Licensed under MPL-2.0
-    Repository: https://github.com/Adasha/proximity-effect
-    Demos: http://lab.adasha.com/proximity-effect
-*/
-
-// TODO: only build after page layout complete
+ * ProximityEffect class by Adasha
+ * Licensed under MPL-2.0
+ * Repository: https://github.com/Adasha/proximity-effect
+ * Demos: http://lab.adasha.com/proximity-effect
+ */
 
 var VALID_MODES = new Set(['mousemove', 'enterframe', 'redraw']),
     VALID_DIRECTIONS = new Set(['both', 'horizontal', 'vertical']),
@@ -139,15 +137,15 @@ var ProximityEffect = function (_extendableBuiltin2) {
      * Create a ProximityEffect instance.
      * @param {NodeList} nodes - A list of nodes to control.
      * @param {Object} [params={}] - An object containing effect parameters.
-     * @param {number} [params.threshold=0] - The effect threshold.
-     * @param {number} [params.runoff] - The effect runoff.
+     * @param {number} [params.threshold=0] - The effect threshold, in pixels.
+     * @param {number} [params.runoff] - The effect runoff, in pixels.
      * @param {number} [params.attack=1] - The effect attack.
      * @param {number} [params.decay=1] - The effect decay.
      * @param {number} [params.accuracy] - The effect accuracy.
      * @param {boolean} [params.invert=false] - Invert distance.
-     * @param {number} [params.offsetX=0] - The global horizontal offset.
-     * @param {number} [params.offsetY=0] - The global vertical offset.
-     * @param {number} [params.jitter=0] - The effect jitter.
+     * @param {number} [params.offsetX=0] - The global horizontal offset, in pixels.
+     * @param {number} [params.offsetY=0] - The global vertical offset, in pixels.
+     * @param {number} [params.jitter=0] - The effect jitter, in pixels.
      * @param {string} [params.direction] - The effect direction.
      * @param {Element} [params.target] - The effect tracker target.
      */
@@ -235,7 +233,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         /**
          * Get the current target
-         * @return {Element|falsy} The current target.
+         * @return {Element|Falsy} The current target.
          */
 
     }, {
@@ -260,7 +258,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
          * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
          * @param {Object} [params] - An object containing additional effect parameters.
          * @param {string} params.rule - The CSS style rule to use.
-         * @param {string} [params.func] - The CSS function of the given style.
+         * @param {string} [params.func] - The CSS function of the given style rule.
          * @param {number} [params.min] - The minimum effect value.
          * @param {number} [params.max] - The maximum effect value.
          * @param {number} [params.default] - The default effect value.
@@ -532,16 +530,16 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         /**
          * Set the current target
-         * @param {Element|falsy} t - A reference to a DOM Element, or falsy to target mouse.
+         * @param {Element|Falsy} target - A reference to a DOM Element, or falsy to target mouse.
          */
         ,
-        set: function set(t) {
-            if (!t || t.getBoundingClientRect()) this._params.target = t;else return void console.log(t + ' is not a valid target');
+        set: function set(target) {
+            if (!target || target.getBoundingClientRect()) this._params.target = target;else return void console.log(target + ' is not a valid target');
         }
 
         /**
          * Get the list of nodes.
-         * @return {Array.Node} The node array.
+         * @return {Array<Element>} The node array.
          */
 
     }, {
@@ -552,14 +550,14 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         /**
          * Set the list of nodes.
-         * @param {NodeList.Element} n - The list of nodes.
+         * @param {NodeList<Element>} list - The list of nodes.
          */
         ,
-        set: function set(n) {
-            if (!(n instanceof NodeList)) throw new Error(n + ' is not a node list');
-            if (n.length < 1) throw new Error('No nodes found in ' + n);
+        set: function set(list) {
+            if (!(list instanceof NodeList)) throw new Error(list + ' is not a node list');
+            if (list.length < 1) throw new Error('No nodes found in ' + list);
 
-            this._nodes = [].slice.call(n);
+            this._nodes = [].slice.call(list);
             this._nodeData = this._nodes.map(function (i) {
                 return { node: i, style: i.style.cssText };
             });
@@ -569,7 +567,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         /**
          * Get the list of effects.
-         * @return {Array.Object} The effects array.
+         * @return {Array<Object>} The effects array.
          */
 
     }, {
@@ -580,7 +578,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         /**
          * Get the effect threshold.
-         * @return {number} The threshold value, in pixels.
+         * @return {number} The threshold radius, in pixels.
          */
 
     }, {
@@ -591,16 +589,16 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         /**
          * Set the effect threshold.
-         * @param {number} num - The new threshold value, in pixels.
+         * @param {number} value - The new threshold radius, in pixels.
          */
         ,
-        set: function set(num) {
-            this._params.threshold = constrain(num, 0);
+        set: function set(value) {
+            this._params.threshold = constrain(value, 0);
         }
 
         /**
          * Get the effect runoff.
-         * @return {number} The runoff value, in pixels.
+         * @return {number} The runoff radius, in pixels.
          */
 
     }, {
@@ -611,17 +609,17 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         /**
          * Set the effect runoff.
-         * @param {number} num - The new runoff value, in pixels.
+         * @param {number} value - The new runoff radius, in pixels.
          */
         ,
-        set: function set(num) {
-            this._params.runoff = constrain(num, 0);
+        set: function set(value) {
+            this._params.runoff = constrain(value, 0);
             this._invRunoff = 1 / this._params.runoff;
         }
 
         /**
          * Get the effect boundary.
-         * @return {number} The boundary value, in pixels.
+         * @return {number} The boundary radius, in pixels.
          */
 
     }, {
@@ -643,11 +641,11 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         /**
          * Set the invert state.
-         * @param {boolean} bool - The new invert value.
+         * @param {boolean} flag - The new invert value.
          */
         ,
-        set: function set(bool) {
-            this._params.invert = !!bool;
+        set: function set(flag) {
+            this._params.invert = !!flag;
         }
 
         /**
@@ -663,11 +661,11 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         /**
          * Set the effect attack.
-         * @param {number} num - The new attack value.
+         * @param {number} value - The new attack value.
          */
         ,
-        set: function set(num) {
-            this._params.attack = constrain(num, 0, 1);
+        set: function set(value) {
+            this._params.attack = constrain(value, 0, 1);
         }
 
         /**
@@ -683,11 +681,11 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         /**
          * Set the effect decay.
-         * @param {number} num - The new decay value.
+         * @param {number} value - The new decay value.
          */
         ,
-        set: function set(num) {
-            this._params.decay = constrain(num, 0, 1);
+        set: function set(value) {
+            this._params.decay = constrain(value, 0, 1);
         }
 
         /**
@@ -710,16 +708,16 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         /**
          * Set the global horizontal offset.
-         * @param {number} num - The new offset value, in pixels.
+         * @param {number} value - The new offset value, in pixels.
          */
-        set: function set(num) {
-            this._params.offsetX = num;
+        set: function set(value) {
+            this._params.offsetX = value;
             if (!this.preventCenterCalculations) this.setCenterPoints();
         }
 
         /**
          * Set the global vertical offset, in pixels.
-         * @param {number} num - The new offset value.
+         * @param {number} value - The new offset value.
          */
 
     }, {
@@ -727,8 +725,8 @@ var ProximityEffect = function (_extendableBuiltin2) {
         get: function get() {
             return this._params.offsetY;
         },
-        set: function set(num) {
-            this._params.offsetY = num;
+        set: function set(value) {
+            this._params.offsetY = value;
             if (!this.preventCenterCalculations) this.setCenterPoints();
         }
 

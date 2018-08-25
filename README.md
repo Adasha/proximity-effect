@@ -92,7 +92,10 @@ myEffect.addEffect('translateX', 0, {value: 50, scatter: 15});
 myEffect.addEffect('padding', {value: 20, scatter: 30}, {value: 100, scatter: 50}, {rule: 'padding', unit: 'px'});
 ```
 
+## API freeze
 Full details on the API are forthcoming, for now there is only an unfinished [page on the wiki](https://github.com/Adasha/proximity-effect/wiki/API-reference).
+
+The API will be fixed from v2.2. The v2.1 devtrain is still likely to see some changes, though on smaller scales.
 
 
 ## License:

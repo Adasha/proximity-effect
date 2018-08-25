@@ -101,15 +101,15 @@ class ProximityEffect extends EventTarget
      * Create a ProximityEffect instance.
      * @param {NodeList} nodes - A list of nodes to control.
      * @param {Object} [params={}] - An object containing effect parameters.
-     * @param {number} [params.threshold=0] - The effect threshold.
-     * @param {number} [params.runoff] - The effect runoff.
+     * @param {number} [params.threshold=0] - The effect threshold, in pixels.
+     * @param {number} [params.runoff] - The effect runoff, in pixels.
      * @param {number} [params.attack=1] - The effect attack.
      * @param {number} [params.decay=1] - The effect decay.
      * @param {number} [params.accuracy] - The effect accuracy.
      * @param {boolean} [params.invert=false] - Invert distance.
-     * @param {number} [params.offsetX=0] - The global horizontal offset.
-     * @param {number} [params.offsetY=0] - The global vertical offset.
-     * @param {number} [params.jitter=0] - The effect jitter.
+     * @param {number} [params.offsetX=0] - The global horizontal offset, in pixels.
+     * @param {number} [params.offsetY=0] - The global vertical offset, in pixels.
+     * @param {number} [params.jitter=0] - The effect jitter, in pixels.
      * @param {string} [params.direction] - The effect direction.
      * @param {Element} [params.target] - The effect tracker target.
      */
@@ -201,7 +201,7 @@ class ProximityEffect extends EventTarget
 
     /**
      * Get the current target
-     * @return {Element|falsy} The current target.
+     * @return {Element|Falsy} The current target.
      */
     get target()
     {
@@ -210,12 +210,12 @@ class ProximityEffect extends EventTarget
 
     /**
      * Set the current target
-     * @param {Element|falsy} t - A reference to a DOM Element, or falsy to target mouse.
+     * @param {Element|Falsy} target - A reference to a DOM Element, or falsy to target mouse.
      */
-    set target(t)
+    set target(target)
     {
-        if(!t || t.getBoundingClientRect()) this._params.target = t;
-        else return void console.log(`${t} is not a valid target`);
+        if(!target || target.getBoundingClientRect()) this._params.target = target;
+        else return void console.log(`${target} is not a valid target`);
     }
 
 
@@ -224,7 +224,7 @@ class ProximityEffect extends EventTarget
 
     /**
      * Get the list of nodes.
-     * @return {Array.Node} The node array.
+     * @return {Array<Element>} The node array.
      */
     get nodes()
     {
@@ -233,14 +233,14 @@ class ProximityEffect extends EventTarget
 
     /**
      * Set the list of nodes.
-     * @param {NodeList.Element} n - The list of nodes.
+     * @param {NodeList<Element>} list - The list of nodes.
      */
-    set nodes(n)
+    set nodes(list)
     {
-        if(!(n instanceof NodeList)) throw new Error(`${n} is not a node list`);
-        if(n.length<1) throw new Error(`No nodes found in ${n}`);
+        if(!(list instanceof NodeList)) throw new Error(`${list} is not a node list`);
+        if(list.length<1) throw new Error(`No nodes found in ${list}`);
 
-        this._nodes = [].slice.call(n);
+        this._nodes = [].slice.call(list);
         this._nodeData = this._nodes.map(i => ({node: i, style: i.style.cssText}));
 
 		if(this._params && !this.preventCenterCalculations) this.setCenterPoints();
@@ -252,7 +252,7 @@ class ProximityEffect extends EventTarget
 
     /**
      * Get the list of effects.
-     * @return {Array.Object} The effects array.
+     * @return {Array<Object>} The effects array.
      */
     get effects()
     {
@@ -265,7 +265,7 @@ class ProximityEffect extends EventTarget
 
     /**
      * Get the effect threshold.
-     * @return {number} The threshold value, in pixels.
+     * @return {number} The threshold radius, in pixels.
      */
     get threshold()
     {
@@ -274,11 +274,11 @@ class ProximityEffect extends EventTarget
 
     /**
      * Set the effect threshold.
-     * @param {number} num - The new threshold value, in pixels.
+     * @param {number} value - The new threshold radius, in pixels.
      */
-    set threshold(num)
+    set threshold(value)
     {
-    	this._params.threshold = constrain(num, 0);
+    	this._params.threshold = constrain(value, 0);
     }
 
 
@@ -287,7 +287,7 @@ class ProximityEffect extends EventTarget
 
     /**
      * Get the effect runoff.
-     * @return {number} The runoff value, in pixels.
+     * @return {number} The runoff radius, in pixels.
      */
     get runoff()
     {
@@ -296,11 +296,11 @@ class ProximityEffect extends EventTarget
 
     /**
      * Set the effect runoff.
-     * @param {number} num - The new runoff value, in pixels.
+     * @param {number} value - The new runoff radius, in pixels.
      */
-    set runoff(num)
+    set runoff(value)
     {
-    	this._params.runoff = constrain(num, 0);
+    	this._params.runoff = constrain(value, 0);
         this._invRunoff = 1/this._params.runoff;
     }
 
@@ -310,7 +310,7 @@ class ProximityEffect extends EventTarget
 
     /**
      * Get the effect boundary.
-     * @return {number} The boundary value, in pixels.
+     * @return {number} The boundary radius, in pixels.
      */
     get boundary()
     {
@@ -332,11 +332,11 @@ class ProximityEffect extends EventTarget
 
     /**
      * Set the invert state.
-     * @param {boolean} bool - The new invert value.
+     * @param {boolean} flag - The new invert value.
      */
-    set invert(bool)
+    set invert(flag)
     {
-        this._params.invert = !!bool;
+        this._params.invert = !!flag;
     }
 
 
@@ -354,11 +354,11 @@ class ProximityEffect extends EventTarget
 
     /**
      * Set the effect attack.
-     * @param {number} num - The new attack value.
+     * @param {number} value - The new attack value.
      */
-    set attack(num)
+    set attack(value)
     {
-    	this._params.attack = constrain(num, 0, 1);
+    	this._params.attack = constrain(value, 0, 1);
     }
 
 
@@ -375,11 +375,11 @@ class ProximityEffect extends EventTarget
 
     /**
      * Set the effect decay.
-     * @param {number} num - The new decay value.
+     * @param {number} value - The new decay value.
      */
-    set decay(num)
+    set decay(value)
     {
-    	this._params.decay = constrain(num, 0, 1);
+    	this._params.decay = constrain(value, 0, 1);
     }
 
 
@@ -408,21 +408,21 @@ class ProximityEffect extends EventTarget
 
     /**
      * Set the global horizontal offset.
-     * @param {number} num - The new offset value, in pixels.
+     * @param {number} value - The new offset value, in pixels.
      */
-  	set offsetX(num)
+  	set offsetX(value)
   	{
-        this._params.offsetX = num;
+        this._params.offsetX = value;
         if(!this.preventCenterCalculations) this.setCenterPoints();
   	}
 
     /**
      * Set the global vertical offset, in pixels.
-     * @param {number} num - The new offset value.
+     * @param {number} value - The new offset value.
      */
-  	set offsetY(num)
+  	set offsetY(value)
   	{
-        this._params.offsetY = num;
+        this._params.offsetY = value;
         if(!this.preventCenterCalculations) this.setCenterPoints();
   	}
 
@@ -582,14 +582,14 @@ class ProximityEffect extends EventTarget
      * Add a new effect to the effect stack.
      * @param {string} name - The effect name.
      * @param {number|Object} near - The effect value at the closest distance.
-     * @param {number} near.value - The effect value at closest distance, as a property of near.
+     * @param {number} near.value - The effect value at closest distance, as an object property.
      * @param {number} [near.scatter] - The random distribution of the value at the closest distance.
      * @param {number|Object} far - The effect value at the furthest distance.
-     * @param {number} far.value - The effect value at furthest distance, as a property of far.
+     * @param {number} far.value - The effect value at furthest distance, as an object property.
      * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
      * @param {Object} [params] - An object containing additional effect parameters.
      * @param {string} params.rule - The CSS style rule to use.
-     * @param {string} [params.func] - The CSS function of the given style.
+     * @param {string} [params.func] - The CSS function of the given style rule.
      * @param {number} [params.min] - The minimum effect value.
      * @param {number} [params.max] - The maximum effect value.
      * @param {number} [params.default] - The default effect value.
@@ -670,7 +670,7 @@ class ProximityEffect extends EventTarget
 
 
     /**
-     * Get the distance to the current target from the given node.
+     * Get the distance to the current target from the given node, in pixels.
      * @param {Element} n - The node to check.
      */
     distanceFrom(n)
@@ -681,7 +681,7 @@ class ProximityEffect extends EventTarget
 
 
     /**
-     * Get the distance to the current target from the given node index.
+     * Get the distance to the current target from the given node index, in pixels.
      * @param {number} i - The node index to check.
      */
     distanceFromIndex(i)
@@ -726,14 +726,21 @@ class ProximityEffect extends EventTarget
 
 
     /**
-     * Return an object containing the given node's effect data.
+     * @typedef {Object} NodeData
+     * @property {Element} node - A reference to the node.
+     * @property {Array<Object>} effects - An array of applied effects containing near and far values for each.
+     * @property {number} effects[].near - Did this work?.
+     */
+    /**
+     * Return an object containing the given node's effect data or a specific property of that data.
      * @param {Element} n - The node to return data for.
-     * @param {string} prop - The data property to return.
-     * @return {Object} An object containing the node's data.
+     * @param {string} [prop] - The data property to return, leave out to return the entire object.
+     * @return {mixed|NodeData} The chosen property value, or an object containing the node's data.
      */
     getNodeData(n, prop)
     {
-        return this._nodeData[this.nodes.findIndex(n => n===node)][prop];
+        let data = this._nodeData[this.nodes.findIndex(n => n===node)];
+        return prop ? data[prop] : data;
     }
 
 
