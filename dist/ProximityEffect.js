@@ -40,8 +40,7 @@ function _extendableBuiltin(cls) {
  * Demos: http://lab.adasha.com/proximity-effect
  */
 
-var VALID_MODES = new Set(['mousemove', 'enterframe', 'redraw']),
-    VALID_DIRECTIONS = new Set(['both', 'horizontal', 'vertical']),
+var VALID_DIRECTIONS = new Set(['both', 'horizontal', 'vertical']),
     DEFAULT_DIRECTION = 'both',
     DEFAULT_MODE = 'redraw',
     DEFAULT_ACCURACY = 5,
@@ -99,6 +98,26 @@ var map = function map(num, inMin, inMax, outMin, outMax) {
     return (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 };
 
+var random = function random() {
+    var v = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 2;
+    var m = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'uniform';
+
+    switch (m) {
+        case 'gaussian':
+        case 'normal':
+            var t = 0,
+                c = 6;
+            for (var i = 0; i < c; i++) {
+                t += (Math.random() - 0.5) * v;
+            }
+            return t / c;
+            break;
+        case 'uniform':
+        default:
+            return (Math.random() - 0.5) * v;
+    }
+};
+
 var XOR = function XOR(a, b) {
     return (a || b) && !(a && b);
 };
@@ -142,12 +161,16 @@ var ProximityEffect = function (_extendableBuiltin2) {
      * @param {number} [params.attack=1] - The effect attack.
      * @param {number} [params.decay=1] - The effect decay.
      * @param {number} [params.accuracy] - The effect accuracy.
-     * @param {boolean} [params.invert=false] - Invert distance.
+     * @param {boolean} [params.invert=false] - Invert distances.
      * @param {number} [params.offsetX=0] - The global horizontal offset, in pixels.
      * @param {number} [params.offsetY=0] - The global vertical offset, in pixels.
      * @param {number} [params.jitter=0] - The effect jitter, in pixels.
-     * @param {string} [params.direction] - The effect direction.
+     * @param {string} [params.direction="both"] - The effect direction, one of 'both', 'horizontal' or 'vertical'.
      * @param {Element} [params.target] - The effect tracker target.
+     * @param {boolean} [params.doPresetDistances=false] - Prime the initial distances to create an initial transition. Only available through params argument in constructor.
+     * @fires ProximityEffect#ready
+     * @fires ProximityEffect#redraw
+     * @fires ProximityEffect#reflow
      */
     function ProximityEffect(nodes) {
         var params = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
@@ -160,8 +183,8 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
         _this.preventCenterCalculations = true;
 
-        _this.nodes = nodes;
         _this._params = params;
+        _this.nodes = nodes;
         _this._pointer = {};
 
         _this.threshold = _this._params.hasOwnProperty('threshold') ? _this._params.threshold : 0;
@@ -200,25 +223,6 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
             // TODO: add alternative trigger modes
 
-            /*let b = document.body;
-            b.removeEventListener('mousemove',  update());
-            b.removeEventListener('enterframe', update());
-            window.clearInterval(_frameLoop);
-             	switch(mode)
-            {
-            	case 'mousemove' :
-            		b.addEventListener('mousemove', update());
-            		break;
-            	case 'enterframe' :
-            		b.addEventListener('enterframe', update());
-            		_frameLoop = window.setInterval(() =>
-            			b.dispatchEvent(new Event('enterframe'));
-            		, 1000/params.FPS);
-            		break;
-            	case 'redraw' :
-            		break;
-            }*/
-
             document.dispatchEvent(new MouseEvent('mousemove'));
             this.dispatchEvent(new Event('ready'));
             window.requestAnimationFrame(this.update);
@@ -251,13 +255,15 @@ var ProximityEffect = function (_extendableBuiltin2) {
          * Add a new effect to the effect stack.
          * @param {string} name - The effect name.
          * @param {number|Object} near - The effect value at the closest distance.
-         * @param {number} near.value - The effect value at closest distance, as a property of near.
+         * @param {number} near.value - The effect value at closest distance, as an object property.
          * @param {number} [near.scatter] - The random distribution of the value at the closest distance.
+         * @param {string} [near.scatterMethod] - The random scatter method.
          * @param {number|Object} far - The effect value at the furthest distance.
-         * @param {number} far.value - The effect value at furthest distance, as a property of far.
+         * @param {number} far.value - The effect value at furthest distance, as an object property.
          * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
+         * @param {string} [far.scatterMethod] - The random scatter method.
          * @param {Object} [params] - An object containing additional effect parameters.
-         * @param {string} params.rule - The CSS style rule to use.
+         * @param {string} [params.rule] - The CSS style rule to use.
          * @param {string} [params.func] - The CSS function of the given style rule.
          * @param {number} [params.min] - The minimum effect value.
          * @param {number} [params.max] - The maximum effect value.
@@ -265,10 +271,11 @@ var ProximityEffect = function (_extendableBuiltin2) {
          * @param {string} [params.unit] - The effect CSS unit.
          */
         value: function addEffect(name, near, far, params) {
-            if (VALID_EFFECTS.hasOwnProperty(name)) {
-                /** Effect already exists **/
-                params = VALID_EFFECTS[name];
-            } else if (params && isObject(params) && typeof params.rule === 'string') // TODO: do we need any deeper validation checks?
+            if (VALID_EFFECTS.hasOwnProperty(name)) // TODO: how necessary is this really?
+                {
+                    /** Effect already exists **/
+                    params = VALID_EFFECTS[name];
+                } else if (params && isObject(params) && typeof params.rule === 'string') // TODO: do we need any deeper validation checks?
                 {
                     /** Register custom effect **/
                     VALID_EFFECTS[name] = params;
@@ -285,11 +292,12 @@ var ProximityEffect = function (_extendableBuiltin2) {
                 params: params
             });
 
+            var scatMeth = params.scatterMethod || 'uniform';
             for (var i = 0; i < this._nodeData.length; i++) {
                 var effects = this.getNodeIndexData(i, 'effects') || this._setNodeIndexData(i, 'effects', [])['effects'];
                 effects.push({
-                    near: near.scatter ? near.value + (Math.random() - 0.5) * near.scatter : near.value,
-                    far: far.scatter ? far.value + (Math.random() - 0.5) * far.scatter : far.value
+                    near: near.scatter ? near.value + random(near.scatter, scatMeth) : near.value,
+                    far: far.scatter ? far.value + random(far.scatter, scatMeth) : far.value
                 });
             }
         }
@@ -327,7 +335,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
         }
 
         /**
-         * Get the distance to the current target from the given node.
+         * Get the distance to the current target from the given node, in pixels.
          * @param {Element} n - The node to check.
          */
 
@@ -338,7 +346,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
         }
 
         /**
-         * Get the distance to the current target from the given node index.
+         * Get the distance to the current target from the given node index, in pixels.
          * @param {number} i - The node index to check.
          */
 
@@ -377,31 +385,51 @@ var ProximityEffect = function (_extendableBuiltin2) {
         }
 
         /**
-         * Return an object containing the given node's effect data.
+         * @typedef {Object} NodeData
+         * @property {Element} node - A reference to the node.
+         * @property {Array<Object>} effects - An array of applied effects containing near and far values for each.
+         * @property {number} effects[].near - Did this work?.
+         */
+        /**
+         * Return an object containing the given node's effect data or a specific property of that data.
          * @param {Element} n - The node to return data for.
-         * @param {string} prop - The data property to return.
-         * @return {Object} An object containing the node's data.
+         * @param {string} [prop] - The data property to return, leave out to return the entire object.
+         * @return {mixed|NodeData} The chosen property value, or an object containing the node's data.
          */
 
     }, {
         key: 'getNodeData',
         value: function getNodeData(n, prop) {
-            return this._nodeData[this.nodes.findIndex(function (n) {
+            var data = this._nodeData[this.nodes.findIndex(function (n) {
                 return n === node;
-            })][prop];
+            })];
+            return prop ? data[prop] : data;
         }
 
         /**
          * Return an object containing the given node index's effect data.
          * @param {number} i - The node index to return data for.
          * @param {string} prop - The data property to return.
-         * @return {Object} An object containing the node's data.
+         * @return {Object} True if the property exists, false otherwise.
          */
 
     }, {
         key: 'getNodeIndexData',
         value: function getNodeIndexData(i, prop) {
             return this._nodeData[i][prop];
+        }
+
+        /**
+         * Return a boolean determining if the given node has thegiven data.
+         * @param {number} i - The node index to return data for.
+         * @param {string} prop - The data property to return.
+         * @return {boolean} An object containing the node's data.
+         */
+
+    }, {
+        key: 'hasNodeIndexData',
+        value: function hasNodeIndexData(i, prop) {
+            return this._nodeData[i].hasOwnProperty(prop);
         }
 
         ///////////////////////////////
@@ -451,7 +479,6 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
             for (var n = 0; n < this.nodes.length; n++) {
                 var _node2 = this.nodes[n],
-                    last = this.getNodeIndexData(n, 'lastDelta'),
                     bounds = _node2.getBoundingClientRect(),
                     center = this.getNodeIndexData(n, 'center');
 
@@ -459,7 +486,8 @@ var ProximityEffect = function (_extendableBuiltin2) {
                     centerY = center.y - (_node2.dataset['offsety'] || 0);
 
                 var tx = void 0,
-                    ty = void 0;
+                    ty = void 0,
+                    last = this.getNodeIndexData(n, 'lastDelta');
 
                 if (this.target) {
                     var b = this.target.getBoundingClientRect();
@@ -483,7 +511,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
 
                 this._setNodeIndexData(n, 'distance', td);
 
-                if (last) d = last + (td - last) * (XOR(td > last, this.invert) ? this.decay : this.attack);else d = td;
+                d = last + (td - last) * (XOR(td > last, this.invert) ? this.decay : this.attack);
 
                 d = roundTo(d, this.accuracy);
                 this._setNodeIndexData(n, 'lastDelta', d);
@@ -554,12 +582,18 @@ var ProximityEffect = function (_extendableBuiltin2) {
          */
         ,
         set: function set(list) {
+            var _this3 = this;
+
             if (!(list instanceof NodeList)) throw new Error(list + ' is not a node list');
             if (list.length < 1) throw new Error('No nodes found in ' + list);
 
             this._nodes = [].slice.call(list);
             this._nodeData = this._nodes.map(function (i) {
-                return { node: i, style: i.style.cssText };
+                return {
+                    node: i,
+                    style: i.style.cssText,
+                    lastDelta: _this3._params.doPresetDistances ? 1 : null
+                };
             });
 
             if (this._params && !this.preventCenterCalculations) this.setCenterPoints();
@@ -750,8 +784,8 @@ var ProximityEffect = function (_extendableBuiltin2) {
             this._params.jitter = constrain(num, 0);
             for (var i = 0; i < this.nodes.length; i++) {
                 this._setNodeIndexData(i, 'jitter', {
-                    x: (Math.random() - 0.5) * this.jitter,
-                    y: (Math.random() - 0.5) * this.jitter
+                    x: random(this.jitter),
+                    y: random(this.jitter)
                 });
             }
             if (!this.preventCenterCalculations) this.setCenterPoints();
@@ -789,7 +823,7 @@ var ProximityEffect = function (_extendableBuiltin2) {
         set: function set(num) {
             if (num > 0) {
                 this._params.FPS = constrain(num, 0);
-            } else return void console.log('Invalid FPS requested');
+            } else return void console.log('Invalid FPS requested.');
         }
 
         // MODE [String]
@@ -799,12 +833,34 @@ var ProximityEffect = function (_extendableBuiltin2) {
         get: function get() {
             return this._params.mode;
         },
-        set: function set(str) {
-            if (str !== this._params.mode) {
-                if (VALID_MODES.has(str)) {
-                    this._params.mode = str;
-                } else return void console.log(str + ' not a recognised mode.');
-            } else return void console.log('Already in ' + str + ' mode. Mode not changed.');
+        set: function set(mode) {
+            if (mode) {
+                //alert(this._params.mode);
+                if (mode === this._params.mode) return void console.log('Already in ' + mode + ' mode. Mode not changed.');
+
+                var b = document.body;
+                // b.removeEventListener('mousemove',  this.update());
+                // b.removeEventListener('enterframe', this.update());
+                // window.clearInterval(this._frameLoop);
+
+                switch (mode) {
+                    case 'mousemove':
+                        b.addEventListener('mousemove', this.update());
+                        break;
+                    case 'enterframe':
+                        b.addEventListener('enterframe', this.update());
+                        this._frameLoop = window.setInterval(function () {
+                            return b.dispatchEvent(new Event('enterframe'));
+                        }, 1000 / this.FPS);
+                        break;
+                    case 'redraw':
+                        break;
+                    default:
+                        return void console.log(mode + ' is not a recognised mode.');
+                }
+
+                this._params.mode = mode;
+            }
         }
 
         /**

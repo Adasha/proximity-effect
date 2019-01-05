@@ -413,7 +413,7 @@
                 </td>
             
 
-            <td class="description last">Invert distance.</td>
+            <td class="description last">Invert distances.</td>
         </tr>
 
     
@@ -564,10 +564,12 @@
             
                 <td class="default">
                 
+                    "both"
+                
                 </td>
             
 
-            <td class="description last">The effect direction.</td>
+            <td class="description last">The effect direction, one of 'both', 'horizontal' or 'vertical'.</td>
         </tr>
 
     
@@ -605,6 +607,45 @@
             
 
             <td class="description last">The effect tracker target.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>doPresetDistances</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last">Prime the initial distances to create an initial transition. Only available through params argument in constructor.</td>
         </tr>
 
     
@@ -652,7 +693,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line96">line 96</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line114">line 114</a>
     </li></ul></dd>
     
 
@@ -755,7 +796,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line537">line 537</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line563">line 563</a>
     </li></ul></dd>
     
 
@@ -817,7 +858,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line546">line 546</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line572">line 572</a>
     </li></ul></dd>
     
 
@@ -879,7 +920,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line359">line 359</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line365">line 365</a>
     </li></ul></dd>
     
 
@@ -941,7 +982,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line350">line 350</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line356">line 356</a>
     </li></ul></dd>
     
 
@@ -1003,7 +1044,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line315">line 315</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line321">line 321</a>
     </li></ul></dd>
     
 
@@ -1065,7 +1106,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line380">line 380</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line386">line 386</a>
     </li></ul></dd>
     
 
@@ -1127,69 +1168,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line371">line 371</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
-<h4 class="name" id="direction"><span class="type-signature"></span>direction<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    Get the effect direction.
-</div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line467">line 467</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line377">line 377</a>
     </li></ul></dd>
     
 
@@ -1251,7 +1230,69 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line476">line 476</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line482">line 482</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="direction"><span class="type-signature"></span>direction<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Get the effect direction.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line473">line 473</a>
     </li></ul></dd>
     
 
@@ -1313,7 +1354,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line257">line 257</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line263">line 263</a>
     </li></ul></dd>
     
 
@@ -1375,7 +1416,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line337">line 337</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line343">line 343</a>
     </li></ul></dd>
     
 
@@ -1437,7 +1478,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line328">line 328</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line334">line 334</a>
     </li></ul></dd>
     
 
@@ -1499,7 +1540,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line446">line 446</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line452">line 452</a>
     </li></ul></dd>
     
 
@@ -1561,69 +1602,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line437">line 437</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
-<h4 class="name" id="nodes"><span class="type-signature"></span>nodes<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    Set the list of nodes.
-</div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line238">line 238</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line443">line 443</a>
     </li></ul></dd>
     
 
@@ -1685,7 +1664,69 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line229">line 229</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line231">line 231</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="nodes"><span class="type-signature"></span>nodes<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Set the list of nodes.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line240">line 240</a>
     </li></ul></dd>
     
 
@@ -1747,7 +1788,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line413">line 413</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line419">line 419</a>
     </li></ul></dd>
     
 
@@ -1809,7 +1850,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line393">line 393</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line399">line 399</a>
     </li></ul></dd>
     
 
@@ -1871,7 +1912,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line423">line 423</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line429">line 429</a>
     </li></ul></dd>
     
 
@@ -1933,7 +1974,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line402">line 402</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line408">line 408</a>
     </li></ul></dd>
     
 
@@ -1995,69 +2036,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line559">line 559</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
-<h4 class="name" id="runoff"><span class="type-signature"></span>runoff<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    Get the effect runoff.
-</div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line292">line 292</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line585">line 585</a>
     </li></ul></dd>
     
 
@@ -2119,7 +2098,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line301">line 301</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line307">line 307</a>
     </li></ul></dd>
     
 
@@ -2137,13 +2116,13 @@
 
         
             
-<h4 class="name" id="target"><span class="type-signature"></span>target<span class="type-signature"></span></h4>
+<h4 class="name" id="runoff"><span class="type-signature"></span>runoff<span class="type-signature"></span></h4>
 
 
 
 
 <div class="description">
-    Get the current target
+    Get the effect runoff.
 </div>
 
 
@@ -2181,7 +2160,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line206">line 206</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line298">line 298</a>
     </li></ul></dd>
     
 
@@ -2243,7 +2222,69 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line215">line 215</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line217">line 217</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="target"><span class="type-signature"></span>target<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Get the current target
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line208">line 208</a>
     </li></ul></dd>
     
 
@@ -2305,7 +2346,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line279">line 279</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line285">line 285</a>
     </li></ul></dd>
     
 
@@ -2367,7 +2408,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line270">line 270</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line276">line 276</a>
     </li></ul></dd>
     
 
@@ -2588,6 +2629,39 @@
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>scatterMethod</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">The random scatter method.</td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -2714,6 +2788,39 @@
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>scatterMethod</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">The random scatter method.</td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -2792,6 +2899,8 @@
 
             
                 <td class="attributes">
+                
+                    &lt;optional><br>
                 
 
                 
@@ -3015,7 +3124,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line598">line 598</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line626">line 626</a>
     </li></ul></dd>
     
 
@@ -3150,7 +3259,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line676">line 676</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line705">line 705</a>
     </li></ul></dd>
     
 
@@ -3285,7 +3394,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line687">line 687</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line716">line 716</a>
     </li></ul></dd>
     
 
@@ -3463,7 +3572,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line740">line 740</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line769">line 769</a>
     </li></ul></dd>
     
 
@@ -3646,7 +3755,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line754">line 754</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line783">line 783</a>
     </li></ul></dd>
     
 
@@ -3673,7 +3782,7 @@
 
         
 <div class="param-desc">
-    An object containing the node's data.
+    True if the property exists, false otherwise.
 </div>
 
 
@@ -3803,7 +3912,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line642">line 642</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line671">line 671</a>
     </li></ul></dd>
     
 
@@ -3831,6 +3940,186 @@
         
 <div class="param-desc">
     True if the effect exists at least once.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="hasNodeIndexData"><span class="type-signature"></span>hasNodeIndexData<span class="signature">(i, prop)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Return a boolean determining if the given node has thegiven data.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>i</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The node index to return data for.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>prop</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The data property to return.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line797">line 797</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    An object containing the node's data.
 </div>
 
 
@@ -3960,7 +4249,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line653">line 653</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line682">line 682</a>
     </li></ul></dd>
     
 
@@ -4046,7 +4335,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line699">line 699</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line728">line 728</a>
     </li></ul></dd>
     
 
@@ -4096,7 +4385,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Aug 25 2018 20:43:11 GMT+0100 (GMT Summer Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Jan 05 2019 01:03:55 GMT+0000 (GMT Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>
