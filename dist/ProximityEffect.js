@@ -46,6 +46,7 @@ var VALID_DIRECTIONS = new Set(['both', 'horizontal', 'vertical']),
     DEFAULT_ACCURACY = 5,
     DEFAULT_FPS = 15,
     DEFAULT_RUNOFF = 100,
+    DEFAULT_SCATTER_METHOD = 'uniform',
     VALID_EFFECTS = {
     opacity: { min: 0, max: 1, default: 1, rule: 'opacity' },
     translateX: { default: 0, rule: 'transform', func: 'translateX', unit: 'px' },
@@ -292,12 +293,13 @@ var ProximityEffect = function (_extendableBuiltin2) {
                 params: params
             });
 
-            var scatMeth = params.scatterMethod || 'uniform';
             for (var i = 0; i < this._nodeData.length; i++) {
                 var effects = this.getNodeIndexData(i, 'effects') || this._setNodeIndexData(i, 'effects', [])['effects'];
+                var nearMethod = near.scatterMethod ? near.scatterMethod : DEFAULT_SCATTER_METHOD,
+                    farMethod = far.scatterMethod ? far.scatterMethod : DEFAULT_SCATTER_METHOD;
                 effects.push({
-                    near: near.scatter ? near.value + random(near.scatter, scatMeth) : near.value,
-                    far: far.scatter ? far.value + random(far.scatter, scatMeth) : far.value
+                    near: near.scatter ? near.value + random(near.scatter, nearMethod) : near.value,
+                    far: far.scatter ? far.value + random(far.scatter, farMethod) : far.value
                 });
             }
         }
