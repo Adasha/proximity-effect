@@ -1,8 +1,5 @@
 {
-	"presets": ["env"],
-	"plugins": [
-		["babel-plugin-transform-builtin-extend", {
-            "globals": ["EventTarget"]
-        }]
-	]
+	"presets": [
+		"@babel/preset-env"
+	],
 }
