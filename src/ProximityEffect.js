@@ -1,4 +1,4 @@
-﻿/*
+/*
  * ProximityEffect class by Adasha
  * Licensed under MPL-2.0
  * Repository: https://github.com/Adasha/proximity-effect
@@ -6,7 +6,6 @@
  */
 
 
-// TODO: is this strictly *necessary*?
 
 let VALID_DIRECTIONS  = new Set(["both", "horizontal", "vertical"]),
     DEFAULT_DIRECTION = "both",
