@@ -1,6 +1,6 @@
 "use strict";
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -8,17 +8,19 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
 function _wrapNativeSuper(Class) { var _cache = typeof Map === "function" ? new Map() : undefined; _wrapNativeSuper = function _wrapNativeSuper(Class) { if (Class === null || !_isNativeFunction(Class)) return Class; if (typeof Class !== "function") { throw new TypeError("Super expression must either be null or a function"); } if (typeof _cache !== "undefined") { if (_cache.has(Class)) return _cache.get(Class); _cache.set(Class, Wrapper); } function Wrapper() { return _construct(Class, arguments, _getPrototypeOf(this).constructor); } Wrapper.prototype = Object.create(Class.prototype, { constructor: { value: Wrapper, enumerable: false, writable: true, configurable: true } }); return _setPrototypeOf(Wrapper, Class); }; return _wrapNativeSuper(Class); }
 
-function isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+function _construct(Parent, args, Class) { if (_isNativeReflectConstruct()) { _construct = Reflect.construct; } else { _construct = function _construct(Parent, args, Class) { var a = [null]; a.push.apply(a, args); var Constructor = Function.bind.apply(Parent, a); var instance = new Constructor(); if (Class) _setPrototypeOf(instance, Class.prototype); return instance; }; } return _construct.apply(null, arguments); }
 
-function _construct(Parent, args, Class) { if (isNativeReflectConstruct()) { _construct = Reflect.construct; } else { _construct = function _construct(Parent, args, Class) { var a = [null]; a.push.apply(a, args); var Constructor = Function.bind.apply(Parent, a); var instance = new Constructor(); if (Class) _setPrototypeOf(instance, Class.prototype); return instance; }; } return _construct.apply(null, arguments); }
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
 
 function _isNativeFunction(fn) { return Function.toString.call(fn).indexOf("[native code]") !== -1; }
 
@@ -26,178 +28,19 @@ function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || func
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
+function _classPrivateMethodGet(receiver, privateSet, fn) { if (!privateSet.has(receiver)) { throw new TypeError("attempted to get private field on non-instance"); } return fn; }
+
+function _classPrivateFieldGet(receiver, privateMap) { var descriptor = privateMap.get(receiver); if (!descriptor) { throw new TypeError("attempted to get private field on non-instance"); } if (descriptor.get) { return descriptor.get.call(receiver); } return descriptor.value; }
+
+function _classPrivateFieldSet(receiver, privateMap, value) { var descriptor = privateMap.get(receiver); if (!descriptor) { throw new TypeError("attempted to set private field on non-instance"); } if (descriptor.set) { descriptor.set.call(receiver, value); } else { if (!descriptor.writable) { throw new TypeError("attempted to set read only private field"); } descriptor.value = value; } return value; }
+
 /*
  * ProximityEffect class by Adasha
  * Licensed under MPL-2.0
  * Repository: https://github.com/Adasha/proximity-effect
  * Demos: http://lab.adasha.com/proximity-effect
  */
-// TODO: is this strictly *necessary*?
-var VALID_DIRECTIONS = new Set(["both", "horizontal", "vertical"]),
-    DEFAULT_DIRECTION = "both",
-    DEFAULT_MODE = "redraw",
-    DEFAULT_ACCURACY = 5,
-    DEFAULT_FPS = 15,
-    DEFAULT_RUNOFF = 100,
-    DEFAULT_SCATTER_METHOD = "uniform",
-    VALID_EFFECTS = {
-  opacity: {
-    min: 0,
-    max: 1,
-    "default": 1,
-    rule: "opacity"
-  },
-  translateX: {
-    "default": 0,
-    rule: "transform",
-    func: "translateX",
-    unit: "px"
-  },
-  translateY: {
-    "default": 0,
-    rule: "transform",
-    func: "translateY",
-    unit: "px"
-  },
-  translateZ: {
-    "default": 0,
-    rule: "transform",
-    func: "translateZ",
-    unit: "px"
-  },
-  rotate: {
-    "default": 0,
-    rule: "transform",
-    func: "rotate",
-    unit: "deg"
-  },
-  rotateX: {
-    "default": 0,
-    rule: "transform",
-    func: "rotateX",
-    unit: "deg"
-  },
-  rotateY: {
-    "default": 0,
-    rule: "transform",
-    func: "rotateY",
-    unit: "deg"
-  },
-  rotateZ: {
-    "default": 0,
-    rule: "transform",
-    func: "rotateZ",
-    unit: "deg"
-  },
-  scale: {
-    "default": 1,
-    rule: "transform",
-    func: "scale"
-  },
-  scaleX: {
-    "default": 1,
-    rule: "transform",
-    func: "scaleX"
-  },
-  scaleY: {
-    "default": 1,
-    rule: "transform",
-    func: "scaleY"
-  },
-  scaleZ: {
-    "default": 1,
-    rule: "transform",
-    func: "scaleZ"
-  },
-  skewX: {
-    "default": 0,
-    rule: "transform",
-    func: "skewX",
-    unit: "deg"
-  },
-  skewY: {
-    "default": 0,
-    rule: "transform",
-    func: "skewY",
-    unit: "deg"
-  },
-  //perspective:     {                  default:       0, rule: "transform",       func: "perspective", unit: "px"},
-  blur: {
-    min: 0,
-    "default": 0,
-    rule: "filter",
-    func: "blur",
-    unit: "px"
-  },
-  brightness: {
-    min: 0,
-    "default": 100,
-    rule: "filter",
-    func: "brightness",
-    unit: "%"
-  },
-  contrast: {
-    min: 0,
-    "default": 100,
-    rule: "filter",
-    func: "contrast",
-    unit: "%"
-  },
-  grayscale: {
-    min: 0,
-    max: 100,
-    "default": 0,
-    rule: "filter",
-    func: "grayscale",
-    unit: "%"
-  },
-  hueRotate: {
-    "default": 0,
-    rule: "filter",
-    func: "hue-rotate",
-    unit: "deg"
-  },
-  invert: {
-    min: 0,
-    max: 100,
-    "default": 0,
-    rule: "filter",
-    func: "invert",
-    unit: "%"
-  },
-  //opacity:         {min: 0, max: 100, default:     100, rule: "filter",          func: "opacity",     unit: "%"},
-  saturate: {
-    min: 0,
-    max: 100,
-    "default": 100,
-    rule: "filter",
-    func: "saturate",
-    unit: "%"
-  },
-  sepia: {
-    min: 0,
-    max: 100,
-    "default": 0,
-    rule: "filter",
-    func: "sepia",
-    unit: "%"
-  },
-  backgroundColor: {
-    min: 0,
-    max: 255,
-    "default": [0, 0, 0],
-    rule: "backgroundColor",
-    func: "rgb",
-    args: 3
-  },
-  scale3D: {
-    "default": [1, 1, 1],
-    rule: "transform",
-    func: "scale3D",
-    args: 3
-  }
-}; // TODO: get these out of the global scope
-
+// TODO: get these out of the global scope
 var constrain = function constrain(num, min, max) {
   if (typeof num !== "number") {
     return NaN;
@@ -279,12 +122,40 @@ var isObject = function isObject(obj) {
  */
 
 
-var ProximityEffect =
-/*#__PURE__*/
-function (_EventTarget) {
+var _params = new WeakMap();
+
+var _pointer = new WeakMap();
+
+var _effects = new WeakMap();
+
+var _nodes = new WeakMap();
+
+var _nodeData = new WeakMap();
+
+var _VALID_DIRECTIONS = new WeakMap();
+
+var _DEFAULT_DIRECTION = new WeakMap();
+
+var _DEFAULT_MODE = new WeakMap();
+
+var _DEFAULT_ACCURACY = new WeakMap();
+
+var _DEFAULT_FPS = new WeakMap();
+
+var _DEFAULT_RUNOFF = new WeakMap();
+
+var _DEFAULT_SCATTER_METHOD = new WeakMap();
+
+var _VALID_EFFECTS = new WeakMap();
+
+var _init = new WeakSet();
+
+var _setNodeIndexData = new WeakSet();
+
+var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   _inherits(ProximityEffect, _EventTarget);
 
-  // TODO: Private variables once possible.
+  var _super = _createSuper(ProximityEffect);
 
   /**
    * Create a ProximityEffect instance.
@@ -313,67 +184,279 @@ function (_EventTarget) {
 
     _classCallCheck(this, ProximityEffect);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(ProximityEffect).call(this));
+    _this = _super.call(this);
+
+    _setNodeIndexData.add(_assertThisInitialized(_this));
+
+    _init.add(_assertThisInitialized(_this));
+
+    _params.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: void 0
+    });
+
+    _pointer.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: {}
+    });
+
+    _effects.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: void 0
+    });
+
+    _nodes.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: void 0
+    });
+
+    _nodeData.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: void 0
+    });
+
+    _VALID_DIRECTIONS.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: new Set(["both", "horizontal", "vertical"])
+    });
+
+    _DEFAULT_DIRECTION.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: "both"
+    });
+
+    _DEFAULT_MODE.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: "redraw"
+    });
+
+    _DEFAULT_ACCURACY.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: 5
+    });
+
+    _DEFAULT_FPS.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: 15
+    });
+
+    _DEFAULT_RUNOFF.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: 100
+    });
+
+    _DEFAULT_SCATTER_METHOD.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: "uniform"
+    });
+
+    _VALID_EFFECTS.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: {
+        opacity: {
+          min: 0,
+          max: 1,
+          "default": 1,
+          rule: "opacity"
+        },
+        translateX: {
+          "default": 0,
+          rule: "transform",
+          func: "translateX",
+          unit: "px"
+        },
+        translateY: {
+          "default": 0,
+          rule: "transform",
+          func: "translateY",
+          unit: "px"
+        },
+        translateZ: {
+          "default": 0,
+          rule: "transform",
+          func: "translateZ",
+          unit: "px"
+        },
+        rotate: {
+          "default": 0,
+          rule: "transform",
+          func: "rotate",
+          unit: "deg"
+        },
+        rotateX: {
+          "default": 0,
+          rule: "transform",
+          func: "rotateX",
+          unit: "deg"
+        },
+        rotateY: {
+          "default": 0,
+          rule: "transform",
+          func: "rotateY",
+          unit: "deg"
+        },
+        rotateZ: {
+          "default": 0,
+          rule: "transform",
+          func: "rotateZ",
+          unit: "deg"
+        },
+        scale: {
+          "default": 1,
+          rule: "transform",
+          func: "scale"
+        },
+        scaleX: {
+          "default": 1,
+          rule: "transform",
+          func: "scaleX"
+        },
+        scaleY: {
+          "default": 1,
+          rule: "transform",
+          func: "scaleY"
+        },
+        scaleZ: {
+          "default": 1,
+          rule: "transform",
+          func: "scaleZ"
+        },
+        skewX: {
+          "default": 0,
+          rule: "transform",
+          func: "skewX",
+          unit: "deg"
+        },
+        skewY: {
+          "default": 0,
+          rule: "transform",
+          func: "skewY",
+          unit: "deg"
+        },
+        //perspective:     {                  default:       0, rule: "transform",       func: "perspective", unit: "px"},
+        blur: {
+          min: 0,
+          "default": 0,
+          rule: "filter",
+          func: "blur",
+          unit: "px"
+        },
+        brightness: {
+          min: 0,
+          "default": 100,
+          rule: "filter",
+          func: "brightness",
+          unit: "%"
+        },
+        contrast: {
+          min: 0,
+          "default": 100,
+          rule: "filter",
+          func: "contrast",
+          unit: "%"
+        },
+        grayscale: {
+          min: 0,
+          max: 100,
+          "default": 0,
+          rule: "filter",
+          func: "grayscale",
+          unit: "%"
+        },
+        hueRotate: {
+          "default": 0,
+          rule: "filter",
+          func: "hue-rotate",
+          unit: "deg"
+        },
+        invert: {
+          min: 0,
+          max: 100,
+          "default": 0,
+          rule: "filter",
+          func: "invert",
+          unit: "%"
+        },
+        //opacity:         {min: 0, max: 100, default:     100, rule: "filter",          func: "opacity",     unit: "%"},
+        saturate: {
+          min: 0,
+          max: 100,
+          "default": 100,
+          rule: "filter",
+          func: "saturate",
+          unit: "%"
+        },
+        sepia: {
+          min: 0,
+          max: 100,
+          "default": 0,
+          rule: "filter",
+          func: "sepia",
+          unit: "%"
+        },
+        backgroundColor: {
+          min: 0,
+          max: 255,
+          "default": [0, 0, 0],
+          rule: "backgroundColor",
+          func: "rgb",
+          args: 3
+        },
+        scale3D: {
+          "default": [1, 1, 1],
+          rule: "transform",
+          func: "scale3D",
+          args: 3
+        }
+      }
+    });
 
     if (!nodes) {
       throw new Error("ProximityEffect: nodes argument is required");
     }
 
     _this.preventCenterCalculations = true;
-    _this._params = params;
-    _this.nodes = nodes;
-    _this._pointer = {};
-    _this.threshold = _this._params.hasOwnProperty("threshold") ? _this._params.threshold : 0;
-    _this.runoff = _this._params.hasOwnProperty("runoff") ? _this._params.runoff : DEFAULT_RUNOFF;
-    _this.attack = _this._params.hasOwnProperty("attack") ? _this._params.attack : 1;
-    _this.decay = _this._params.hasOwnProperty("decay") ? _this._params.decay : 1;
-    _this.accuracy = _this._params.hasOwnProperty("accuracy") ? _this._params.accuracy : DEFAULT_ACCURACY; //this.reverse   = this._params.reverse   || false;
 
-    _this.invert = _this._params.invert || false;
-    _this.offsetX = _this._params.offsetX || 0;
-    _this.offsetY = _this._params.offsetY || 0;
-    _this.jitter = _this._params.jitter || 0;
-    _this.direction = _this._params.direction || DEFAULT_DIRECTION;
-    _this.FPS = _this._params.FPS || DEFAULT_FPS;
-    _this.mode = _this._params.mode || DEFAULT_MODE;
-    _this.target = _this._params.target;
+    _classPrivateFieldSet(_assertThisInitialized(_this), _params, params);
+
+    _this.nodes = nodes;
+    _this.threshold = _classPrivateFieldGet(_assertThisInitialized(_this), _params).hasOwnProperty("threshold") ? _classPrivateFieldGet(_assertThisInitialized(_this), _params).threshold : 0;
+    _this.runoff = _classPrivateFieldGet(_assertThisInitialized(_this), _params).hasOwnProperty("runoff") ? _classPrivateFieldGet(_assertThisInitialized(_this), _params).runoff : _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_RUNOFF);
+    _this.attack = _classPrivateFieldGet(_assertThisInitialized(_this), _params).hasOwnProperty("attack") ? _classPrivateFieldGet(_assertThisInitialized(_this), _params).attack : 1;
+    _this.decay = _classPrivateFieldGet(_assertThisInitialized(_this), _params).hasOwnProperty("decay") ? _classPrivateFieldGet(_assertThisInitialized(_this), _params).decay : 1;
+    _this.accuracy = _classPrivateFieldGet(_assertThisInitialized(_this), _params).hasOwnProperty("accuracy") ? _classPrivateFieldGet(_assertThisInitialized(_this), _params).accuracy : _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_ACCURACY); //this.reverse   = this.#params.reverse   || false;
+
+    _this.invert = _classPrivateFieldGet(_assertThisInitialized(_this), _params).invert || false;
+    _this.offsetX = _classPrivateFieldGet(_assertThisInitialized(_this), _params).offsetX || 0;
+    _this.offsetY = _classPrivateFieldGet(_assertThisInitialized(_this), _params).offsetY || 0;
+    _this.jitter = _classPrivateFieldGet(_assertThisInitialized(_this), _params).jitter || 0;
+    _this.direction = _classPrivateFieldGet(_assertThisInitialized(_this), _params).direction || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_DIRECTION);
+    _this.FPS = _classPrivateFieldGet(_assertThisInitialized(_this), _params).FPS || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_FPS);
+    _this.mode = _classPrivateFieldGet(_assertThisInitialized(_this), _params).mode || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_MODE);
+    _this.target = _classPrivateFieldGet(_assertThisInitialized(_this), _params).target;
 
     if (document.readyState === "completed") {
-      _this.init();
+      _classPrivateMethodGet(_assertThisInitialized(_this), _init, _init2).call(_assertThisInitialized(_this));
     } else {
       window.addEventListener("load", function () {
-        return _this.init();
+        return _classPrivateMethodGet(_assertThisInitialized(_this), _init, _init2).call(_assertThisInitialized(_this));
       });
     }
 
     return _this;
-  }
+  } /////////////////////////////////
+  //                             //
+  //     GETTER/SETTER PROPS     //
+  //                             //
+  /////////////////////////////////
+
+  /**
+   * Get the current target
+   * @return {Element|Falsy} The current target.
+   */
+
 
   _createClass(ProximityEffect, [{
-    key: "init",
-    value: function init() {
-      this.preventCenterCalculations = false;
-      this.setCenterPoints();
-      this.update = this.update.bind(this);
-      window.addEventListener("scroll", this.reflowEvent.bind(this));
-      window.addEventListener("resize", this.reflowEvent.bind(this));
-      document.addEventListener("mousemove", this.updatePointer.bind(this)); // TODO: add alternative trigger modes
-
-      document.dispatchEvent(new MouseEvent("mousemove"));
-      this.dispatchEvent(new Event("ready"));
-      window.requestAnimationFrame(this.update);
-    } /////////////////////////////////
-    //                             //
-    //     GETTER/SETTER PROPS     //
-    //                             //
-    /////////////////////////////////
-
-    /**
-     * Get the current target
-     * @return {Element|Falsy} The current target.
-     */
-
-  }, {
     key: "addEffect",
     ////////////////////////////
     //                        //
@@ -401,16 +484,16 @@ function (_EventTarget) {
      * @param {string} [params.unit] - The effect CSS unit.
      */
     value: function addEffect(name, near, far, params) {
-      if (VALID_EFFECTS.hasOwnProperty(name)) {
+      if (_classPrivateFieldGet(this, _VALID_EFFECTS).hasOwnProperty(name)) {
         // TODO: how necessary is this really?
 
         /** Effect already exists **/
-        params = VALID_EFFECTS[name];
+        params = _classPrivateFieldGet(this, _VALID_EFFECTS)[name];
       } else if (params && isObject(params) && typeof params.rule === "string") {
         // TODO: do we need any deeper validation checks?
 
         /** Register custom effect **/
-        VALID_EFFECTS[name] = params;
+        _classPrivateFieldGet(this, _VALID_EFFECTS)[name] = params;
       } else return void console.log("".concat(name, " is not a valid effect type"));
 
       if (typeof near === "number") {
@@ -421,20 +504,20 @@ function (_EventTarget) {
         far = valToObj(constrain(far, params.min, params.max));
       }
 
-      this._effects = this._effects || [];
+      _classPrivateFieldSet(this, _effects, _classPrivateFieldGet(this, _effects) || []);
 
-      this._effects.push({
+      _classPrivateFieldGet(this, _effects).push({
         type: name,
         near: near,
         far: far,
         params: params
       });
 
-      for (var i = 0; i < this._nodeData.length; i++) {
-        var effects = this.getNodeIndexData(i, "effects") || this._setNodeIndexData(i, "effects", [])["effects"];
+      for (var i = 0; i < _classPrivateFieldGet(this, _nodeData).length; i++) {
+        var effects = this.getNodeIndexData(i, "effects") || _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, "effects", [])["effects"];
 
-        var nearMethod = near.scatterMethod ? near.scatterMethod : DEFAULT_SCATTER_METHOD,
-            farMethod = far.scatterMethod ? far.scatterMethod : DEFAULT_SCATTER_METHOD;
+        var nearMethod = near.scatterMethod ? near.scatterMethod : _classPrivateFieldGet(this, _DEFAULT_SCATTER_METHOD),
+            farMethod = far.scatterMethod ? far.scatterMethod : _classPrivateFieldGet(this, _DEFAULT_SCATTER_METHOD);
         effects.push({
           near: near.scatter ? near.value + random(near.scatter, nearMethod) : near.value,
           far: far.scatter ? far.value + random(far.scatter, farMethod) : far.value
@@ -463,11 +546,11 @@ function (_EventTarget) {
     key: "removeEffect",
     value: function removeEffect(name) {
       if (this.hasEffect(name)) {
-        for (var i = 0; i < this.effects.length; i++) {
-          var eff = this.effects[i];
+        for (var i = 0; i < _classPrivateFieldGet(this, _effects).length; i++) {
+          var eff = _classPrivateFieldGet(this, _effects)[i];
 
           if (eff["type"] === name) {
-            this.effects.splice(i, 1);
+            _classPrivateFieldGet(this, _effects).splice(i, 1);
           }
         }
       }
@@ -516,7 +599,7 @@ function (_EventTarget) {
 
         _node.style.cssText = cssTxt;
 
-        this._setNodeIndexData(n, "center", {
+        _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, "center", {
           x: x,
           y: y
         });
@@ -539,7 +622,7 @@ function (_EventTarget) {
   }, {
     key: "getNodeData",
     value: function getNodeData(n, prop) {
-      var data = this._nodeData[this.nodes.findIndex(function (n) {
+      var data = _classPrivateFieldGet(this, _nodeData)[this.nodes.findIndex(function (n) {
         return n === node;
       })];
 
@@ -555,7 +638,7 @@ function (_EventTarget) {
   }, {
     key: "getNodeIndexData",
     value: function getNodeIndexData(i, prop) {
-      return this._nodeData[i][prop];
+      return _classPrivateFieldGet(this, _nodeData)[i][prop];
     }
     /**
      * Return a boolean determining if the given node has thegiven data.
@@ -567,33 +650,23 @@ function (_EventTarget) {
   }, {
     key: "hasNodeIndexData",
     value: function hasNodeIndexData(i, prop) {
-      return this._nodeData[i].hasOwnProperty(prop);
+      return _classPrivateFieldGet(this, _nodeData)[i].hasOwnProperty(prop);
     } ///////////////////////////////
     //                           //
-    //     "PRIVATE" METHODS     //
+    //      PRIVATE METHODS      //
     //                           //
     ///////////////////////////////
 
   }, {
-    key: "_setNodeIndexData",
-    value: function _setNodeIndexData(n, prop, val) {
-      if (!this._nodeData[n]) {
-        this._nodeData[n] = {};
-      }
-
-      this._nodeData[n][prop] = val;
-      return this._nodeData[n];
-    } ////////////////////
+    key: "updatePointer",
+    ////////////////////
     //                //
     //     EVENTS     //
     //                //
     ////////////////////
-
-  }, {
-    key: "updatePointer",
     value: function updatePointer(evt) {
-      this._pointer.x = evt.clientX;
-      this._pointer.y = evt.clientY;
+      _classPrivateFieldGet(this, _pointer).x = evt.clientX;
+      _classPrivateFieldGet(this, _pointer).y = evt.clientY;
     }
   }, {
     key: "reflowEvent",
@@ -649,26 +722,26 @@ function (_EventTarget) {
         } // normalise to boundaries
 
 
-        td = constrain((dd - this.threshold) * this._invRunoff, 0, 1);
+        td = constrain((dd - this.threshold) * _classPrivateFieldGet(this, _params).invRunoff, 0, 1);
 
         if (this.invert) {
           td = 1 - td;
         }
 
-        this._setNodeIndexData(n, "distance", td); // apply easing
+        _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, "distance", td); // apply easing
 
 
         d = last + (td - last) * (XOR(td > last, this.invert) ? this.decay : this.attack); // round value to reduce jitter
 
         d = roundTo(d, this.accuracy);
 
-        this._setNodeIndexData(n, "lastDelta", d);
+        _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, "lastDelta", d);
 
         if (this.effects.length > 0) {
           var styles = {};
 
-          for (var f = 0; f < this._effects.length; f++) {
-            var effect = this._effects[f],
+          for (var f = 0; f < this.effects.length; f++) {
+            var effect = this.effects[f],
                 nodeVals = this.getNodeIndexData(n, "effects")[f];
             var near = nodeVals.near,
                 far = nodeVals.far,
@@ -707,7 +780,7 @@ function (_EventTarget) {
   }, {
     key: "target",
     get: function get() {
-      return this._params.target;
+      return _classPrivateFieldGet(this, _params).target;
     }
     /**
      * Set the current target
@@ -716,7 +789,7 @@ function (_EventTarget) {
     ,
     set: function set(target) {
       if (!target || target.getBoundingClientRect()) {
-        this._params.target = target;
+        _classPrivateFieldGet(this, _params).target = target;
       } else {
         return void console.log("".concat(target, " is not a valid target"));
       }
@@ -729,7 +802,7 @@ function (_EventTarget) {
   }, {
     key: "nodes",
     get: function get() {
-      return this._nodes;
+      return _classPrivateFieldGet(this, _nodes);
     }
     /**
      * Set the list of nodes.
@@ -747,17 +820,18 @@ function (_EventTarget) {
         throw new Error("No nodes found in ".concat(list));
       }
 
-      this._nodes = [].slice.call(list); //convert to array
+      _classPrivateFieldSet(this, _nodes, [].slice.call(list)); //convert to array
 
-      this._nodeData = this._nodes.map(function (i) {
+
+      _classPrivateFieldSet(this, _nodeData, _classPrivateFieldGet(this, _nodes).map(function (i) {
         return {
           node: i,
           style: i.style.cssText,
-          lastDelta: _this3._params.doPresetDistances ? 1 : null
+          lastDelta: _classPrivateFieldGet(_this3, _params).doPresetDistances ? 1 : null
         };
-      });
+      }));
 
-      if (this._params && !this.preventCenterCalculations) {
+      if (_classPrivateFieldGet(this, _params) && !this.preventCenterCalculations) {
         this.setCenterPoints();
       }
     }
@@ -769,7 +843,7 @@ function (_EventTarget) {
   }, {
     key: "effects",
     get: function get() {
-      return this._effects;
+      return _classPrivateFieldGet(this, _effects);
     }
     /**
      * Get the effect threshold.
@@ -779,7 +853,7 @@ function (_EventTarget) {
   }, {
     key: "threshold",
     get: function get() {
-      return this._params.threshold;
+      return _classPrivateFieldGet(this, _params).threshold;
     }
     /**
      * Set the effect threshold.
@@ -787,7 +861,7 @@ function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      this._params.threshold = constrain(value, 0);
+      _classPrivateFieldGet(this, _params).threshold = constrain(value, 0);
     }
     /**
      * Get the effect runoff.
@@ -797,7 +871,7 @@ function (_EventTarget) {
   }, {
     key: "runoff",
     get: function get() {
-      return this._params.runoff;
+      return _classPrivateFieldGet(this, _params).runoff;
     }
     /**
      * Set the effect runoff.
@@ -805,8 +879,8 @@ function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      this._params.runoff = constrain(value, 0);
-      this._invRunoff = 1 / this._params.runoff;
+      _classPrivateFieldGet(this, _params).runoff = constrain(value, 0);
+      _classPrivateFieldGet(this, _params).invRunoff = 1 / _classPrivateFieldGet(this, _params).runoff;
     }
     /**
      * Get the effect boundary.
@@ -826,7 +900,7 @@ function (_EventTarget) {
   }, {
     key: "invert",
     get: function get() {
-      return this._params.invert;
+      return _classPrivateFieldGet(this, _params).invert;
     }
     /**
      * Set the invert state.
@@ -834,7 +908,7 @@ function (_EventTarget) {
      */
     ,
     set: function set(flag) {
-      this._params.invert = !!flag;
+      _classPrivateFieldGet(this, _params).invert = !!flag;
     }
     /**
      * Get the effect attack.
@@ -844,7 +918,7 @@ function (_EventTarget) {
   }, {
     key: "attack",
     get: function get() {
-      return this._params.attack;
+      return _classPrivateFieldGet(this, _params).attack;
     }
     /**
      * Set the effect attack.
@@ -852,7 +926,7 @@ function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      this._params.attack = constrain(value, 0, 1);
+      _classPrivateFieldGet(this, _params).attack = constrain(value, 0, 1);
     }
     /**
      * Get the effect decay.
@@ -862,7 +936,7 @@ function (_EventTarget) {
   }, {
     key: "decay",
     get: function get() {
-      return this._params.decay;
+      return _classPrivateFieldGet(this, _params).decay;
     }
     /**
      * Set the effect decay.
@@ -870,7 +944,7 @@ function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      this._params.decay = constrain(value, 0, 1);
+      _classPrivateFieldGet(this, _params).decay = constrain(value, 0, 1);
     }
     /**
      * Get the global horizontal offset.
@@ -880,7 +954,7 @@ function (_EventTarget) {
   }, {
     key: "offsetX",
     get: function get() {
-      return this._params.offsetX;
+      return _classPrivateFieldGet(this, _params).offsetX;
     }
     /**
      * Get the global vertical offset.
@@ -893,7 +967,7 @@ function (_EventTarget) {
      * @param {number} value - The new offset value, in pixels.
      */
     set: function set(value) {
-      this._params.offsetX = value;
+      _classPrivateFieldGet(this, _params).offsetX = value;
 
       if (!this.preventCenterCalculations) {
         this.setCenterPoints();
@@ -907,10 +981,10 @@ function (_EventTarget) {
   }, {
     key: "offsetY",
     get: function get() {
-      return this._params.offsetY;
+      return _classPrivateFieldGet(this, _params).offsetY;
     },
     set: function set(value) {
-      this._params.offsetY = value;
+      _classPrivateFieldGet(this, _params).offsetY = value;
 
       if (!this.preventCenterCalculations) {
         this.setCenterPoints();
@@ -924,7 +998,7 @@ function (_EventTarget) {
   }, {
     key: "jitter",
     get: function get() {
-      return this._params.jitter;
+      return _classPrivateFieldGet(this, _params).jitter;
     }
     /**
      * Set the jitter value.
@@ -932,10 +1006,10 @@ function (_EventTarget) {
      */
     ,
     set: function set(num) {
-      this._params.jitter = constrain(num, 0);
+      _classPrivateFieldGet(this, _params).jitter = constrain(num, 0);
 
       for (var i = 0; i < this.nodes.length; i++) {
-        this._setNodeIndexData(i, "jitter", {
+        _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, "jitter", {
           x: random(this.jitter),
           y: random(this.jitter)
         });
@@ -953,7 +1027,7 @@ function (_EventTarget) {
   }, {
     key: "direction",
     get: function get() {
-      return this._params.direction;
+      return _classPrivateFieldGet(this, _params).direction;
     }
     /**
      * Set the effect direction.
@@ -961,8 +1035,8 @@ function (_EventTarget) {
      */
     ,
     set: function set(str) {
-      if (VALID_DIRECTIONS.has(str)) {
-        this._params.direction = str;
+      if (_classPrivateFieldGet(this, _VALID_DIRECTIONS).has(str)) {
+        _classPrivateFieldGet(this, _params).direction = str;
       } else {
         return void console.log("".concat(str, " not a valid direction."));
       }
@@ -971,11 +1045,11 @@ function (_EventTarget) {
   }, {
     key: "FPS",
     get: function get() {
-      return this._params.FPS;
+      return _classPrivateFieldGet(this, _params).FPS;
     },
     set: function set(num) {
       if (num > 0) {
-        this._params.FPS = constrain(num, 0);
+        _classPrivateFieldGet(this, _params).FPS = constrain(num, 0);
       } else {
         return void console.log("Invalid FPS requested.");
       }
@@ -984,11 +1058,11 @@ function (_EventTarget) {
   }, {
     key: "mode",
     get: function get() {
-      return this._params.mode;
+      return _classPrivateFieldGet(this, _params).mode;
     },
     set: function set(mode) {
       if (mode) {
-        if (mode === this._params.mode) {
+        if (mode === _classPrivateFieldGet(this, _params).mode) {
           return void console.log("Already in ".concat(mode, " mode. Mode not changed."));
         }
 
@@ -1015,7 +1089,7 @@ function (_EventTarget) {
             return void console.log("".concat(mode, " is not a recognised mode."));
         }
 
-        this._params.mode = mode;
+        _classPrivateFieldGet(this, _params).mode = mode;
       }
     }
     /**
@@ -1026,7 +1100,7 @@ function (_EventTarget) {
   }, {
     key: "accuracy",
     get: function get() {
-      return this._params.accuracy;
+      return _classPrivateFieldGet(this, _params).accuracy;
     }
     /**
      * Set the effect accuracy.
@@ -1034,7 +1108,7 @@ function (_EventTarget) {
      */
     ,
     set: function set(num) {
-      this._params.accuracy = Math.floor(constrain(num, 0));
+      _classPrivateFieldGet(this, _params).accuracy = Math.floor(constrain(num, 0));
     }
     /**
      * Get the last known mouse pointer coordinates, relative to the viewport, in pixels.
@@ -1045,11 +1119,33 @@ function (_EventTarget) {
     key: "pointer",
     get: function get() {
       return {
-        x: this._pointer.x,
-        y: this._pointer.y
+        x: _classPrivateFieldGet(this, _pointer).x,
+        y: _classPrivateFieldGet(this, _pointer).y
       };
     }
   }]);
 
   return ProximityEffect;
-}(_wrapNativeSuper(EventTarget));
+}( /*#__PURE__*/_wrapNativeSuper(EventTarget));
+
+var _init2 = function _init2() {
+  this.preventCenterCalculations = false;
+  this.setCenterPoints();
+  this.update = this.update.bind(this);
+  window.addEventListener("scroll", this.reflowEvent.bind(this));
+  window.addEventListener("resize", this.reflowEvent.bind(this));
+  document.addEventListener("mousemove", this.updatePointer.bind(this)); // TODO: add alternative trigger modes
+
+  document.dispatchEvent(new MouseEvent("mousemove"));
+  this.dispatchEvent(new Event("ready"));
+  window.requestAnimationFrame(this.update);
+};
+
+var _setNodeIndexData2 = function _setNodeIndexData2(n, prop, val) {
+  if (!_classPrivateFieldGet(this, _nodeData)[n]) {
+    _classPrivateFieldGet(this, _nodeData)[n] = {};
+  }
+
+  _classPrivateFieldGet(this, _nodeData)[n][prop] = val;
+  return _classPrivateFieldGet(this, _nodeData)[n];
+};

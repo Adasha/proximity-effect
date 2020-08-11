@@ -91,7 +91,6 @@ class ProximityEffect extends EventTarget {
     #nodes;
     #nodeData;
 
-    
     #VALID_DIRECTIONS       = new Set(["both", "horizontal", "vertical"]);
     #DEFAULT_DIRECTION      = "both";
     #DEFAULT_MODE           = "redraw";
@@ -180,11 +179,30 @@ class ProximityEffect extends EventTarget {
 
 
        	if (document.readyState==="completed") {
-            this.#init();
+            this.init();
         }
        	else {
-            window.addEventListener("load", () => this.#init());
+            window.addEventListener("load", () => this.init());
         }
+    }
+
+
+    init() {
+        this.preventCenterCalculations = false;
+        this.setCenterPoints();
+
+        this.update = this.update.bind(this);
+
+        window.addEventListener("scroll", this.reflowEvent.bind(this));
+        window.addEventListener("resize", this.reflowEvent.bind(this));
+
+        document.addEventListener("mousemove", this.updatePointer.bind(this));
+
+        // TODO: add alternative trigger modes
+
+        document.dispatchEvent(new MouseEvent("mousemove"));
+        this.dispatchEvent(new Event("ready"));
+        window.requestAnimationFrame(this.update);
     }
 
 
@@ -783,28 +801,6 @@ class ProximityEffect extends EventTarget {
 	//      PRIVATE METHODS      //
     //                           //
 	///////////////////////////////
-
-
-
-    #init() {
-        this.preventCenterCalculations = false;
-        this.setCenterPoints();
-
-        this.update = this.update.bind(this);
-
-        window.addEventListener("scroll", this.reflowEvent.bind(this));
-        window.addEventListener("resize", this.reflowEvent.bind(this));
-
-        document.addEventListener("mousemove", this.updatePointer.bind(this));
-
-        // TODO: add alternative trigger modes
-
-        document.dispatchEvent(new MouseEvent("mousemove"));
-        this.dispatchEvent(new Event("ready"));
-        window.requestAnimationFrame(this.update);
-    }
-
-
 
 
 
