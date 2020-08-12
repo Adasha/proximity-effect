@@ -2,8 +2,6 @@
 
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
@@ -34,14 +32,30 @@ function _classPrivateFieldGet(receiver, privateMap) { var descriptor = privateM
 
 function _classPrivateFieldSet(receiver, privateMap, value) { var descriptor = privateMap.get(receiver); if (!descriptor) { throw new TypeError("attempted to set private field on non-instance"); } if (descriptor.set) { descriptor.set.call(receiver, value); } else { if (!descriptor.writable) { throw new TypeError("attempted to set read only private field"); } descriptor.value = value; } return value; }
 
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+/** 
+ * Utilities Class
+ */
+var Utils = function Utils() {
+  _classCallCheck(this, Utils);
+};
 /*
  * ProximityEffect class by Adasha
  * Licensed under MPL-2.0
  * Repository: https://github.com/Adasha/proximity-effect
  * Demos: http://lab.adasha.com/proximity-effect
  */
-// TODO: get these out of the global scope
-var constrain = function constrain(num, min, max) {
+
+/**
+ * Class representing a ProximityEffect.
+ * @extends EventTarget
+ */
+
+
+_defineProperty(Utils, "constrain", function (num, min, max) {
   if (typeof num !== "number") {
     return NaN;
   }
@@ -55,23 +69,23 @@ var constrain = function constrain(num, min, max) {
   }
 
   return num;
-};
+});
 
-var roundTo = function roundTo(num) {
+_defineProperty(Utils, "roundTo", function (num) {
   var dp = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
   var mult = Math.pow(dp + 1, 10);
   return Math.round(num * mult) / mult;
-};
+});
 
-var delta = function delta(num, a, b) {
-  return (b - a) * constrain(num, 0, 1) + a;
-};
+_defineProperty(Utils, "delta", function (num, a, b) {
+  return (b - a) * Utils.constrain(num, 0, 1) + a;
+});
 
-var map = function map(num, inMin, inMax, outMin, outMax) {
+_defineProperty(Utils, "map", function (num, inMin, inMax, outMin, outMax) {
   return (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-};
+});
 
-var random = function random() {
+_defineProperty(Utils, "random", function () {
   var v = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 2;
   var m = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "uniform";
 
@@ -93,34 +107,28 @@ var random = function random() {
     default:
       return (Math.random() - 0.5) * v;
   }
-};
+});
 
-var XOR = function XOR(a, b) {
+_defineProperty(Utils, "XOR", function (a, b) {
   return (a || b) && !(a && b);
-};
+});
 
-var isVisibleInViewport = function isVisibleInViewport(el) {
+_defineProperty(Utils, "isVisibleInViewport", function (el) {
   var bounds = el.getBoundingClientRect(),
       view = document.documentElement;
   return bounds.right >= 0 && bounds.left <= view.clientWidth && bounds.bottom >= 0 && bounds.top <= view.clientHeight;
-}; //const startTimer = (delay) =>
+});
 
-
-var valToObj = function valToObj(val) {
+_defineProperty(Utils, "valToObj", function (val) {
   var key = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "value";
   var obj = {};
   obj[key] = val;
   return obj;
-};
+});
 
-var isObject = function isObject(obj) {
+_defineProperty(Utils, "isObject", function (obj) {
   return obj == Object(obj);
-};
-/**
- * Class representing a ProximityEffect.
- * @extends EventTarget
- */
-
+});
 
 var _params = new WeakMap();
 
@@ -489,7 +497,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
         /** Effect already exists **/
         params = _classPrivateFieldGet(this, _VALID_EFFECTS)[name];
-      } else if (params && isObject(params) && typeof params.rule === "string") {
+      } else if (params && Utils.isObject(params) && typeof params.rule === "string") {
         // TODO: do we need any deeper validation checks?
 
         /** Register custom effect **/
@@ -497,11 +505,11 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       } else return void console.log("".concat(name, " is not a valid effect type"));
 
       if (typeof near === "number") {
-        near = valToObj(constrain(near, params.min, params.max));
+        near = Utils.valToObj(Utils.constrain(near, params.min, params.max));
       }
 
       if (typeof far === "number") {
-        far = valToObj(constrain(far, params.min, params.max));
+        far = Utils.valToObj(Utils.constrain(far, params.min, params.max));
       }
 
       _classPrivateFieldSet(this, _effects, _classPrivateFieldGet(this, _effects) || []);
@@ -519,8 +527,8 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         var nearMethod = near.scatterMethod ? near.scatterMethod : _classPrivateFieldGet(this, _DEFAULT_SCATTER_METHOD),
             farMethod = far.scatterMethod ? far.scatterMethod : _classPrivateFieldGet(this, _DEFAULT_SCATTER_METHOD);
         effects.push({
-          near: near.scatter ? near.value + random(near.scatter, nearMethod) : near.value,
-          far: far.scatter ? far.value + random(far.scatter, farMethod) : far.value
+          near: near.scatter ? near.value + Utils.random(near.scatter, nearMethod) : near.value,
+          far: far.scatter ? far.value + Utils.random(far.scatter, farMethod) : far.value
         });
       }
     }
@@ -722,7 +730,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         } // normalise to boundaries
 
 
-        td = constrain((dd - this.threshold) * _classPrivateFieldGet(this, _params).invRunoff, 0, 1);
+        td = Utils.constrain((dd - this.threshold) * _classPrivateFieldGet(this, _params).invRunoff, 0, 1);
 
         if (this.invert) {
           td = 1 - td;
@@ -731,9 +739,9 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, "distance", td); // apply easing
 
 
-        d = last + (td - last) * (XOR(td > last, this.invert) ? this.decay : this.attack); // round value to reduce jitter
+        d = last + (td - last) * (Utils.XOR(td > last, this.invert) ? this.decay : this.attack); // round value to reduce jitter
 
-        d = roundTo(d, this.accuracy);
+        d = Utils.roundTo(d, this.accuracy);
 
         _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, "lastDelta", d);
 
@@ -748,7 +756,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
                 rule = effect.params.rule,
                 func = effect.params.func,
                 unit = effect.params.unit || "",
-                val = delta(d, near, far);
+                val = Utils.delta(d, near, far);
 
             if (!func) {
               _node2.style[rule] = "".concat(val).concat(unit);
@@ -861,7 +869,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      _classPrivateFieldGet(this, _params).threshold = constrain(value, 0);
+      _classPrivateFieldGet(this, _params).threshold = Utils.constrain(value, 0);
     }
     /**
      * Get the effect runoff.
@@ -879,7 +887,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      _classPrivateFieldGet(this, _params).runoff = constrain(value, 0);
+      _classPrivateFieldGet(this, _params).runoff = Utils.constrain(value, 0);
       _classPrivateFieldGet(this, _params).invRunoff = 1 / _classPrivateFieldGet(this, _params).runoff;
     }
     /**
@@ -926,7 +934,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      _classPrivateFieldGet(this, _params).attack = constrain(value, 0, 1);
+      _classPrivateFieldGet(this, _params).attack = Utils.constrain(value, 0, 1);
     }
     /**
      * Get the effect decay.
@@ -944,7 +952,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      _classPrivateFieldGet(this, _params).decay = constrain(value, 0, 1);
+      _classPrivateFieldGet(this, _params).decay = Utils.constrain(value, 0, 1);
     }
     /**
      * Get the global horizontal offset.
@@ -1006,12 +1014,12 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(num) {
-      _classPrivateFieldGet(this, _params).jitter = constrain(num, 0);
+      _classPrivateFieldGet(this, _params).jitter = Utils.constrain(num, 0);
 
       for (var i = 0; i < this.nodes.length; i++) {
         _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, "jitter", {
-          x: random(this.jitter),
-          y: random(this.jitter)
+          x: Utils.random(this.jitter),
+          y: Utils.random(this.jitter)
         });
       }
 
@@ -1049,7 +1057,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     },
     set: function set(num) {
       if (num > 0) {
-        _classPrivateFieldGet(this, _params).FPS = constrain(num, 0);
+        _classPrivateFieldGet(this, _params).FPS = Utils.constrain(num, 0);
       } else {
         return void console.log("Invalid FPS requested.");
       }
@@ -1108,7 +1116,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(num) {
-      _classPrivateFieldGet(this, _params).accuracy = Math.floor(constrain(num, 0));
+      _classPrivateFieldGet(this, _params).accuracy = Math.floor(Utils.constrain(num, 0));
     }
     /**
      * Get the last known mouse pointer coordinates, relative to the viewport, in pixels.

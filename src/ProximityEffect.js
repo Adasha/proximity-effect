@@ -1,81 +1,102 @@
-﻿/*
+﻿/** 
+ * Utilities Class
+ */
+
+class Utils {
+
+
+
+    static constrain = (num, min, max) => {
+        if (typeof num!=="number") {
+            return NaN;
+        }
+        if (min!==undefined && min!==null && typeof min==="number") {
+            num = Math.max(num, min);
+        }
+        if (max!==undefined && max!==null && typeof max==="number") {
+            num = Math.min(num, max);
+        }
+        return num;
+    };
+    
+
+    static roundTo = (num, dp=0) => {
+        let mult = Math.pow(dp+1,10);
+        return Math.round(num*mult)/mult;
+    };
+    
+
+    static delta = (num, a, b) => (b - a) * Utils.constrain(num, 0, 1) + a;
+    
+
+    static map = (num, inMin, inMax, outMin, outMax) =>
+            (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+    
+
+    static random = (v=2, m="uniform") => {
+        switch (m) {
+    
+            // intentional fall-throughs
+            case "gaussian" :
+            case "normal" :
+                let t = 0,
+                    c = 6;
+                for (let i=0; i<c; i++) {
+                    t += (Math.random()-0.5)*v;
+                }
+                return t/c;
+                break;
+    
+            case "uniform" :
+            default :
+                return (Math.random()-0.5)*v;
+        }
+    }
+    
+
+    static XOR = (a, b) => (a || b) && !(a && b);
+    
+
+    static isVisibleInViewport = (el) => {
+        let bounds = el.getBoundingClientRect(),
+            view   = document.documentElement;
+        return bounds.right >=0 && bounds.left<=view.clientWidth &&
+               bounds.bottom>=0 && bounds.top <=view.clientHeight;
+    };
+    
+
+    //static startTimer = (delay) =>
+    
+
+    static valToObj = (val, key="value") => {
+        let obj = {};
+        obj[key] = val;
+        return obj;
+    
+    };
+    
+
+    static isObject = obj => obj==Object(obj);
+    
+    
+
+}
+
+
+
+
+
+
+
+
+
+
+/*
  * ProximityEffect class by Adasha
  * Licensed under MPL-2.0
  * Repository: https://github.com/Adasha/proximity-effect
  * Demos: http://lab.adasha.com/proximity-effect
  */
-
-
-
-
-
-
-// TODO: get these out of the global scope
-
-const constrain = (num, min, max) => {
-    if (typeof num!=="number") {
-        return NaN;
-    }
-    if (min!==undefined && min!==null && typeof min==="number") {
-        num = Math.max(num, min);
-    }
-    if (max!==undefined && max!==null && typeof max==="number") {
-        num = Math.min(num, max);
-    }
-    return num;
-};
-
-const roundTo = (num, dp=0) => {
-    let mult = Math.pow(dp+1,10);
-    return Math.round(num*mult)/mult;
-};
-
-const delta = (num, a, b) => (b - a) * constrain(num, 0, 1) + a;
-
-const map = (num, inMin, inMax, outMin, outMax) =>
-        (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-
-const random = (v=2, m="uniform") => {
-    switch (m) {
-
-        // intentional fall-throughs
-        case "gaussian" :
-        case "normal" :
-            let t = 0,
-                c = 6;
-            for (let i=0; i<c; i++) {
-                t += (Math.random()-0.5)*v;
-            }
-            return t/c;
-            break;
-
-        case "uniform" :
-        default :
-            return (Math.random()-0.5)*v;
-    }
-}
-
-const XOR = (a, b) => (a || b) && !(a && b);
-
-const isVisibleInViewport = (el) => {
-    let bounds = el.getBoundingClientRect(),
-        view   = document.documentElement;
-    return bounds.right >=0 && bounds.left<=view.clientWidth &&
-           bounds.bottom>=0 && bounds.top <=view.clientHeight;
-};
-
-//const startTimer = (delay) =>
-
-const valToObj = (val, key="value") => {
-    let obj = {};
-    obj[key] = val;
-    return obj;
-};
-
-const isObject = obj => obj==Object(obj);
-
-
-
 
 
 
@@ -91,7 +112,7 @@ class ProximityEffect extends EventTarget {
     #nodes;
     #nodeData;
 
-    
+
     #VALID_DIRECTIONS       = new Set(["both", "horizontal", "vertical"]);
     #DEFAULT_DIRECTION      = "both";
     #DEFAULT_MODE           = "redraw";
@@ -285,7 +306,7 @@ class ProximityEffect extends EventTarget {
      * @param {number} value - The new threshold radius, in pixels.
      */
     set threshold(value) {
-    	this.#params.threshold = constrain(value, 0);
+    	this.#params.threshold = Utils.constrain(value, 0);
     }
 
 
@@ -305,7 +326,7 @@ class ProximityEffect extends EventTarget {
      * @param {number} value - The new runoff radius, in pixels.
      */
     set runoff(value) {
-    	this.#params.runoff = constrain(value, 0);
+    	this.#params.runoff = Utils.constrain(value, 0);
         this.#params.invRunoff = 1/this.#params.runoff;
     }
 
@@ -358,7 +379,7 @@ class ProximityEffect extends EventTarget {
      * @param {number} value - The new attack value.
      */
     set attack(value) {
-    	this.#params.attack = constrain(value, 0, 1);
+    	this.#params.attack = Utils.constrain(value, 0, 1);
     }
 
 
@@ -377,7 +398,7 @@ class ProximityEffect extends EventTarget {
      * @param {number} value - The new decay value.
      */
     set decay(value) {
-    	this.#params.decay = constrain(value, 0, 1);
+    	this.#params.decay = Utils.constrain(value, 0, 1);
     }
 
 
@@ -441,11 +462,11 @@ class ProximityEffect extends EventTarget {
      * @param {number} num - The new jitter value, in pixels.
      */
   	set jitter(num) {
-        this.#params.jitter = constrain(num, 0);
+        this.#params.jitter = Utils.constrain(num, 0);
         for (let i=0; i<this.nodes.length; i++) {
             this.#setNodeIndexData(i, "jitter", {
-                x: random(this.jitter),
-                y: random(this.jitter)
+                x: Utils.random(this.jitter),
+                y: Utils.random(this.jitter)
             });
         }
         if (!this.preventCenterCalculations) {
@@ -490,7 +511,7 @@ class ProximityEffect extends EventTarget {
 
     set FPS(num) {
         if (num>0) {
-            this.#params.FPS = constrain(num, 0);
+            this.#params.FPS = Utils.constrain(num, 0);
         }
         else {
             return void console.log("Invalid FPS requested.");
@@ -558,7 +579,7 @@ class ProximityEffect extends EventTarget {
      * @param {number} num - The new accuracy value.
      */
     set accuracy(num) {
-        this.#params.accuracy = Math.floor(constrain(num, 0));
+        this.#params.accuracy = Math.floor(Utils.constrain(num, 0));
     }
 
 
@@ -614,17 +635,17 @@ class ProximityEffect extends EventTarget {
             /** Effect already exists **/
             params = this.#VALID_EFFECTS[name];
         }
-        else if (params && isObject(params) && typeof params.rule==="string") {  // TODO: do we need any deeper validation checks?
+        else if (params && Utils.isObject(params) && typeof params.rule==="string") {  // TODO: do we need any deeper validation checks?
             /** Register custom effect **/
             this.#VALID_EFFECTS[name] = params;
         }
         else return void console.log(`${name} is not a valid effect type`);
 
         if (typeof near==="number") {
-            near = valToObj(constrain(near, params.min, params.max));
+            near = Utils.valToObj(Utils.constrain(near, params.min, params.max));
         }
         if (typeof far==="number") {
-            far = valToObj(constrain(far, params.min, params.max));
+            far = Utils.valToObj(Utils.constrain(far, params.min, params.max));
         }
 
 
@@ -643,8 +664,8 @@ class ProximityEffect extends EventTarget {
                  farMethod =  far.scatterMethod ?  far.scatterMethod : this.#DEFAULT_SCATTER_METHOD;
 
             effects.push({
-                near: near.scatter ? near.value+random(near.scatter, nearMethod) : near.value,
-                far:   far.scatter ?  far.value+random( far.scatter, farMethod)  :  far.value
+                near: near.scatter ? near.value+Utils.random(near.scatter, nearMethod) : near.value,
+                far:   far.scatter ?  far.value+Utils.random( far.scatter,  farMethod) :  far.value
             });
         }
     }
@@ -892,7 +913,7 @@ class ProximityEffect extends EventTarget {
             }
 
             // normalise to boundaries
-    		td = constrain((dd-this.threshold) * this.#params.invRunoff, 0, 1);
+    		td = Utils.constrain((dd-this.threshold) * this.#params.invRunoff, 0, 1);
             if (this.invert) {
                 td = 1 - td;
             }
@@ -900,10 +921,10 @@ class ProximityEffect extends EventTarget {
             this.#setNodeIndexData(n, "distance", td);
 
             // apply easing
-            d = last+(td-last)*(XOR(td>last, this.invert) ? this.decay : this.attack);
+            d = last+(td-last)*(Utils.XOR(td>last, this.invert) ? this.decay : this.attack);
 
             // round value to reduce jitter
-            d = roundTo(d, this.accuracy);
+            d = Utils.roundTo(d, this.accuracy);
 
             this.#setNodeIndexData(n, "lastDelta", d);
 
@@ -920,7 +941,7 @@ class ProximityEffect extends EventTarget {
                           rule     = effect.params.rule,
                           func     = effect.params.func,
                           unit     = effect.params.unit || "",
-                          val      = delta(d, near, far);
+                          val      = Utils.delta(d, near, far);
 
 
                       if (!func) {
