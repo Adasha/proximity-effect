@@ -1,4 +1,4 @@
-﻿/** 
+﻿/*
  * Utilities Class
  */
 
@@ -102,6 +102,9 @@ class Utils {
 
 /**
  * Class representing a ProximityEffect.
+ * @version 2.1.19
+ * @author Adam Shailer <adasha76@outlook.com>
+ * @class
  * @extends EventTarget
  */
 class ProximityEffect extends EventTarget {
@@ -152,6 +155,7 @@ class ProximityEffect extends EventTarget {
 
     /**
      * Create a ProximityEffect instance.
+     * @constructor
      * @param {NodeList} nodes - A list of nodes to control.
      * @param {Object} [params={}] - An object containing effect parameters.
      * @param {number} [params.threshold=0] - The effect threshold, in pixels.
