@@ -95,7 +95,7 @@ myEffect.addEffect('padding', {value: 20, scatter: 30}, {value: 100, scatter: 50
 ## API
 Full details on the API are forthcoming, for now there is only an unfinished [page on the wiki](https://github.com/Adasha/proximity-effect/wiki/API-reference).
 
-This is a hobby project and the API has evolved, much less been planned out. v3 is the target for everything to be locked down.
+This is a hobby project and the API has evolved, much less been planned out. v3 is the target for everything to be locked down, after which semver all the way.
 
 
 ## License:
