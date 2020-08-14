@@ -51,6 +51,9 @@ var Utils = function Utils() {
 
 /**
  * Class representing a ProximityEffect.
+ * @version 2.1.19
+ * @author Adam Shailer <adasha76@outlook.com>
+ * @class
  * @extends EventTarget
  */
 
@@ -167,6 +170,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
   /**
    * Create a ProximityEffect instance.
+   * @constructor
    * @param {NodeList} nodes - A list of nodes to control.
    * @param {Object} [params={}] - An object containing effect parameters.
    * @param {number} [params.threshold=0] - The effect threshold, in pixels.

@@ -107,7 +107,8 @@ class Utils {
  * @class
  * @extends EventTarget
  */
-class ProximityEffect extends EventTarget {
+class ProximityEffect extends EventTarget
+{
 
     #params;
     #pointer = {};
@@ -123,6 +124,8 @@ class ProximityEffect extends EventTarget {
     #DEFAULT_FPS            =     15;
     #DEFAULT_RUNOFF         =    100;
     #DEFAULT_SCATTER_METHOD = "uniform";
+
+
     #VALID_EFFECTS          = {
         opacity:         {min: 0, max:   1, default:       1, rule: "opacity"},
         translateX:      {                  default:       0, rule: "transform",       func: "translateX",  unit: "px"},
@@ -174,7 +177,8 @@ class ProximityEffect extends EventTarget {
      * @fires ProximityEffect#redraw
      * @fires ProximityEffect#reflow
      */
-    constructor(nodes, params = {}) {
+    constructor(nodes, params = {})
+    {
         super();
 
         if (!nodes) {
@@ -204,10 +208,13 @@ class ProximityEffect extends EventTarget {
         this.target    = this.#params.target;
 
 
-       	if (document.readyState==="completed") {
+
+        if (document.readyState==="completed")
+        {
             this.#init();
         }
-       	else {
+        else
+        {
             window.addEventListener("load", () => this.#init());
         }
     }
@@ -228,7 +235,8 @@ class ProximityEffect extends EventTarget {
      * Get the current target
      * @return {Element|Falsy} The current target.
      */
-    get target() {
+    get target()
+    {
         return this.#params.target;
     }
 
@@ -236,7 +244,8 @@ class ProximityEffect extends EventTarget {
      * Set the current target
      * @param {Element|Falsy} target - A reference to a DOM Element, or falsy to target mouse.
      */
-    set target(target) {
+    set target(target)
+    {
         if (!target || target.getBoundingClientRect()) {
             this.#params.target = target;
         }
@@ -253,7 +262,8 @@ class ProximityEffect extends EventTarget {
      * Get the list of nodes.
      * @return {Array<Element>} The node array.
      */
-    get nodes() {
+    get nodes()
+    {
         return this.#nodes;
     }
 
@@ -261,13 +271,17 @@ class ProximityEffect extends EventTarget {
      * Set the list of nodes.
      * @param {NodeList<Element>} list - The list of nodes.
      */
-    set nodes(list) {
-        if (!(list instanceof NodeList)) {
+    set nodes(list)
+    {
+        if (!(list instanceof NodeList))
+        {
             throw new Error(`${list} is not a node list`);
         }
-        if (list.length<1) {
+        if (list.length<1)
+        {
             throw new Error(`No nodes found in ${list}`);
         }
+
 
         this.#nodes = [].slice.call(list);  //convert to array
         this.#nodeData = this.#nodes.map(i => ({
@@ -276,7 +290,9 @@ class ProximityEffect extends EventTarget {
             lastDelta: this.#params.doPresetDistances ? 1 : null
         }));
 
-		if (this.#params && !this.preventCenterCalculations) {
+
+        if (this.#params && !this.preventCenterCalculations)
+        {
             this.setCenterPoints();
         }
     }
@@ -289,7 +305,8 @@ class ProximityEffect extends EventTarget {
      * Get the list of effects.
      * @return {Array<Object>} The effects array.
      */
-    get effects() {
+    get effects()
+    {
         return this.#effects;
     }
 
@@ -301,7 +318,8 @@ class ProximityEffect extends EventTarget {
      * Get the effect threshold.
      * @return {number} The threshold radius, in pixels.
      */
-    get threshold() {
+    get threshold()
+    {
     	return this.#params.threshold;
     }
 
@@ -309,7 +327,8 @@ class ProximityEffect extends EventTarget {
      * Set the effect threshold.
      * @param {number} value - The new threshold radius, in pixels.
      */
-    set threshold(value) {
+    set threshold(value)
+    {
     	this.#params.threshold = Utils.constrain(value, 0);
     }
 
@@ -321,7 +340,8 @@ class ProximityEffect extends EventTarget {
      * Get the effect runoff.
      * @return {number} The runoff radius, in pixels.
      */
-    get runoff() {
+    get runoff()
+    {
     	return this.#params.runoff;
     }
 
@@ -329,7 +349,8 @@ class ProximityEffect extends EventTarget {
      * Set the effect runoff.
      * @param {number} value - The new runoff radius, in pixels.
      */
-    set runoff(value) {
+    set runoff(value)
+    {
     	this.#params.runoff = Utils.constrain(value, 0);
         this.#params.invRunoff = 1/this.#params.runoff;
     }
@@ -342,7 +363,8 @@ class ProximityEffect extends EventTarget {
      * Get the effect boundary.
      * @return {number} The boundary radius, in pixels.
      */
-    get boundary() {
+    get boundary()
+    {
     	return this.threshold + this.runoff;
     }
 
@@ -354,7 +376,8 @@ class ProximityEffect extends EventTarget {
      * Get the invert state.
      * @return {boolean} The invert value.
      */
-    get invert() {
+    get invert()
+    {
         return this.#params.invert;
     }
 
@@ -362,7 +385,8 @@ class ProximityEffect extends EventTarget {
      * Set the invert state.
      * @param {boolean} flag - The new invert value.
      */
-    set invert(flag) {
+    set invert(flag)
+    {
         this.#params.invert = !!flag;
     }
 
@@ -374,7 +398,8 @@ class ProximityEffect extends EventTarget {
      * Get the effect attack.
      * @return {number} The attack value.
      */
-    get attack() {
+    get attack()
+    {
     	return this.#params.attack;
     }
 
@@ -382,7 +407,8 @@ class ProximityEffect extends EventTarget {
      * Set the effect attack.
      * @param {number} value - The new attack value.
      */
-    set attack(value) {
+    set attack(value)
+    {
     	this.#params.attack = Utils.constrain(value, 0, 1);
     }
 
@@ -393,7 +419,8 @@ class ProximityEffect extends EventTarget {
      * Get the effect decay.
      * @return {number} The decay value.
      */
-    get decay() {
+    get decay()
+    {
     	return this.#params.decay;
     }
 
@@ -401,7 +428,8 @@ class ProximityEffect extends EventTarget {
      * Set the effect decay.
      * @param {number} value - The new decay value.
      */
-    set decay(value) {
+    set decay(value)
+    {
     	this.#params.decay = Utils.constrain(value, 0, 1);
     }
 
@@ -413,7 +441,8 @@ class ProximityEffect extends EventTarget {
      * Get the global horizontal offset.
      * @return {number} The offset value, in pixels.
      */
-  	get offsetX() {
+    get offsetX()
+    {
         return this.#params.offsetX;
   	}
 
@@ -421,7 +450,8 @@ class ProximityEffect extends EventTarget {
      * Get the global vertical offset.
      * @return {number} The offset value, in pixels.
      */
- 	get offsetY() {
+    get offsetY()
+    {
         return this.#params.offsetY;
   	}
 
@@ -431,7 +461,8 @@ class ProximityEffect extends EventTarget {
      * Set the global horizontal offset.
      * @param {number} value - The new offset value, in pixels.
      */
-  	set offsetX(value) {
+    set offsetX(value)
+    {
         this.#params.offsetX = value;
         if (!this.preventCenterCalculations) {
             this.setCenterPoints();
@@ -442,9 +473,11 @@ class ProximityEffect extends EventTarget {
      * Set the global vertical offset, in pixels.
      * @param {number} value - The new offset value.
      */
-  	set offsetY(value) {
+    set offsetY(value)
+    {
         this.#params.offsetY = value;
-        if (!this.preventCenterCalculations) {
+        if (!this.preventCenterCalculations)
+        {
             this.setCenterPoints();
         }
   	}
@@ -457,7 +490,8 @@ class ProximityEffect extends EventTarget {
      * Get the jitter value.
      * @return {number} The jitter value, in pixels.
      */
-  	get jitter() {
+    get jitter()
+    {
         return this.#params.jitter;
   	}
 
@@ -465,7 +499,8 @@ class ProximityEffect extends EventTarget {
      * Set the jitter value.
      * @param {number} num - The new jitter value, in pixels.
      */
-  	set jitter(num) {
+    set jitter(num)
+    {
         this.#params.jitter = Utils.constrain(num, 0);
         for (let i=0; i<this.nodes.length; i++) {
             this.#setNodeIndexData(i, "jitter", {
@@ -486,7 +521,8 @@ class ProximityEffect extends EventTarget {
      * Get the effect direction.
      * @return {string} The direction value.
      */
-    get direction() {
+    get direction()
+    {
         return this.#params.direction;
     }
 
@@ -494,11 +530,14 @@ class ProximityEffect extends EventTarget {
      * Set the effect direction.
      * @param {string} str - The new direction value, both|horizontal|vertical.
      */
-    set direction(str) {
-        if (this.#VALID_DIRECTIONS.has(str)) {
+    set direction(str)
+    {
+        if (this.#VALID_DIRECTIONS.has(str))
+        {
         	this.#params.direction = str;
         }
-        else {
+        else
+        {
             return void console.log(`${str} not a valid direction.`);
         }
     }
@@ -509,15 +548,19 @@ class ProximityEffect extends EventTarget {
 
     // FPS [Number>0]
 
-    get FPS() {
+    get FPS()
+    {
     	return this.#params.FPS;
     }
 
-    set FPS(num) {
-        if (num>0) {
+    set FPS(num)
+    {
+        if (num>0)
+        {
             this.#params.FPS = Utils.constrain(num, 0);
         }
-        else {
+        else
+        {
             return void console.log("Invalid FPS requested.");
         }
     }
@@ -528,13 +571,17 @@ class ProximityEffect extends EventTarget {
 
     // MODE [String]
 
-    get mode() {
+    get mode()
+    {
         return this.#params.mode;
     }
 
-    set mode(mode) {
-        if (mode) {
-            if (mode===this.#params.mode) {
+    set mode(mode)
+    {
+        if (mode)
+        {
+            if (mode===this.#params.mode)
+            {
                 return void console.log(`Already in ${mode} mode. Mode not changed.`);
             }
 
@@ -543,7 +590,8 @@ class ProximityEffect extends EventTarget {
         	// b.removeEventListener("enterframe", this.update());
         	// window.clearInterval(this._frameLoop);
 
-            switch (mode) {
+            switch (mode)
+            {
         		case "mousemove" :
         			b.addEventListener("mousemove", this.update());
         			break;
@@ -574,7 +622,8 @@ class ProximityEffect extends EventTarget {
      * Get the effect accuracy.
      * @return {number} The accuracy value.
      */
-    get accuracy() {
+    get accuracy()
+    {
         return this.#params.accuracy;
     }
 
@@ -582,7 +631,8 @@ class ProximityEffect extends EventTarget {
      * Set the effect accuracy.
      * @param {number} num - The new accuracy value.
      */
-    set accuracy(num) {
+    set accuracy(num)
+    {
         this.#params.accuracy = Math.floor(Utils.constrain(num, 0));
     }
 
@@ -594,7 +644,8 @@ class ProximityEffect extends EventTarget {
      * Get the last known mouse pointer coordinates, relative to the viewport, in pixels.
      * @return {Object} An object containing x and y properties.
      */
-    get pointer() {
+    get pointer()
+    {
         return {
             x: this.#pointer.x,
             y: this.#pointer.y
@@ -634,21 +685,26 @@ class ProximityEffect extends EventTarget {
      * @param {number} [params.default] - The default effect value.
      * @param {string} [params.unit] - The effect CSS unit.
      */
-    addEffect(name, near, far, params) {
-        if (this.#VALID_EFFECTS.hasOwnProperty(name)) {    // TODO: how necessary is this really?
+    addEffect(name, near, far, params)
+    {
+        if (this.#VALID_EFFECTS.hasOwnProperty(name))
+        {    // TODO: how necessary is this really?
             /** Effect already exists **/
             params = this.#VALID_EFFECTS[name];
         }
-        else if (params && Utils.isObject(params) && typeof params.rule==="string") {  // TODO: do we need any deeper validation checks?
+        else if (params && Utils.isObject(params) && typeof params.rule==="string")
+        {  // TODO: do we need any deeper validation checks?
             /** Register custom effect **/
             this.#VALID_EFFECTS[name] = params;
         }
         else return void console.log(`${name} is not a valid effect type`);
 
-        if (typeof near==="number") {
+        if (typeof near==="number")
+        {
             near = Utils.valToObj(Utils.constrain(near, params.min, params.max));
         }
-        if (typeof far==="number") {
+        if (typeof far==="number")
+        {
             far = Utils.valToObj(Utils.constrain(far, params.min, params.max));
         }
 
@@ -662,7 +718,8 @@ class ProximityEffect extends EventTarget {
         });
 
 
-        for (let i=0; i<this.#nodeData.length; i++) {
+        for (let i=0; i<this.#nodeData.length; i++)
+        {
             let effects = this.getNodeIndexData(i, "effects") || this.#setNodeIndexData(i, "effects", [])["effects"];
             let nearMethod = near.scatterMethod ? near.scatterMethod : this.#DEFAULT_SCATTER_METHOD,
                  farMethod =  far.scatterMethod ?  far.scatterMethod : this.#DEFAULT_SCATTER_METHOD;
@@ -681,7 +738,8 @@ class ProximityEffect extends EventTarget {
      * @param {string} name - The name of the effect to check for.
      * @return {boolean} True if the effect exists at least once.
      */
-    hasEffect(name) {
+    hasEffect(name)
+    {
         return this.effects.find(eff => eff["type"]===name)!==undefined;
     }
 
@@ -691,11 +749,15 @@ class ProximityEffect extends EventTarget {
      * Remove all instances of an effect from the stack.
      * @param {string} name - The name of the effect to remove.
      */
-    removeEffect(name) {
-        if (this.hasEffect(name)) {
-            for (let i=0; i<this.#effects.length; i++) {
+    removeEffect(name)
+    {
+        if (this.hasEffect(name))
+        {
+            for (let i=0; i<this.#effects.length; i++)
+            {
                 let eff = this.#effects[i];
-                if (eff["type"]===name) {
+                if (eff["type"]===name)
+                {
                     this.#effects.splice(i, 1);
                 }
             }
@@ -710,7 +772,8 @@ class ProximityEffect extends EventTarget {
      * Get the distance to the current target from the given node, in pixels.
      * @param {Element} n - The node to check.
      */
-    distanceFrom(n) {
+    distanceFrom(n)
+    {
         return this.getNodeData(n, "distance");
     }
 
@@ -720,7 +783,8 @@ class ProximityEffect extends EventTarget {
      * Get the distance to the current target from the given node index, in pixels.
      * @param {number} i - The node index to check.
      */
-    distanceFromIndex(i) {
+    distanceFromIndex(i)
+    {
         return this.getNodeIndexData(i, "distance");
     }
 
@@ -731,8 +795,10 @@ class ProximityEffect extends EventTarget {
     /**
      * Recalculate each node"s centre point, including global offset and jitter.
      */
-    setCenterPoints() {
-    	for (let n=0; n<this.nodes.length; n++) {
+    setCenterPoints()
+    {
+        for (let n=0; n<this.nodes.length; n++)
+        {
     		let node   = this.nodes[n],
                 cssTxt = node.style.cssText;
 
@@ -743,7 +809,8 @@ class ProximityEffect extends EventTarget {
                 y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY,
                 jitter = this.getNodeIndexData(n, "jitter");
 
-            if (jitter && this.jitter>0) {
+            if (jitter && this.jitter>0)
+            {
                 x += jitter.x;
                 y += jitter.y;
             }
@@ -769,7 +836,8 @@ class ProximityEffect extends EventTarget {
      * @param {string} [prop] - The data property to return, leave out to return the entire object.
      * @return {mixed|NodeData} The chosen property value, or an object containing the node"s data.
      */
-    getNodeData(n, prop) {
+    getNodeData(n, prop)
+    {
         let data = this.#nodeData[this.nodes.findIndex(n => n===node)];
         return prop ? data[prop] : data;
     }
@@ -782,7 +850,8 @@ class ProximityEffect extends EventTarget {
      * @param {string} prop - The data property to return.
      * @return {Object} True if the property exists, false otherwise.
      */
-    getNodeIndexData(i, prop) {
+    getNodeIndexData(i, prop)
+    {
         return this.#nodeData[i][prop];
     }
 
@@ -795,7 +864,8 @@ class ProximityEffect extends EventTarget {
      * @param {string} prop - The data property to return.
      * @return {boolean} An object containing the node"s data.
      */
-    hasNodeIndexData(i, prop) {
+    hasNodeIndexData(i, prop)
+    {
         return this.#nodeData[i].hasOwnProperty(prop);
     }
 
@@ -811,7 +881,8 @@ class ProximityEffect extends EventTarget {
 
 
 
-    #init() {
+    #init()
+    {
         this.preventCenterCalculations = false;
         this.setCenterPoints();
 
@@ -833,8 +904,10 @@ class ProximityEffect extends EventTarget {
 
 
 
-    #setNodeIndexData(n, prop, val) {
-        if (!this.#nodeData[n]) {
+    #setNodeIndexData(n, prop, val)
+    {
+        if (!this.#nodeData[n])
+        {
             this.#nodeData[n] = {};
         }
         this.#nodeData[n][prop] = val;
@@ -855,7 +928,8 @@ class ProximityEffect extends EventTarget {
 
 
 
-    updatePointer(evt) {
+    updatePointer(evt)
+    {
         this.#pointer.x = evt.clientX;
         this.#pointer.y = evt.clientY;
     }
@@ -864,13 +938,16 @@ class ProximityEffect extends EventTarget {
 
 
 
-    reflowEvent(evt) {
-        if (evt.currentTarget!==this) {
+    reflowEvent(evt)
+    {
+        if (evt.currentTarget!==this)
+        {
             this.dispatchEvent(new Event("reflow"));
         }
 
         // TODO: is this a hack? or the best way to do it?
-        if (!this.preventCenterCalculations) {
+        if (!this.preventCenterCalculations)
+        {
             window.setTimeout(() => this.setCenterPoints(), 1);
         }
     }
@@ -879,10 +956,12 @@ class ProximityEffect extends EventTarget {
 
 
 
-    update(timestamp) {
+    update(timestamp)
+    {
         let view = document.documentElement;
 
-        for (let n=0; n<this.nodes.length; n++) {
+        for (let n=0; n<this.nodes.length; n++)
+        {
             let node    = this.nodes[n],
                 bounds  = node.getBoundingClientRect(),
                 center  = this.getNodeIndexData(n, "center");
@@ -894,12 +973,14 @@ class ProximityEffect extends EventTarget {
                 last = this.getNodeIndexData(n, "lastDelta");
 
 
-            if (this.target) {
+            if (this.target)
+            {
                 let b = this.target.getBoundingClientRect();
                 tx = (b.left + b.right)*0.5;
                 ty = (b.top + b.bottom)*0.5;
             }
-            else {
+            else
+            {
                 tx = this.pointer.x;
                 ty = this.pointer.y;
             }
@@ -909,16 +990,19 @@ class ProximityEffect extends EventTarget {
                 dd, td, d;
 
             // calculate distance
-            if (this.direction==="both") {
+            if (this.direction==="both")
+            {
                 dd = Math.sqrt(dx*dx+dy*dy);
             }
-            else {
+            else
+            {
                 dd = Math.abs(this.direction==="horizontal" ? dx : dy);
             }
 
             // normalise to boundaries
     		td = Utils.constrain((dd-this.threshold) * this.#params.invRunoff, 0, 1);
-            if (this.invert) {
+            if (this.invert)
+            {
                 td = 1 - td;
             }
 
@@ -933,40 +1017,50 @@ class ProximityEffect extends EventTarget {
             this.#setNodeIndexData(n, "lastDelta", d);
 
 
-  			if (this.effects.length>0) {
+            if (this.effects.length>0)
+            {
       			let styles = {};
 
-      			for (let f=0; f<this.effects.length; f++) {
+                for (let f=0; f<this.effects.length; f++)
+                {
       				let effect   = this.effects[f],
-                          nodeVals = this.getNodeIndexData(n, "effects")[f];
+                        nodeVals = this.getNodeIndexData(n, "effects")[f];
 
-                      let near     = nodeVals.near,
-                          far      = nodeVals.far,
-                          rule     = effect.params.rule,
-                          func     = effect.params.func,
-                          unit     = effect.params.unit || "",
-                          val      = Utils.delta(d, near, far);
+                    let near     = nodeVals.near,
+                        far      = nodeVals.far,
+                        rule     = effect.params.rule,
+                        func     = effect.params.func,
+                        unit     = effect.params.unit || "",
+                        val      = Utils.delta(d, near, far);
 
 
-                      if (!func) {
-                          node.style[rule] = `${val}${unit}`;
-                      }
-                      else {
-                          if (!styles[rule]) {
-                              styles[rule] = [];
-                          }
-                          styles[rule].push(func+"("+val+unit+")");
-                      }
-      			      }
-                  for (let rule in styles) {
+                    if (!func)
+                    {
+                        node.style[rule] = `${val}${unit}`;
+                    }
+                    else
+                    {
+                        if (!styles[rule])
+                        {
+                            styles[rule] = [];
+                        }
+                        styles[rule].push(func+"("+val+unit+")");
+                    }
+                }
+                
+
+                for (let rule in styles)
+                {
                     node.style[rule] = styles[rule].join(" ");
-                  }
-                  let ix = Math.floor(d*1000);
-                  node.style.zIndex = this.invert ? ix : 1000-ix;
-              }
-          }
+                }
 
-        if (this.mode==="redraw") {
+                let ix = Math.floor(d*1000);
+                node.style.zIndex = this.invert ? ix : 1000-ix;
+            }
+        }
+
+        if (this.mode==="redraw")
+        {
             window.requestAnimationFrame(this.update);
         }
 
