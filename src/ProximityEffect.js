@@ -2,7 +2,8 @@
  * Utilities Class
  */
 
-class Utils {
+class Utils
+{
 
 
 
