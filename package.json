@@ -1,6 +1,6 @@
 {
 	"name": "proximity-effect",
-	"version": "v2.1.19",
+	"version": "v3.0.0",
 	"description": "Mass animate CSS properties based on proximity of mouse or arbitrary target.",
 	"author": {
 		"name": "Adam Shailer",
@@ -11,11 +11,6 @@
 	"unpkg": "./dist/ProximityEffect.min.js",
 	"directories": {
 		"test": "tests"
-	},
-	"scripts": {
-		"build": "gulp babel && gulp minify",
-		"build:docs": "jsdoc ./src/ProximityEffect.js -d ./docs -P ./package.json -R ./README.md",
-		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"keywords": [
 		"mouse",
@@ -48,9 +43,10 @@
 		"blend",
 		"transform",
 		"transition",
-		"element"
+		"element",
+		"front-end"
 	],
-	"homepage": "http://lab.adasha.com/proximity-effect",
+	"homepage": "http://lab.adasha.com/components/proximity-effect",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Adasha/proximity-effect"
@@ -61,22 +57,28 @@
 	},
 	"license": "MPL-2.0",
 	"dependencies": {
-		"@babel/polyfill": "^7.7.0",
+		"@babel/polyfill": "^7.11.5",
 		"event-target": "^1.2.3"
 	},
 	"devDependencies": {
-		"@babel/cli": "^7.10.5",
-		"@babel/core": "^7.11.1",
+		"@babel/cli": "^7.11.6",
+		"@babel/core": "^7.11.6",
 		"@babel/plugin-proposal-class-properties": "^7.10.4",
 		"@babel/plugin-proposal-private-methods": "^7.10.4",
-		"@babel/preset-env": "^7.11.0",
+		"@babel/preset-env": "^7.11.5",
 		"babel-eslint": "^10.1.0",
-		"eslint": "^7.7.0",
+		"eslint": "^7.8.1",
 		"gulp": "^4.0.2",
 		"gulp-babel": "^8.0.0",
 		"gulp-gzip": "^1.4.2",
 		"gulp-rename": "^2.0.0",
 		"gulp-uglify": "^3.0.2",
 		"jsdoc": "^3.6.5"
+	},
+	"scripts": {
+		"build": "gulp babel && gulp minify",
+		"build:docs": "jsdoc ./src/ProximityEffect.js -d ./docs -P ./package.json -R ./README.md",
+		"test": "echo \"Error: no test specified\" && exit 1"
 	}
+
 }

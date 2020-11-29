@@ -51,7 +51,7 @@ var Utils = function Utils() {
 
 /**
  * Class representing a ProximityEffect.
- * @version 2.1.19
+ * @version 3.0.0
  * @author Adam Shailer <adasha76@outlook.com>
  * @class
  * @extends EventTarget
@@ -425,13 +425,15 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
     if (!nodes) {
       throw new Error("ProximityEffect: nodes argument is required");
-    }
+    } // turn off centre calculations during setup to avoid calling repeatedly:
+
 
     _this.preventCenterCalculations = true;
 
     _classPrivateFieldSet(_assertThisInitialized(_this), _params, params);
 
-    _this.nodes = nodes;
+    _this.nodes = nodes; // default values:
+
     _this.threshold = _classPrivateFieldGet(_assertThisInitialized(_this), _params).hasOwnProperty("threshold") ? _classPrivateFieldGet(_assertThisInitialized(_this), _params).threshold : 0;
     _this.runoff = _classPrivateFieldGet(_assertThisInitialized(_this), _params).hasOwnProperty("runoff") ? _classPrivateFieldGet(_assertThisInitialized(_this), _params).runoff : _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_RUNOFF);
     _this.attack = _classPrivateFieldGet(_assertThisInitialized(_this), _params).hasOwnProperty("attack") ? _classPrivateFieldGet(_assertThisInitialized(_this), _params).attack : 1;
@@ -478,7 +480,13 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
     /**
      * Add a new effect to the effect stack.
-     * @param {string} name - The effect name.
+     * @param {string|Object} property - The predefined effect name, or an object containing an effect configuration.
+     * @param {string} [property.rule] - The CSS style rule to use.
+     * @param {string} [property.func] - The CSS function of the given style rule.
+     * @param {number} [property.min] - The minimum effect value.
+     * @param {number} [property.max] - The maximum effect value.
+     * @param {number} [property.default] - The default effect value.
+     * @param {string} [property.unit] - The effect CSS unit.
      * @param {number|Object} near - The effect value at the closest distance.
      * @param {number} near.value - The effect value at closest distance, as an object property.
      * @param {number} [near.scatter] - The random distribution of the value at the closest distance.
@@ -488,38 +496,36 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
      * @param {string} [far.scatterMethod] - The random scatter method.
      * @param {Object} [params] - An object containing additional effect parameters.
-     * @param {string} [params.rule] - The CSS style rule to use.
-     * @param {string} [params.func] - The CSS function of the given style rule.
-     * @param {number} [params.min] - The minimum effect value.
-     * @param {number} [params.max] - The maximum effect value.
-     * @param {number} [params.default] - The default effect value.
-     * @param {string} [params.unit] - The effect CSS unit.
+     * @param {string} [params.id] - A unique string to identify the effect.
      */
-    value: function addEffect(name, near, far, params) {
-      if (_classPrivateFieldGet(this, _VALID_EFFECTS).hasOwnProperty(name)) {
-        // TODO: how necessary is this really?
+    value: function addEffect(property, near, far, params) {
+      var styleParams; // if specifying a preset effect
 
-        /** Effect already exists **/
-        params = _classPrivateFieldGet(this, _VALID_EFFECTS)[name];
-      } else if (params && Utils.isObject(params) && typeof params.rule === "string") {
-        // TODO: do we need any deeper validation checks?
+      if (typeof property === "string") {
+        if (_classPrivateFieldGet(this, _VALID_EFFECTS).hasOwnProperty(property)) {
+          // TODO: how necessary is this really?
 
-        /** Register custom effect **/
-        _classPrivateFieldGet(this, _VALID_EFFECTS)[name] = params;
-      } else return void console.log("".concat(name, " is not a valid effect type"));
+          /** Effect already exists **/
+          styleParams = _classPrivateFieldGet(this, _VALID_EFFECTS)[property];
+        } else {
+          throw new Error("ProximityEffect: Couldn't find preset '".concat(property, "'"));
+        }
+      } else if (Utils.isObject(property) && typeof property.rule === "string") {
+        styleParams = property;
+      } else return void console.log("".concat(property, " is not a valid effect type"));
 
       if (typeof near === "number") {
-        near = Utils.valToObj(Utils.constrain(near, params.min, params.max));
+        near = Utils.valToObj(Utils.constrain(near, property.min, property.max));
       }
 
       if (typeof far === "number") {
-        far = Utils.valToObj(Utils.constrain(far, params.min, params.max));
+        far = Utils.valToObj(Utils.constrain(far, property.min, property.max));
       }
 
       _classPrivateFieldSet(this, _effects, _classPrivateFieldGet(this, _effects) || []);
 
       _classPrivateFieldGet(this, _effects).push({
-        type: name,
+        rules: styleParams,
         near: near,
         far: far,
         params: params
@@ -757,9 +763,9 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
                 nodeVals = this.getNodeIndexData(n, "effects")[f];
             var near = nodeVals.near,
                 far = nodeVals.far,
-                rule = effect.params.rule,
-                func = effect.params.func,
-                unit = effect.params.unit || "",
+                rule = effect.rules.rule,
+                func = effect.rules.func,
+                unit = effect.rules.unit || "",
                 val = Utils.delta(d, near, far);
 
             if (!func) {

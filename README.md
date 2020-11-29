@@ -1,5 +1,6 @@
 # ProximityEffect.js
 
+v3.0.0
 
 Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Does not override existing style sheets.
 

@@ -40,6 +40,9 @@
             height: 50px;
             position: absolute;
             transform-style: preserve-3d;
+            border-style: solid;
+            border-color: black;
+            border-width: 0px;
         }
 
         *.childelement > *
@@ -178,15 +181,17 @@
         //fader1.target = null;
         fader1.mode = 'cheesecake';
         //fader1.addEffect('opacity', 1, 0.3);
-        fader1.addEffect('scale',   1, 0.5);
+        //fader1.addEffect('scale',   1, 0.5);
+        //fader1.addEffect({rule:"transform", func:"scale"}, 1, 0.5);
         // fader1.addEffect('rotateX',    0, {value: 0, scatter: 360});
         // fader1.addEffect('rotateY',    0, {value: 0, scatter: 360});
         // fader1.addEffect('rotateZ',    0, {value: 0, scatter: 360});
         // fader1.addEffect('translateX', 0, {value: 0, scatter: 200});
         // fader1.addEffect('translateY', 0, {value: 0, scatter: 200});
-        fader1.addEffect('translateZ', 0, {value: 50, scatter: 200});
-
-        //fader1.addEffect('padding', {value: 20, scatter: 30}, {value: 100, scatter: 50}, {rule: 'padding', unit: 'px'});
+        //fader1.addEffect('translateZ', 0, {value: 50, scatter: 200});
+        
+        fader1.addEffect({rule: "border-width", unit:"px"}, 1, 10);
+        //fader1.addEffect({rule: 'padding', unit: 'px'}, {value: 20, scatter: 30}, {value: 100, scatter: 50});
         //fader1.addEffect('opacity', 1, 0.5);
         //fader2.addEffect('scale',   1, 0);
         //fader1.addEffect('blur',    0, 5);

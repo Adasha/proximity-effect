@@ -103,7 +103,7 @@ class Utils
 
 /**
  * Class representing a ProximityEffect.
- * @version 2.1.19
+ * @version 3.0.0
  * @author Adam Shailer <adasha76@outlook.com>
  * @class
  * @extends EventTarget
@@ -186,6 +186,7 @@ class ProximityEffect extends EventTarget
             throw new Error("ProximityEffect: nodes argument is required");
         }
 
+        // turn off centre calculations during setup to avoid calling repeatedly:
         this.preventCenterCalculations = true;
 
 
@@ -193,6 +194,7 @@ class ProximityEffect extends EventTarget
         this.nodes = nodes;
 
 
+        // default values:
         this.threshold = this.#params.hasOwnProperty("threshold") ? this.#params.threshold : 0;
         this.runoff    = this.#params.hasOwnProperty("runoff")    ? this.#params.runoff    : this.#DEFAULT_RUNOFF;
         this.attack    = this.#params.hasOwnProperty("attack")    ? this.#params.attack    : 1;
@@ -669,7 +671,13 @@ class ProximityEffect extends EventTarget
 
     /**
      * Add a new effect to the effect stack.
-     * @param {string} name - The effect name.
+     * @param {string|Object} property - The predefined effect name, or an object containing an effect configuration.
+     * @param {string} [property.rule] - The CSS style rule to use.
+     * @param {string} [property.func] - The CSS function of the given style rule.
+     * @param {number} [property.min] - The minimum effect value.
+     * @param {number} [property.max] - The maximum effect value.
+     * @param {number} [property.default] - The default effect value.
+     * @param {string} [property.unit] - The effect CSS unit.
      * @param {number|Object} near - The effect value at the closest distance.
      * @param {number} near.value - The effect value at closest distance, as an object property.
      * @param {number} [near.scatter] - The random distribution of the value at the closest distance.
@@ -679,42 +687,47 @@ class ProximityEffect extends EventTarget
      * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
      * @param {string} [far.scatterMethod] - The random scatter method.
      * @param {Object} [params] - An object containing additional effect parameters.
-     * @param {string} [params.rule] - The CSS style rule to use.
-     * @param {string} [params.func] - The CSS function of the given style rule.
-     * @param {number} [params.min] - The minimum effect value.
-     * @param {number} [params.max] - The maximum effect value.
-     * @param {number} [params.default] - The default effect value.
-     * @param {string} [params.unit] - The effect CSS unit.
+     * @param {string} [params.id] - A unique string to identify the effect.
      */
-    addEffect(name, near, far, params)
+    addEffect(property, near, far, params)
     {
-        if (this.#VALID_EFFECTS.hasOwnProperty(name))
-        {    // TODO: how necessary is this really?
-            /** Effect already exists **/
-            params = this.#VALID_EFFECTS[name];
-        }
-        else if (params && Utils.isObject(params) && typeof params.rule==="string")
-        {  // TODO: do we need any deeper validation checks?
-            /** Register custom effect **/
-            this.#VALID_EFFECTS[name] = params;
-        }
-        else return void console.log(`${name} is not a valid effect type`);
+        let styleParams;
 
+        // if specifying a preset effect
+        if(typeof property==="string")
+        {
+            if (this.#VALID_EFFECTS.hasOwnProperty(property))
+            {    // TODO: how necessary is this really?
+                /** Effect already exists **/
+                styleParams = this.#VALID_EFFECTS[property];
+            }
+            else
+            {
+                throw new Error(`ProximityEffect: Couldn't find preset '${property}'`);
+            }
+        }
+        else if(Utils.isObject(property) && typeof property.rule==="string")
+        {
+            styleParams = property;
+        }
+        else return void console.log(`${property} is not a valid effect type`);
+
+        
         if (typeof near==="number")
         {
-            near = Utils.valToObj(Utils.constrain(near, params.min, params.max));
+            near = Utils.valToObj(Utils.constrain(near, property.min, property.max));
         }
         if (typeof far==="number")
         {
-            far = Utils.valToObj(Utils.constrain(far, params.min, params.max));
+            far = Utils.valToObj(Utils.constrain(far, property.min, property.max));
         }
 
 
         this.#effects = this.#effects || [];
         this.#effects.push({
-            type: name,
-            near: near,
-            far:  far,
+            rules:  styleParams,
+            near:   near,
+            far:    far,
             params: params
         });
 
@@ -968,7 +981,7 @@ class ProximityEffect extends EventTarget
                 center  = this.getNodeIndexData(n, "center");
 
 			      let centerX = center.x - (node.dataset["offsetx"]||0),
-                centerY = center.y - (node.dataset["offsety"]||0);
+                      centerY = center.y - (node.dataset["offsety"]||0);
 
             let tx, ty,
                 last = this.getNodeIndexData(n, "lastDelta");
@@ -1029,9 +1042,9 @@ class ProximityEffect extends EventTarget
 
                     let near     = nodeVals.near,
                         far      = nodeVals.far,
-                        rule     = effect.params.rule,
-                        func     = effect.params.func,
-                        unit     = effect.params.unit || "",
+                        rule     = effect.rules.rule,
+                        func     = effect.rules.func,
+                        unit     = effect.rules.unit || "",
                         val      = Utils.delta(d, near, far);
 
 
