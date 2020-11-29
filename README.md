@@ -1,12 +1,20 @@
 # ProximityEffect.js
 
-v3.0.0
+v3.0.0-alpha1
 
 Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Does not override existing style sheets.
 
-**NOTE: current version requires capability to extend EventTarget - this knocks out Edge and Firefox before v59 until backwards compatibility is given more thought. To work around import a ponyfill such as `event-target` or `event-target-shim`. This lets you be disappointed with how slow Edge is.**
-
 [View live demos](http://lab.adasha.com/proximity-effect)
+
+Version 3 has had an API makeover and is a little more efficient, but effects added from the predefined list should still work without changes. For custom effects, data provided to the old `params` argument should now be placed first inlieu of a preset name. The old `params` argument still exists but is unused at present.
+
+Roadmap before full release:
+- More API stuff
+- Stackable ProximityEffects
+- Multiple-value CSS properties
+- Improved documentation
+
+**NOTE: current version requires capability to extend EventTarget - this knocks out Edge and Firefox before v59 until backwards compatibility is given more thought. To work around import a ponyfill such as `event-target` or `event-target-shim`. This lets you be disappointed with how slow Edge is.**
 
 ## Installation
 
@@ -74,23 +82,29 @@ Parameters can also be accessed as individual properties on the ProximityEffect 
 myEffect.invert = true;
 ```
 
-Finally add effects as you see fit:
+Finally add effects as you see fit. You can either specify a predefined CSS property:
 
 ```javascript
 myEffect.addEffect('opacity', 1,  0.5);
 myEffect.addEffect('scale',   1,  2);
 myEffect.addEffect('blur',    0, 10);
+```
 
-myEffect.addEffect('positionleft', 100, 50, {rule: 'left', unit: 'em'});
-myEffect.addEffect('perspective',  100, 50, {rule: 'transform', func: 'perspective', unit: 'px'});
+Or you can define your own - any single-numerical-value property can be defined, with multiple-value property support coming:
+
+```javascript
+myEffect.addEffect({rule: 'left', unit: 'em'}, 100, 50);
+myEffect.addEffect({rule: 'transform', func: 'perspective', unit: 'px'},  100, 50);
 ...
 ```
-ProximityEffect directly supports [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-number CSS rule. (Note: the syntax has changed since v2.1.10).
+
+ProximityEffect comes predefined with [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-number CSS rule.
 
 `near` and `far` can also be fed an object with a `value` key and other optional properties, including a `scatter` value:
+
 ```javascript
 myEffect.addEffect('translateX', 0, {value: 50, scatter: 15});
-myEffect.addEffect('padding', {value: 20, scatter: 30}, {value: 100, scatter: 50}, {rule: 'padding', unit: 'px'});
+myEffect.addEffect({rule: 'padding', unit: 'px'}, {value: 20, scatter: 30}, {value: 100, scatter: 50});
 ```
 
 ## API
