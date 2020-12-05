@@ -6,6 +6,7 @@ Bulk modify CSS properties on elements based on mouse pointer or other arbitrary
 
 [View live demos](http://lab.adasha.com/proximity-effect)
 
+
 Version 3 has had an API makeover and is a little more efficient, but effects added from the predefined list should still work without changes. For custom effects, data provided to the old `params` argument should now be placed first inlieu of a preset name. The old `params` argument still exists but is unused at present.
 
 Roadmap before full release:
@@ -66,6 +67,9 @@ let params = {
    direction:   'both', // 'both' | 'horizontal' | 'vertical'
    offsetX:          0, // [n>=0] global horizontal centrepoint offset
    offsetY:          0, // [n>=0] global vertical centrepoint offset
+   jitter:           0, // random offset per element
+   jitterX:          0, // random X offset per element, stacks with jitter
+   jitterY:          0, // random Y offset per element, stacks with jitter
    mode:      'redraw', // 'redraw' <del>| 'mousemove' | 'enterframe'</del>
    FPS:             30, // [n>0] 'enterframe' mode only, up to refresh rate
    accuracy:         5  // [n>0] rounds internal calculations to reduce CPU load

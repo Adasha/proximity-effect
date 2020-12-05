@@ -51,7 +51,7 @@ var Utils = function Utils() {
 
 /**
  * Class representing a ProximityEffect.
- * @version 3.0.0
+ * @version 3.0.0-alpha1
  * @author Adam Shailer <adasha76@outlook.com>
  * @class
  * @extends EventTarget
@@ -133,7 +133,7 @@ _defineProperty(Utils, "isObject", function (obj) {
   return obj == Object(obj);
 });
 
-var _params = new WeakMap();
+var _globalParams = new WeakMap();
 
 var _pointer = new WeakMap();
 
@@ -163,6 +163,8 @@ var _init = new WeakSet();
 
 var _setNodeIndexData = new WeakSet();
 
+var _calculateJitters = new WeakSet();
+
 var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   _inherits(ProximityEffect, _EventTarget);
 
@@ -172,17 +174,19 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
    * Create a ProximityEffect instance.
    * @constructor
    * @param {NodeList} nodes - A list of nodes to control.
-   * @param {Object} [params={}] - An object containing effect parameters.
-   * @param {number} [params.threshold=0] - The effect threshold, in pixels.
-   * @param {number} [params.runoff] - The effect runoff, in pixels.
-   * @param {number} [params.attack=1] - The effect attack.
-   * @param {number} [params.decay=1] - The effect decay.
-   * @param {number} [params.accuracy] - The effect accuracy.
-   * @param {boolean} [params.invert=false] - Invert distances.
-   * @param {number} [params.offsetX=0] - The global horizontal offset, in pixels.
-   * @param {number} [params.offsetY=0] - The global vertical offset, in pixels.
-   * @param {number} [params.jitter=0] - The effect jitter, in pixels.
-   * @param {string} [params.direction="both"] - The effect direction, one of "both", "horizontal" or "vertical".
+   * @param {Object}  [params={}] - An object containing effect parameters.
+   * @param {number}  [params.threshold=0] - The global effect threshold, in pixels.
+   * @param {number}  [params.runoff] - The global effect runoff, in pixels.
+   * @param {boolean} [params.invert=false] - Invert distances globally.
+   * @param {string}  [params.direction="both"] - The effect direction, one of "both", "horizontal" or "vertical".
+   * @param {number}  [params.attack=1] - The global effect attack.
+   * @param {number}  [params.decay=1] - The global effect decay.
+   * @param {number}  [params.offsetX=0] - The global horizontal offset, in pixels.
+   * @param {number}  [params.offsetY=0] - The global vertical offset, in pixels.
+   * @param {number}  [params.jitter=0] - The effect jitter, in pixels. Affects X and Y.
+   * @param {number}  [params.jitterX=0] - The effect jitter for the X axis only, in pixels.
+   * @param {number}  [params.jitterY=0] - The effect jitter for the Y axis only, in pixels.
+   * @param {number}  [params.accuracy] - The effect accuracy.
    * @param {Element} [params.target] - The effect tracker target.
    * @param {boolean} [params.doPresetDistances=false] - Prime the initial distances to create an initial transition. Only available through params argument in constructor.
    * @fires ProximityEffect#ready
@@ -198,11 +202,13 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
     _this = _super.call(this);
 
+    _calculateJitters.add(_assertThisInitialized(_this));
+
     _setNodeIndexData.add(_assertThisInitialized(_this));
 
     _init.add(_assertThisInitialized(_this));
 
-    _params.set(_assertThisInitialized(_this), {
+    _globalParams.set(_assertThisInitialized(_this), {
       writable: true,
       value: void 0
     });
@@ -265,12 +271,6 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     _VALID_EFFECTS.set(_assertThisInitialized(_this), {
       writable: true,
       value: {
-        opacity: {
-          min: 0,
-          max: 1,
-          "default": 1,
-          rule: "opacity"
-        },
         translateX: {
           "default": 0,
           rule: "transform",
@@ -345,7 +345,6 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
           func: "skewY",
           unit: "deg"
         },
-        //perspective:     {                  default:       0, rule: "transform",       func: "perspective", unit: "px"},
         blur: {
           min: 0,
           "default": 0,
@@ -389,7 +388,14 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
           func: "invert",
           unit: "%"
         },
-        //opacity:         {min: 0, max: 100, default:     100, rule: "filter",          func: "opacity",     unit: "%"},
+        opacity: {
+          min: 0,
+          max: 100,
+          "default": 100,
+          rule: "filter",
+          func: "opacity",
+          unit: "%"
+        },
         saturate: {
           min: 0,
           max: 100,
@@ -405,6 +411,14 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
           rule: "filter",
           func: "sepia",
           unit: "%"
+        },
+        color: {
+          min: 0,
+          max: 255,
+          "default": [0, 0, 0],
+          rule: "color",
+          func: "rgb",
+          args: 3
         },
         backgroundColor: {
           min: 0,
@@ -430,24 +444,26 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
     _this.preventCenterCalculations = true;
 
-    _classPrivateFieldSet(_assertThisInitialized(_this), _params, params);
+    _classPrivateFieldSet(_assertThisInitialized(_this), _globalParams, params);
 
-    _this.nodes = nodes; // default values:
+    _this.nodes = nodes; // default global parameter values:
 
-    _this.threshold = _classPrivateFieldGet(_assertThisInitialized(_this), _params).hasOwnProperty("threshold") ? _classPrivateFieldGet(_assertThisInitialized(_this), _params).threshold : 0;
-    _this.runoff = _classPrivateFieldGet(_assertThisInitialized(_this), _params).hasOwnProperty("runoff") ? _classPrivateFieldGet(_assertThisInitialized(_this), _params).runoff : _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_RUNOFF);
-    _this.attack = _classPrivateFieldGet(_assertThisInitialized(_this), _params).hasOwnProperty("attack") ? _classPrivateFieldGet(_assertThisInitialized(_this), _params).attack : 1;
-    _this.decay = _classPrivateFieldGet(_assertThisInitialized(_this), _params).hasOwnProperty("decay") ? _classPrivateFieldGet(_assertThisInitialized(_this), _params).decay : 1;
-    _this.accuracy = _classPrivateFieldGet(_assertThisInitialized(_this), _params).hasOwnProperty("accuracy") ? _classPrivateFieldGet(_assertThisInitialized(_this), _params).accuracy : _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_ACCURACY); //this.reverse   = this.#params.reverse   || false;
+    _this.threshold = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).hasOwnProperty("threshold") ? _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).threshold : 0;
+    _this.runoff = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).hasOwnProperty("runoff") ? _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).runoff : _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_RUNOFF);
+    _this.attack = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).hasOwnProperty("attack") ? _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).attack : 1;
+    _this.decay = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).hasOwnProperty("decay") ? _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).decay : 1;
+    _this.accuracy = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).hasOwnProperty("accuracy") ? _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).accuracy : _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_ACCURACY); //this.reverse   = this.#globalParams.reverse   || false;
 
-    _this.invert = _classPrivateFieldGet(_assertThisInitialized(_this), _params).invert || false;
-    _this.offsetX = _classPrivateFieldGet(_assertThisInitialized(_this), _params).offsetX || 0;
-    _this.offsetY = _classPrivateFieldGet(_assertThisInitialized(_this), _params).offsetY || 0;
-    _this.jitter = _classPrivateFieldGet(_assertThisInitialized(_this), _params).jitter || 0;
-    _this.direction = _classPrivateFieldGet(_assertThisInitialized(_this), _params).direction || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_DIRECTION);
-    _this.FPS = _classPrivateFieldGet(_assertThisInitialized(_this), _params).FPS || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_FPS);
-    _this.mode = _classPrivateFieldGet(_assertThisInitialized(_this), _params).mode || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_MODE);
-    _this.target = _classPrivateFieldGet(_assertThisInitialized(_this), _params).target;
+    _this.invert = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).invert || false;
+    _this.offsetX = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).offsetX || 0;
+    _this.offsetY = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).offsetY || 0;
+    _this.jitter = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).jitter || 0;
+    _this.jitterX = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).jitterX || 0;
+    _this.jitterY = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).jitterY || 0;
+    _this.direction = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).direction || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_DIRECTION);
+    _this.FPS = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).FPS || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_FPS);
+    _this.mode = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).mode || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_MODE);
+    _this.target = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).target;
 
     if (document.readyState === "completed") {
       _classPrivateMethodGet(_assertThisInitialized(_this), _init, _init2).call(_assertThisInitialized(_this));
@@ -497,15 +513,14 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      * @param {string} [far.scatterMethod] - The random scatter method.
      * @param {Object} [params] - An object containing additional effect parameters.
      * @param {string} [params.id] - A unique string to identify the effect.
+     * @param {number} [params.threshold] - The effect threshold for this effect, overriding the global value.
+     * @param {number} [params.runoff] - The effect runoff for this effect, overriding the global value.
      */
     value: function addEffect(property, near, far, params) {
       var styleParams; // if specifying a preset effect
 
       if (typeof property === "string") {
         if (_classPrivateFieldGet(this, _VALID_EFFECTS).hasOwnProperty(property)) {
-          // TODO: how necessary is this really?
-
-          /** Effect already exists **/
           styleParams = _classPrivateFieldGet(this, _VALID_EFFECTS)[property];
         } else {
           throw new Error("ProximityEffect: Couldn't find preset '".concat(property, "'"));
@@ -515,11 +530,11 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       } else return void console.log("".concat(property, " is not a valid effect type"));
 
       if (typeof near === "number") {
-        near = Utils.valToObj(Utils.constrain(near, property.min, property.max));
+        near = Utils.valToObj(Utils.constrain(near, styleParams.min, styleParams.max));
       }
 
       if (typeof far === "number") {
-        far = Utils.valToObj(Utils.constrain(far, property.min, property.max));
+        far = Utils.valToObj(Utils.constrain(far, styleParams.min, styleParams.max));
       }
 
       _classPrivateFieldSet(this, _effects, _classPrivateFieldGet(this, _effects) || []);
@@ -594,6 +609,15 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       return this.getNodeIndexData(i, "distance");
     }
     /**
+     * Clear the target
+     */
+
+  }, {
+    key: "clearTarget",
+    value: function clearTarget() {
+      _classPrivateFieldGet(this, _globalParams).target = null;
+    }
+    /**
      * Recalculate each node"s centre point, including global offset and jitter.
      */
 
@@ -610,7 +634,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
             y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY,
             jitter = this.getNodeIndexData(n, "jitter");
 
-        if (jitter && this.jitter > 0) {
+        if (jitter) {
           x += jitter.x;
           y += jitter.y;
         }
@@ -740,7 +764,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         } // normalise to boundaries
 
 
-        td = Utils.constrain((dd - this.threshold) * _classPrivateFieldGet(this, _params).invRunoff, 0, 1);
+        td = Utils.constrain((dd - this.threshold) * _classPrivateFieldGet(this, _globalParams).invRunoff, 0, 1);
 
         if (this.invert) {
           td = 1 - td;
@@ -798,7 +822,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "target",
     get: function get() {
-      return _classPrivateFieldGet(this, _params).target;
+      return _classPrivateFieldGet(this, _globalParams).target;
     }
     /**
      * Set the current target
@@ -807,7 +831,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     ,
     set: function set(target) {
       if (!target || target.getBoundingClientRect()) {
-        _classPrivateFieldGet(this, _params).target = target;
+        _classPrivateFieldGet(this, _globalParams).target = target;
       } else {
         return void console.log("".concat(target, " is not a valid target"));
       }
@@ -845,11 +869,11 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         return {
           node: i,
           style: i.style.cssText,
-          lastDelta: _classPrivateFieldGet(_this3, _params).doPresetDistances ? 1 : null
+          lastDelta: _classPrivateFieldGet(_this3, _globalParams).doPresetDistances ? 1 : null
         };
       }));
 
-      if (_classPrivateFieldGet(this, _params) && !this.preventCenterCalculations) {
+      if (_classPrivateFieldGet(this, _globalParams) && !this.preventCenterCalculations) {
         this.setCenterPoints();
       }
     }
@@ -871,7 +895,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "threshold",
     get: function get() {
-      return _classPrivateFieldGet(this, _params).threshold;
+      return _classPrivateFieldGet(this, _globalParams).threshold;
     }
     /**
      * Set the effect threshold.
@@ -879,7 +903,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      _classPrivateFieldGet(this, _params).threshold = Utils.constrain(value, 0);
+      _classPrivateFieldGet(this, _globalParams).threshold = Utils.constrain(value, 0);
     }
     /**
      * Get the effect runoff.
@@ -889,7 +913,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "runoff",
     get: function get() {
-      return _classPrivateFieldGet(this, _params).runoff;
+      return _classPrivateFieldGet(this, _globalParams).runoff;
     }
     /**
      * Set the effect runoff.
@@ -897,8 +921,8 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      _classPrivateFieldGet(this, _params).runoff = Utils.constrain(value, 0);
-      _classPrivateFieldGet(this, _params).invRunoff = 1 / _classPrivateFieldGet(this, _params).runoff;
+      _classPrivateFieldGet(this, _globalParams).runoff = Utils.constrain(value, 0);
+      _classPrivateFieldGet(this, _globalParams).invRunoff = 1 / _classPrivateFieldGet(this, _globalParams).runoff;
     }
     /**
      * Get the effect boundary.
@@ -918,7 +942,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "invert",
     get: function get() {
-      return _classPrivateFieldGet(this, _params).invert;
+      return _classPrivateFieldGet(this, _globalParams).invert;
     }
     /**
      * Set the invert state.
@@ -926,7 +950,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(flag) {
-      _classPrivateFieldGet(this, _params).invert = !!flag;
+      _classPrivateFieldGet(this, _globalParams).invert = !!flag;
     }
     /**
      * Get the effect attack.
@@ -936,7 +960,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "attack",
     get: function get() {
-      return _classPrivateFieldGet(this, _params).attack;
+      return _classPrivateFieldGet(this, _globalParams).attack;
     }
     /**
      * Set the effect attack.
@@ -944,7 +968,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      _classPrivateFieldGet(this, _params).attack = Utils.constrain(value, 0, 1);
+      _classPrivateFieldGet(this, _globalParams).attack = Utils.constrain(value, 0, 1);
     }
     /**
      * Get the effect decay.
@@ -954,7 +978,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "decay",
     get: function get() {
-      return _classPrivateFieldGet(this, _params).decay;
+      return _classPrivateFieldGet(this, _globalParams).decay;
     }
     /**
      * Set the effect decay.
@@ -962,7 +986,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      _classPrivateFieldGet(this, _params).decay = Utils.constrain(value, 0, 1);
+      _classPrivateFieldGet(this, _globalParams).decay = Utils.constrain(value, 0, 1);
     }
     /**
      * Get the global horizontal offset.
@@ -972,7 +996,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "offsetX",
     get: function get() {
-      return _classPrivateFieldGet(this, _params).offsetX;
+      return _classPrivateFieldGet(this, _globalParams).offsetX;
     }
     /**
      * Get the global vertical offset.
@@ -985,7 +1009,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      * @param {number} value - The new offset value, in pixels.
      */
     set: function set(value) {
-      _classPrivateFieldGet(this, _params).offsetX = value;
+      _classPrivateFieldGet(this, _globalParams).offsetX = value;
 
       if (!this.preventCenterCalculations) {
         this.setCenterPoints();
@@ -999,10 +1023,10 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "offsetY",
     get: function get() {
-      return _classPrivateFieldGet(this, _params).offsetY;
+      return _classPrivateFieldGet(this, _globalParams).offsetY;
     },
     set: function set(value) {
-      _classPrivateFieldGet(this, _params).offsetY = value;
+      _classPrivateFieldGet(this, _globalParams).offsetY = value;
 
       if (!this.preventCenterCalculations) {
         this.setCenterPoints();
@@ -1016,26 +1040,57 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "jitter",
     get: function get() {
-      return _classPrivateFieldGet(this, _params).jitter;
+      return _classPrivateFieldGet(this, _globalParams).jitter;
     }
+    /**
+     * Get the jitterX value.
+     * @return {number} The jitterX value, in pixels.
+     */
+    ,
+
     /**
      * Set the jitter value.
      * @param {number} num - The new jitter value, in pixels.
      */
+    set: function set(num) {
+      _classPrivateFieldGet(this, _globalParams).jitter = Utils.constrain(num, 0);
+
+      _classPrivateMethodGet(this, _calculateJitters, _calculateJitters2).call(this);
+    }
+    /**
+     * Set the jitterX value.
+     * @param {number} num - The new jitterX value, in pixels.
+     */
+
+  }, {
+    key: "jitterX",
+    get: function get() {
+      return _classPrivateFieldGet(this, _globalParams).jitterX;
+    }
+    /**
+     * Get the jitterY value.
+     * @return {number} The jitterY value, in pixels.
+     */
     ,
     set: function set(num) {
-      _classPrivateFieldGet(this, _params).jitter = Utils.constrain(num, 0);
+      _classPrivateFieldGet(this, _globalParams).jitterX = Utils.constrain(num, 0);
 
-      for (var i = 0; i < this.nodes.length; i++) {
-        _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, "jitter", {
-          x: Utils.random(this.jitter),
-          y: Utils.random(this.jitter)
-        });
-      }
+      _classPrivateMethodGet(this, _calculateJitters, _calculateJitters2).call(this);
+    }
+    /**
+     * Set the jitterY value.
+     * @param {number} num - The new jitterY value, in pixels.
+     */
 
-      if (!this.preventCenterCalculations) {
-        this.setCenterPoints();
-      }
+  }, {
+    key: "jitterY",
+    get: function get() {
+      return _classPrivateFieldGet(this, _globalParams).jitterY;
+    },
+    set: function set(num) {
+      _classPrivateFieldGet(this, _globalParams).jitterY = Utils.constrain(num, 0);
+
+      _classPrivateMethodGet(this, _calculateJitters, _calculateJitters2).call(this);
     }
     /**
      * Get the effect direction.
@@ -1045,7 +1100,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "direction",
     get: function get() {
-      return _classPrivateFieldGet(this, _params).direction;
+      return _classPrivateFieldGet(this, _globalParams).direction;
     }
     /**
      * Set the effect direction.
@@ -1054,7 +1109,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     ,
     set: function set(str) {
       if (_classPrivateFieldGet(this, _VALID_DIRECTIONS).has(str)) {
-        _classPrivateFieldGet(this, _params).direction = str;
+        _classPrivateFieldGet(this, _globalParams).direction = str;
       } else {
         return void console.log("".concat(str, " not a valid direction."));
       }
@@ -1063,11 +1118,11 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "FPS",
     get: function get() {
-      return _classPrivateFieldGet(this, _params).FPS;
+      return _classPrivateFieldGet(this, _globalParams).FPS;
     },
     set: function set(num) {
       if (num > 0) {
-        _classPrivateFieldGet(this, _params).FPS = Utils.constrain(num, 0);
+        _classPrivateFieldGet(this, _globalParams).FPS = Utils.constrain(num, 0);
       } else {
         return void console.log("Invalid FPS requested.");
       }
@@ -1076,11 +1131,11 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "mode",
     get: function get() {
-      return _classPrivateFieldGet(this, _params).mode;
+      return _classPrivateFieldGet(this, _globalParams).mode;
     },
     set: function set(mode) {
       if (mode) {
-        if (mode === _classPrivateFieldGet(this, _params).mode) {
+        if (mode === _classPrivateFieldGet(this, _globalParams).mode) {
           return void console.log("Already in ".concat(mode, " mode. Mode not changed."));
         }
 
@@ -1107,7 +1162,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
             return void console.log("".concat(mode, " is not a recognised mode."));
         }
 
-        _classPrivateFieldGet(this, _params).mode = mode;
+        _classPrivateFieldGet(this, _globalParams).mode = mode;
       }
     }
     /**
@@ -1118,7 +1173,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "accuracy",
     get: function get() {
-      return _classPrivateFieldGet(this, _params).accuracy;
+      return _classPrivateFieldGet(this, _globalParams).accuracy;
     }
     /**
      * Set the effect accuracy.
@@ -1126,7 +1181,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(num) {
-      _classPrivateFieldGet(this, _params).accuracy = Math.floor(Utils.constrain(num, 0));
+      _classPrivateFieldGet(this, _globalParams).accuracy = Math.floor(Utils.constrain(num, 0));
     }
     /**
      * Get the last known mouse pointer coordinates, relative to the viewport, in pixels.
@@ -1166,4 +1221,17 @@ var _setNodeIndexData2 = function _setNodeIndexData2(n, prop, val) {
 
   _classPrivateFieldGet(this, _nodeData)[n][prop] = val;
   return _classPrivateFieldGet(this, _nodeData)[n];
+};
+
+var _calculateJitters2 = function _calculateJitters2() {
+  for (var i = 0; i < this.nodes.length; i++) {
+    _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, "jitter", {
+      x: Utils.random(this.jitter + this.jitterX),
+      y: Utils.random(this.jitter + this.jitterY)
+    });
+  }
+
+  if (!this.preventCenterCalculations) {
+    this.setCenterPoints();
+  }
 };

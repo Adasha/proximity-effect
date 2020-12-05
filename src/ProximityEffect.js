@@ -73,7 +73,6 @@ class Utils
         let obj = {};
         obj[key] = val;
         return obj;
-    
     };
     
 
@@ -111,7 +110,7 @@ class Utils
 class ProximityEffect extends EventTarget
 {
 
-    #params;
+    #globalParams;
     #pointer = {};
     #effects;
     #nodes;
@@ -128,7 +127,6 @@ class ProximityEffect extends EventTarget
 
 
     #VALID_EFFECTS          = {
-        opacity:         {min: 0, max:   1, default:       1, rule: "opacity"},
         translateX:      {                  default:       0, rule: "transform",       func: "translateX",  unit: "px"},
         translateY:      {                  default:       0, rule: "transform",       func: "translateY",  unit: "px"},
         translateZ:      {                  default:       0, rule: "transform",       func: "translateZ",  unit: "px"},
@@ -142,17 +140,18 @@ class ProximityEffect extends EventTarget
         scaleZ:          {                  default:       1, rule: "transform",       func: "scaleZ"},
         skewX:           {                  default:       0, rule: "transform",       func: "skewX",       unit: "deg"},
         skewY:           {                  default:       0, rule: "transform",       func: "skewY",       unit: "deg"},
-        //perspective:     {                  default:       0, rule: "transform",       func: "perspective", unit: "px"},
+        
         blur:            {min: 0,           default:       0, rule: "filter",          func: "blur",        unit: "px"},
         brightness:      {min: 0,           default:     100, rule: "filter",          func: "brightness",  unit: "%"},
         contrast:        {min: 0,           default:     100, rule: "filter",          func: "contrast",    unit: "%"},
         grayscale:       {min: 0, max: 100, default:       0, rule: "filter",          func: "grayscale",   unit: "%"},
         hueRotate:       {                  default:       0, rule: "filter",          func: "hue-rotate",  unit: "deg"},
         invert:          {min: 0, max: 100, default:       0, rule: "filter",          func: "invert",      unit: "%"},
-        //opacity:         {min: 0, max: 100, default:     100, rule: "filter",          func: "opacity",     unit: "%"},
+        opacity:         {min: 0, max: 100, default:     100, rule: "filter",          func: "opacity",     unit: "%"},
         saturate:        {min: 0, max: 100, default:     100, rule: "filter",          func: "saturate",    unit: "%"},
         sepia:           {min: 0, max: 100, default:       0, rule: "filter",          func: "sepia",       unit: "%"},
 
+        color:           {min: 0, max: 255, default: [0,0,0], rule: "color",           func: "rgb",                      args: 3},
         backgroundColor: {min: 0, max: 255, default: [0,0,0], rule: "backgroundColor", func: "rgb",                      args: 3},
         scale3D:         {                  default: [1,1,1], rule: "transform",       func: "scale3D",                  args: 3}
     };
@@ -161,17 +160,19 @@ class ProximityEffect extends EventTarget
      * Create a ProximityEffect instance.
      * @constructor
      * @param {NodeList} nodes - A list of nodes to control.
-     * @param {Object} [params={}] - An object containing effect parameters.
-     * @param {number} [params.threshold=0] - The effect threshold, in pixels.
-     * @param {number} [params.runoff] - The effect runoff, in pixels.
-     * @param {number} [params.attack=1] - The effect attack.
-     * @param {number} [params.decay=1] - The effect decay.
-     * @param {number} [params.accuracy] - The effect accuracy.
-     * @param {boolean} [params.invert=false] - Invert distances.
-     * @param {number} [params.offsetX=0] - The global horizontal offset, in pixels.
-     * @param {number} [params.offsetY=0] - The global vertical offset, in pixels.
-     * @param {number} [params.jitter=0] - The effect jitter, in pixels.
-     * @param {string} [params.direction="both"] - The effect direction, one of "both", "horizontal" or "vertical".
+     * @param {Object}  [params={}] - An object containing effect parameters.
+     * @param {number}  [params.threshold=0] - The global effect threshold, in pixels.
+     * @param {number}  [params.runoff] - The global effect runoff, in pixels.
+     * @param {boolean} [params.invert=false] - Invert distances globally.
+     * @param {string}  [params.direction="both"] - The effect direction, one of "both", "horizontal" or "vertical".
+     * @param {number}  [params.attack=1] - The global effect attack.
+     * @param {number}  [params.decay=1] - The global effect decay.
+     * @param {number}  [params.offsetX=0] - The global horizontal offset, in pixels.
+     * @param {number}  [params.offsetY=0] - The global vertical offset, in pixels.
+     * @param {number}  [params.jitter=0] - The effect jitter, in pixels. Affects X and Y.
+     * @param {number}  [params.jitterX=0] - The effect jitter for the X axis only, in pixels.
+     * @param {number}  [params.jitterY=0] - The effect jitter for the Y axis only, in pixels.
+     * @param {number}  [params.accuracy] - The effect accuracy.
      * @param {Element} [params.target] - The effect tracker target.
      * @param {boolean} [params.doPresetDistances=false] - Prime the initial distances to create an initial transition. Only available through params argument in constructor.
      * @fires ProximityEffect#ready
@@ -190,25 +191,27 @@ class ProximityEffect extends EventTarget
         this.preventCenterCalculations = true;
 
 
-        this.#params = params;
+        this.#globalParams = params;
         this.nodes = nodes;
 
 
-        // default values:
-        this.threshold = this.#params.hasOwnProperty("threshold") ? this.#params.threshold : 0;
-        this.runoff    = this.#params.hasOwnProperty("runoff")    ? this.#params.runoff    : this.#DEFAULT_RUNOFF;
-        this.attack    = this.#params.hasOwnProperty("attack")    ? this.#params.attack    : 1;
-        this.decay     = this.#params.hasOwnProperty("decay")     ? this.#params.decay     : 1;
-        this.accuracy  = this.#params.hasOwnProperty("accuracy")  ? this.#params.accuracy  : this.#DEFAULT_ACCURACY;
-        //this.reverse   = this.#params.reverse   || false;
-        this.invert    = this.#params.invert    || false;
-        this.offsetX   = this.#params.offsetX   || 0;
-        this.offsetY   = this.#params.offsetY   || 0;
-        this.jitter    = this.#params.jitter    || 0;
-        this.direction = this.#params.direction || this.#DEFAULT_DIRECTION;
-        this.FPS       = this.#params.FPS       || this.#DEFAULT_FPS;
-        this.mode      = this.#params.mode      || this.#DEFAULT_MODE;
-        this.target    = this.#params.target;
+        // default global parameter values:
+        this.threshold = this.#globalParams.hasOwnProperty("threshold") ? this.#globalParams.threshold : 0;
+        this.runoff    = this.#globalParams.hasOwnProperty("runoff")    ? this.#globalParams.runoff    : this.#DEFAULT_RUNOFF;
+        this.attack    = this.#globalParams.hasOwnProperty("attack")    ? this.#globalParams.attack    : 1;
+        this.decay     = this.#globalParams.hasOwnProperty("decay")     ? this.#globalParams.decay     : 1;
+        this.accuracy  = this.#globalParams.hasOwnProperty("accuracy")  ? this.#globalParams.accuracy  : this.#DEFAULT_ACCURACY;
+        //this.reverse   = this.#globalParams.reverse   || false;
+        this.invert    = this.#globalParams.invert    || false;
+        this.offsetX   = this.#globalParams.offsetX   || 0;
+        this.offsetY   = this.#globalParams.offsetY   || 0;
+        this.jitter    = this.#globalParams.jitter    || 0;
+        this.jitterX   = this.#globalParams.jitterX   || 0;
+        this.jitterY   = this.#globalParams.jitterY   || 0;
+        this.direction = this.#globalParams.direction || this.#DEFAULT_DIRECTION;
+        this.FPS       = this.#globalParams.FPS       || this.#DEFAULT_FPS;
+        this.mode      = this.#globalParams.mode      || this.#DEFAULT_MODE;
+        this.target    = this.#globalParams.target;
 
 
 
@@ -240,7 +243,7 @@ class ProximityEffect extends EventTarget
      */
     get target()
     {
-        return this.#params.target;
+        return this.#globalParams.target;
     }
 
     /**
@@ -250,7 +253,7 @@ class ProximityEffect extends EventTarget
     set target(target)
     {
         if (!target || target.getBoundingClientRect()) {
-            this.#params.target = target;
+            this.#globalParams.target = target;
         }
         else {
             return void console.log(`${target} is not a valid target`);
@@ -290,11 +293,11 @@ class ProximityEffect extends EventTarget
         this.#nodeData = this.#nodes.map(i => ({
             node:      i,
             style:     i.style.cssText,
-            lastDelta: this.#params.doPresetDistances ? 1 : null
+            lastDelta: this.#globalParams.doPresetDistances ? 1 : null
         }));
 
 
-        if (this.#params && !this.preventCenterCalculations)
+        if (this.#globalParams && !this.preventCenterCalculations)
         {
             this.setCenterPoints();
         }
@@ -323,7 +326,7 @@ class ProximityEffect extends EventTarget
      */
     get threshold()
     {
-    	return this.#params.threshold;
+    	return this.#globalParams.threshold;
     }
 
     /**
@@ -332,7 +335,7 @@ class ProximityEffect extends EventTarget
      */
     set threshold(value)
     {
-    	this.#params.threshold = Utils.constrain(value, 0);
+    	this.#globalParams.threshold = Utils.constrain(value, 0);
     }
 
 
@@ -345,7 +348,7 @@ class ProximityEffect extends EventTarget
      */
     get runoff()
     {
-    	return this.#params.runoff;
+    	return this.#globalParams.runoff;
     }
 
     /**
@@ -354,8 +357,8 @@ class ProximityEffect extends EventTarget
      */
     set runoff(value)
     {
-    	this.#params.runoff = Utils.constrain(value, 0);
-        this.#params.invRunoff = 1/this.#params.runoff;
+    	this.#globalParams.runoff = Utils.constrain(value, 0);
+        this.#globalParams.invRunoff = 1/this.#globalParams.runoff;
     }
 
 
@@ -381,7 +384,7 @@ class ProximityEffect extends EventTarget
      */
     get invert()
     {
-        return this.#params.invert;
+        return this.#globalParams.invert;
     }
 
     /**
@@ -390,7 +393,7 @@ class ProximityEffect extends EventTarget
      */
     set invert(flag)
     {
-        this.#params.invert = !!flag;
+        this.#globalParams.invert = !!flag;
     }
 
 
@@ -403,7 +406,7 @@ class ProximityEffect extends EventTarget
      */
     get attack()
     {
-    	return this.#params.attack;
+    	return this.#globalParams.attack;
     }
 
     /**
@@ -412,7 +415,7 @@ class ProximityEffect extends EventTarget
      */
     set attack(value)
     {
-    	this.#params.attack = Utils.constrain(value, 0, 1);
+    	this.#globalParams.attack = Utils.constrain(value, 0, 1);
     }
 
 
@@ -424,7 +427,7 @@ class ProximityEffect extends EventTarget
      */
     get decay()
     {
-    	return this.#params.decay;
+    	return this.#globalParams.decay;
     }
 
     /**
@@ -433,7 +436,7 @@ class ProximityEffect extends EventTarget
      */
     set decay(value)
     {
-    	this.#params.decay = Utils.constrain(value, 0, 1);
+    	this.#globalParams.decay = Utils.constrain(value, 0, 1);
     }
 
 
@@ -446,7 +449,7 @@ class ProximityEffect extends EventTarget
      */
     get offsetX()
     {
-        return this.#params.offsetX;
+        return this.#globalParams.offsetX;
   	}
 
     /**
@@ -455,7 +458,7 @@ class ProximityEffect extends EventTarget
      */
     get offsetY()
     {
-        return this.#params.offsetY;
+        return this.#globalParams.offsetY;
   	}
 
 
@@ -466,7 +469,7 @@ class ProximityEffect extends EventTarget
      */
     set offsetX(value)
     {
-        this.#params.offsetX = value;
+        this.#globalParams.offsetX = value;
         if (!this.preventCenterCalculations) {
             this.setCenterPoints();
         }
@@ -478,7 +481,7 @@ class ProximityEffect extends EventTarget
      */
     set offsetY(value)
     {
-        this.#params.offsetY = value;
+        this.#globalParams.offsetY = value;
         if (!this.preventCenterCalculations)
         {
             this.setCenterPoints();
@@ -495,8 +498,28 @@ class ProximityEffect extends EventTarget
      */
     get jitter()
     {
-        return this.#params.jitter;
+        return this.#globalParams.jitter;
   	}
+
+    /**
+     * Get the jitterX value.
+     * @return {number} The jitterX value, in pixels.
+     */
+    get jitterX()
+    {
+        return this.#globalParams.jitterX;
+  	}
+
+    /**
+     * Get the jitterY value.
+     * @return {number} The jitterY value, in pixels.
+     */
+    get jitterY()
+    {
+        return this.#globalParams.jitterY;
+  	}
+
+
 
     /**
      * Set the jitter value.
@@ -504,16 +527,28 @@ class ProximityEffect extends EventTarget
      */
     set jitter(num)
     {
-        this.#params.jitter = Utils.constrain(num, 0);
-        for (let i=0; i<this.nodes.length; i++) {
-            this.#setNodeIndexData(i, "jitter", {
-                x: Utils.random(this.jitter),
-                y: Utils.random(this.jitter)
-            });
-        }
-        if (!this.preventCenterCalculations) {
-            this.setCenterPoints();
-        }
+        this.#globalParams.jitter = Utils.constrain(num, 0);
+        this.#calculateJitters();
+  	}
+
+    /**
+     * Set the jitterX value.
+     * @param {number} num - The new jitterX value, in pixels.
+     */
+    set jitterX(num)
+    {
+        this.#globalParams.jitterX = Utils.constrain(num, 0);
+        this.#calculateJitters();
+  	}
+
+    /**
+     * Set the jitterY value.
+     * @param {number} num - The new jitterY value, in pixels.
+     */
+    set jitterY(num)
+    {
+        this.#globalParams.jitterY = Utils.constrain(num, 0);
+        this.#calculateJitters();
   	}
 
 
@@ -526,7 +561,7 @@ class ProximityEffect extends EventTarget
      */
     get direction()
     {
-        return this.#params.direction;
+        return this.#globalParams.direction;
     }
 
     /**
@@ -537,7 +572,7 @@ class ProximityEffect extends EventTarget
     {
         if (this.#VALID_DIRECTIONS.has(str))
         {
-        	this.#params.direction = str;
+        	this.#globalParams.direction = str;
         }
         else
         {
@@ -553,14 +588,14 @@ class ProximityEffect extends EventTarget
 
     get FPS()
     {
-    	return this.#params.FPS;
+    	return this.#globalParams.FPS;
     }
 
     set FPS(num)
     {
         if (num>0)
         {
-            this.#params.FPS = Utils.constrain(num, 0);
+            this.#globalParams.FPS = Utils.constrain(num, 0);
         }
         else
         {
@@ -576,14 +611,14 @@ class ProximityEffect extends EventTarget
 
     get mode()
     {
-        return this.#params.mode;
+        return this.#globalParams.mode;
     }
 
     set mode(mode)
     {
         if (mode)
         {
-            if (mode===this.#params.mode)
+            if (mode===this.#globalParams.mode)
             {
                 return void console.log(`Already in ${mode} mode. Mode not changed.`);
             }
@@ -613,7 +648,7 @@ class ProximityEffect extends EventTarget
                     return void console.log(`${mode} is not a recognised mode.`);
         	}
 
-            this.#params.mode = mode;
+            this.#globalParams.mode = mode;
         }
     }
 
@@ -627,7 +662,7 @@ class ProximityEffect extends EventTarget
      */
     get accuracy()
     {
-        return this.#params.accuracy;
+        return this.#globalParams.accuracy;
     }
 
     /**
@@ -636,7 +671,7 @@ class ProximityEffect extends EventTarget
      */
     set accuracy(num)
     {
-        this.#params.accuracy = Math.floor(Utils.constrain(num, 0));
+        this.#globalParams.accuracy = Math.floor(Utils.constrain(num, 0));
     }
 
 
@@ -688,6 +723,8 @@ class ProximityEffect extends EventTarget
      * @param {string} [far.scatterMethod] - The random scatter method.
      * @param {Object} [params] - An object containing additional effect parameters.
      * @param {string} [params.id] - A unique string to identify the effect.
+     * @param {number} [params.threshold] - The effect threshold for this effect, overriding the global value.
+     * @param {number} [params.runoff] - The effect runoff for this effect, overriding the global value.
      */
     addEffect(property, near, far, params)
     {
@@ -697,8 +734,7 @@ class ProximityEffect extends EventTarget
         if(typeof property==="string")
         {
             if (this.#VALID_EFFECTS.hasOwnProperty(property))
-            {    // TODO: how necessary is this really?
-                /** Effect already exists **/
+            {
                 styleParams = this.#VALID_EFFECTS[property];
             }
             else
@@ -715,11 +751,11 @@ class ProximityEffect extends EventTarget
 
         if (typeof near==="number")
         {
-            near = Utils.valToObj(Utils.constrain(near, property.min, property.max));
+            near = Utils.valToObj(Utils.constrain(near, styleParams.min, styleParams.max));
         }
         if (typeof far==="number")
         {
-            far = Utils.valToObj(Utils.constrain(far, property.min, property.max));
+            far = Utils.valToObj(Utils.constrain(far, styleParams.min, styleParams.max));
         }
 
 
@@ -807,6 +843,18 @@ class ProximityEffect extends EventTarget
 
 
     /**
+     * Clear the target
+     */
+    clearTarget()
+    {
+        this.#globalParams.target = null;
+    }
+
+
+
+
+
+    /**
      * Recalculate each node"s centre point, including global offset and jitter.
      */
     setCenterPoints()
@@ -823,7 +871,7 @@ class ProximityEffect extends EventTarget
                 y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY,
                 jitter = this.getNodeIndexData(n, "jitter");
 
-            if (jitter && this.jitter>0)
+            if (jitter)
             {
                 x += jitter.x;
                 y += jitter.y;
@@ -932,6 +980,22 @@ class ProximityEffect extends EventTarget
 
 
 
+    #calculateJitters()
+    {
+        for (let i=0; i<this.nodes.length; i++) {
+            this.#setNodeIndexData(i, "jitter", {
+                x: Utils.random(this.jitter + this.jitterX),
+                y: Utils.random(this.jitter + this.jitterY)
+            });
+        }
+        if (!this.preventCenterCalculations) {
+            this.setCenterPoints();
+        }
+    }
+
+
+
+
 
 
     ////////////////////
@@ -1014,7 +1078,7 @@ class ProximityEffect extends EventTarget
             }
 
             // normalise to boundaries
-    		td = Utils.constrain((dd-this.threshold) * this.#params.invRunoff, 0, 1);
+    		td = Utils.constrain((dd-this.threshold) * this.#globalParams.invRunoff, 0, 1);
             if (this.invert)
             {
                 td = 1 - td;
