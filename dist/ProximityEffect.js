@@ -147,8 +147,6 @@ var _VALID_DIRECTIONS = new WeakMap();
 
 var _DEFAULT_DIRECTION = new WeakMap();
 
-var _DEFAULT_MODE = new WeakMap();
-
 var _DEFAULT_ACCURACY = new WeakMap();
 
 var _DEFAULT_FPS = new WeakMap();
@@ -156,6 +154,10 @@ var _DEFAULT_FPS = new WeakMap();
 var _DEFAULT_RUNOFF = new WeakMap();
 
 var _DEFAULT_SCATTER_METHOD = new WeakMap();
+
+var _DEFAULT_JITTER_METHOD = new WeakMap();
+
+var _DEFAULT_MODE = new WeakMap();
 
 var _VALID_EFFECTS = new WeakMap();
 
@@ -186,6 +188,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
    * @param {number}  [params.jitter=0] - The effect jitter, in pixels. Affects X and Y.
    * @param {number}  [params.jitterX=0] - The effect jitter for the X axis only, in pixels.
    * @param {number}  [params.jitterY=0] - The effect jitter for the Y axis only, in pixels.
+   * @param {string}  [params.jitterMethod] - The random method for generating jitter values. 
    * @param {number}  [params.accuracy] - The effect accuracy.
    * @param {Element} [params.target] - The effect tracker target.
    * @param {boolean} [params.doPresetDistances=false] - Prime the initial distances to create an initial transition. Only available through params argument in constructor.
@@ -243,11 +246,6 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       value: "both"
     });
 
-    _DEFAULT_MODE.set(_assertThisInitialized(_this), {
-      writable: true,
-      value: "redraw"
-    });
-
     _DEFAULT_ACCURACY.set(_assertThisInitialized(_this), {
       writable: true,
       value: 5
@@ -266,6 +264,16 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     _DEFAULT_SCATTER_METHOD.set(_assertThisInitialized(_this), {
       writable: true,
       value: "uniform"
+    });
+
+    _DEFAULT_JITTER_METHOD.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: "uniform"
+    });
+
+    _DEFAULT_MODE.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: "redraw"
     });
 
     _VALID_EFFECTS.set(_assertThisInitialized(_this), {
@@ -1093,6 +1101,26 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       _classPrivateMethodGet(this, _calculateJitters, _calculateJitters2).call(this);
     }
     /**
+     * Get the jitter method.
+     * @returns {string} The random jitter method.
+     */
+
+  }, {
+    key: "jitterMethod",
+    get: function get() {
+      return _classPrivateFieldGet(this, _globalParams).jitterMethod;
+    }
+    /**
+     * Set the jitter method.
+     * @params {string} method - The random string method to use.
+     */
+    ,
+    set: function set(method) {
+      _classPrivateFieldGet(this, _globalParams).jitterMethod = method;
+
+      _classPrivateMethodGet(this, _calculateJitters, _calculateJitters2).call(this);
+    }
+    /**
      * Get the effect direction.
      * @return {string} The direction value.
      */
@@ -1224,10 +1252,12 @@ var _setNodeIndexData2 = function _setNodeIndexData2(n, prop, val) {
 };
 
 var _calculateJitters2 = function _calculateJitters2() {
+  var method = this.jitterMethod ? this.jitterMethod : _classPrivateFieldGet(this, _DEFAULT_JITTER_METHOD);
+
   for (var i = 0; i < this.nodes.length; i++) {
     _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, "jitter", {
-      x: Utils.random(this.jitter + this.jitterX),
-      y: Utils.random(this.jitter + this.jitterY)
+      x: Utils.random(this.jitter + this.jitterX, method),
+      y: Utils.random(this.jitter + this.jitterY, method)
     });
   }
 

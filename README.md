@@ -59,20 +59,21 @@ let elements = document.querySelectorAll("*.foo"); // requires NodeList
 Then define parameters in an object:
 ```javascript
 let params = {
-   attack:           1, // [0<=n>=1] rate of change when approaching, 1=full speed 0=no movement
-   decay:            1, // [0<=n>=1] rate of change when receding, 1=full speed 0=no movement
-   invert:       false, // [Boolean] swap near and far distances
-   threshold:        0, // [n>=0] minimum distance (from element's mathematical centre) before effect starts
-   runoff:         100, // [n>=0] distance over which styles are interpolated
-   direction:   'both', // 'both' | 'horizontal' | 'vertical'
-   offsetX:          0, // [n>=0] global horizontal centrepoint offset
-   offsetY:          0, // [n>=0] global vertical centrepoint offset
-   jitter:           0, // random offset per element
-   jitterX:          0, // random X offset per element, stacks with jitter
-   jitterY:          0, // random Y offset per element, stacks with jitter
-   mode:      'redraw', // 'redraw' <del>| 'mousemove' | 'enterframe'</del>
-   FPS:             30, // [n>0] 'enterframe' mode only, up to refresh rate
-   accuracy:         5  // [n>0] rounds internal calculations to reduce CPU load
+   attack:               1, // [0<=n>=1] rate of change when approaching, 1=full speed 0=no movement
+   decay:                1, // [0<=n>=1] rate of change when receding, 1=full speed 0=no movement
+   invert:           false, // [Boolean] swap near and far distances
+   threshold:            0, // [n>=0] minimum distance (from element's mathematical centre) before effect starts
+   runoff:             100, // [n>=0] distance over which styles are interpolated
+   direction:       'both', // 'both' | 'horizontal' | 'vertical'
+   offsetX:              0, // [n>=0] global horizontal centrepoint offset
+   offsetY:              0, // [n>=0] global vertical centrepoint offset
+   jitter:               0, // random offset per element
+   jitterX:              0, // random X offset per element, stacks with jitter
+   jitterY:              0, // random Y offset per element, stacks with jitter
+   jitterMethod: 'uniform', // random generation method for jitter values
+   mode:          'redraw', // 'redraw' <del>| 'mousemove' | 'enterframe'</del>
+   FPS:                 30, // [n>0] 'enterframe' mode only, up to refresh rate
+   accuracy:             5  // [n>0] rounds internal calculations to reduce CPU load
 }
 ```
 

@@ -8,6 +8,8 @@
 
         html, body { height: 100%; }
 
+        body {background-color: rgb(167, 167, 167);}
+
         #parentelement
         {
             display: flex;
@@ -133,7 +135,7 @@
             n = t.removeChild(t.querySelector('*.childelement'));
 
         let pos = 30,
-            rows = 20,
+            rows = 10,
             cols = 20;
 
         for(let i=0; i<cols; i++)
@@ -153,9 +155,10 @@
                 //direction: 'horizontal',
                 offsetX:     0,
                 offsetY:     0,
-    			jitter:    0,
-    			jitterX:    300,
-    			jitterY:    0,
+    			jitter:     200,
+    			jitterX:     0,
+                jitterY:     0,
+                jitterMethod: 'gaussian',
                 attack:      1,
                 decay:       1,
                 reverse: false,
@@ -168,7 +171,7 @@
                 //direction: 'vertical',
                 offsetX:     0,
                 offsetY:     0,
-    			jitter:    1000,
+    			jitter:    0,
                 attack:      1,
                 decay:       1,
                 reverse: false,
@@ -180,7 +183,7 @@
         //let fader2 = new ProximityEffect(document.querySelectorAll('*.childelement'), params2);
 
 
-        //fader1.target = document.querySelector('#alttarget');
+        fader1.target = document.querySelector('#alttarget');
         //fader1.target = null;
         //fader1.mode = 'cheesecake';
         //fader1.addEffect('opacity', 100, 30);
@@ -226,7 +229,7 @@
             var alttarget = document.querySelector('#alttarget');
             alttarget.style.left = fader1.pointer.x+'px';
             alttarget.style.top  = fader1.pointer.y+'px';
-        }, 160);
+        }, 16);
 
     </script>
 </body>

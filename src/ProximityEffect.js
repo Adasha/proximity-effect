@@ -119,11 +119,12 @@ class ProximityEffect extends EventTarget
 
     #VALID_DIRECTIONS       = new Set(["both", "horizontal", "vertical"]);
     #DEFAULT_DIRECTION      = "both";
-    #DEFAULT_MODE           = "redraw";
-    #DEFAULT_ACCURACY       =      5;
-    #DEFAULT_FPS            =     15;
-    #DEFAULT_RUNOFF         =    100;
+    #DEFAULT_ACCURACY       =   5;
+    #DEFAULT_FPS            =  15;
+    #DEFAULT_RUNOFF         = 100;
     #DEFAULT_SCATTER_METHOD = "uniform";
+    #DEFAULT_JITTER_METHOD  = "uniform";
+    #DEFAULT_MODE           = "redraw";
 
 
     #VALID_EFFECTS          = {
@@ -172,6 +173,7 @@ class ProximityEffect extends EventTarget
      * @param {number}  [params.jitter=0] - The effect jitter, in pixels. Affects X and Y.
      * @param {number}  [params.jitterX=0] - The effect jitter for the X axis only, in pixels.
      * @param {number}  [params.jitterY=0] - The effect jitter for the Y axis only, in pixels.
+     * @param {string}  [params.jitterMethod] - The random method for generating jitter values. 
      * @param {number}  [params.accuracy] - The effect accuracy.
      * @param {Element} [params.target] - The effect tracker target.
      * @param {boolean} [params.doPresetDistances=false] - Prime the initial distances to create an initial transition. Only available through params argument in constructor.
@@ -550,6 +552,33 @@ class ProximityEffect extends EventTarget
         this.#globalParams.jitterY = Utils.constrain(num, 0);
         this.#calculateJitters();
   	}
+
+
+    
+    
+    
+    /**
+     * Get the jitter method.
+     * @returns {string} The random jitter method.
+     */
+    get jitterMethod()
+    {
+        return this.#globalParams.jitterMethod;
+    }
+
+
+
+    /**
+     * Set the jitter method.
+     * @params {string} method - The random string method to use.
+     */
+    set jitterMethod(method)
+    {
+        this.#globalParams.jitterMethod = method;
+        this.#calculateJitters();
+    }
+
+
 
 
 
@@ -982,10 +1011,11 @@ class ProximityEffect extends EventTarget
 
     #calculateJitters()
     {
+        let method = this.jitterMethod ? this.jitterMethod : this.#DEFAULT_JITTER_METHOD;
         for (let i=0; i<this.nodes.length; i++) {
             this.#setNodeIndexData(i, "jitter", {
-                x: Utils.random(this.jitter + this.jitterX),
-                y: Utils.random(this.jitter + this.jitterY)
+                x: Utils.random(this.jitter + this.jitterX, method),
+                y: Utils.random(this.jitter + this.jitterY, method)
             });
         }
         if (!this.preventCenterCalculations) {
