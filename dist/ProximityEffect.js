@@ -116,6 +116,10 @@ _defineProperty(Utils, "XOR", function (a, b) {
   return (a || b) && !(a && b);
 });
 
+_defineProperty(Utils, "pythagoras", function (a, b) {
+  return Math.sqrt(a * a + b * b);
+});
+
 _defineProperty(Utils, "isVisibleInViewport", function (el) {
   var bounds = el.getBoundingClientRect(),
       view = document.documentElement;
@@ -133,16 +137,6 @@ _defineProperty(Utils, "isObject", function (obj) {
   return obj == Object(obj);
 });
 
-var _globalParams = new WeakMap();
-
-var _pointer = new WeakMap();
-
-var _effects = new WeakMap();
-
-var _nodes = new WeakMap();
-
-var _nodeData = new WeakMap();
-
 var _VALID_DIRECTIONS = new WeakMap();
 
 var _DEFAULT_DIRECTION = new WeakMap();
@@ -153,6 +147,8 @@ var _DEFAULT_FPS = new WeakMap();
 
 var _DEFAULT_RUNOFF = new WeakMap();
 
+var _VALID_RANDOM_METHODS = new WeakMap();
+
 var _DEFAULT_SCATTER_METHOD = new WeakMap();
 
 var _DEFAULT_JITTER_METHOD = new WeakMap();
@@ -160,6 +156,16 @@ var _DEFAULT_JITTER_METHOD = new WeakMap();
 var _DEFAULT_MODE = new WeakMap();
 
 var _VALID_EFFECTS = new WeakMap();
+
+var _globalParams = new WeakMap();
+
+var _pointer = new WeakMap();
+
+var _effects = new WeakMap();
+
+var _nodes = new WeakMap();
+
+var _nodeData = new WeakMap();
 
 var _init = new WeakSet();
 
@@ -211,31 +217,6 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
     _init.add(_assertThisInitialized(_this));
 
-    _globalParams.set(_assertThisInitialized(_this), {
-      writable: true,
-      value: void 0
-    });
-
-    _pointer.set(_assertThisInitialized(_this), {
-      writable: true,
-      value: {}
-    });
-
-    _effects.set(_assertThisInitialized(_this), {
-      writable: true,
-      value: void 0
-    });
-
-    _nodes.set(_assertThisInitialized(_this), {
-      writable: true,
-      value: void 0
-    });
-
-    _nodeData.set(_assertThisInitialized(_this), {
-      writable: true,
-      value: void 0
-    });
-
     _VALID_DIRECTIONS.set(_assertThisInitialized(_this), {
       writable: true,
       value: new Set(["both", "horizontal", "vertical"])
@@ -259,6 +240,11 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     _DEFAULT_RUNOFF.set(_assertThisInitialized(_this), {
       writable: true,
       value: 100
+    });
+
+    _VALID_RANDOM_METHODS.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: new Set(["normal", "uniform"])
     });
 
     _DEFAULT_SCATTER_METHOD.set(_assertThisInitialized(_this), {
@@ -445,6 +431,31 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       }
     });
 
+    _globalParams.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: void 0
+    });
+
+    _pointer.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: {}
+    });
+
+    _effects.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: void 0
+    });
+
+    _nodes.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: void 0
+    });
+
+    _nodeData.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: void 0
+    });
+
     if (!nodes) {
       throw new Error("ProximityEffect: nodes argument is required");
     } // turn off centre calculations during setup to avoid calling repeatedly:
@@ -504,54 +515,57 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
     /**
      * Add a new effect to the effect stack.
-     * @param {string|Object} property - The predefined effect name, or an object containing an effect configuration.
-     * @param {string} [property.rule] - The CSS style rule to use.
+     * @param {string|Object} property - The predefined style rule as a string, or an object containing a CSS style configuration.
+     * @param {string} [property.rule] - The custom CSS style rule to use.
      * @param {string} [property.func] - The CSS function of the given style rule.
-     * @param {number} [property.min] - The minimum effect value.
-     * @param {number} [property.max] - The maximum effect value.
-     * @param {number} [property.default] - The default effect value.
-     * @param {string} [property.unit] - The effect CSS unit.
-     * @param {number|Object} near - The effect value at the closest distance.
-     * @param {number} near.value - The effect value at closest distance, as an object property.
+     * @param {number} [property.min] - The minimum style value.
+     * @param {number} [property.max] - The maximum style value.
+     * @param {number} [property.default] - The default style value.
+     * @param {string} [property.unit] - The style rule's CSS unit.
+     * @param {number|Object} near - The style value at the closest distance, either a single number or an object containing more properties.
+     * @param {number} near.value - The style value at closest distance, as an object property.
      * @param {number} [near.scatter] - The random distribution of the value at the closest distance.
      * @param {string} [near.scatterMethod] - The random scatter method.
-     * @param {number|Object} far - The effect value at the furthest distance.
-     * @param {number} far.value - The effect value at furthest distance, as an object property.
+     * @param {number|Object} far - The style value at the furthest distance, either a single number or an object containing more properties.
+     * @param {number} far.value - The style value at furthest distance, as an object property.
      * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
      * @param {string} [far.scatterMethod] - The random scatter method.
      * @param {Object} [params] - An object containing additional effect parameters.
      * @param {string} [params.id] - A unique string to identify the effect.
      * @param {number} [params.threshold] - The effect threshold for this effect, overriding the global value.
      * @param {number} [params.runoff] - The effect runoff for this effect, overriding the global value.
+     * @param {Boolean} [params.invert] - XXXXX, overriding the global value.
+     * @param {number} [params.attack] - , overriding the global value.
+     * @param {number} [params.decay] - , overriding the global value.
      */
-    value: function addEffect(property, near, far, params) {
-      var styleParams; // if specifying a preset effect
+    value: function addEffect(property, near, far, effectParams) {
+      var cssParams; // if specifying a preset effect
 
       if (typeof property === "string") {
         if (_classPrivateFieldGet(this, _VALID_EFFECTS).hasOwnProperty(property)) {
-          styleParams = _classPrivateFieldGet(this, _VALID_EFFECTS)[property];
+          cssParams = _classPrivateFieldGet(this, _VALID_EFFECTS)[property];
         } else {
           throw new Error("ProximityEffect: Couldn't find preset '".concat(property, "'"));
         }
       } else if (Utils.isObject(property) && typeof property.rule === "string") {
-        styleParams = property;
-      } else return void console.log("".concat(property, " is not a valid effect type"));
+        cssParams = property;
+      } else return void console.log("'".concat(property, "' is not a valid style rule."));
 
       if (typeof near === "number") {
-        near = Utils.valToObj(Utils.constrain(near, styleParams.min, styleParams.max));
+        near = Utils.valToObj(Utils.constrain(near, cssParams.min, cssParams.max));
       }
 
       if (typeof far === "number") {
-        far = Utils.valToObj(Utils.constrain(far, styleParams.min, styleParams.max));
+        far = Utils.valToObj(Utils.constrain(far, cssParams.min, cssParams.max));
       }
 
       _classPrivateFieldSet(this, _effects, _classPrivateFieldGet(this, _effects) || []);
 
       _classPrivateFieldGet(this, _effects).push({
-        rules: styleParams,
+        rules: cssParams,
         near: near,
         far: far,
-        params: params
+        params: effectParams
       });
 
       for (var i = 0; i < _classPrivateFieldGet(this, _nodeData).length; i++) {
@@ -766,7 +780,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
             d = void 0; // calculate distance
 
         if (this.direction === "both") {
-          dd = Math.sqrt(dx * dx + dy * dy);
+          dd = Utils.pythagoras(dx, dy);
         } else {
           dd = Math.abs(this.direction === "horizontal" ? dx : dy);
         } // normalise to boundaries

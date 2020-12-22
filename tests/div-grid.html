@@ -82,6 +82,7 @@
         *.childelement > * > *
         {
             align-self: center;
+            text-decoration: underline;
         }
 
         #alttarget
@@ -135,7 +136,7 @@
             n = t.removeChild(t.querySelector('*.childelement'));
 
         let pos = 30,
-            rows = 10,
+            rows = 20,
             cols = 20;
 
         for(let i=0; i<cols; i++)
@@ -150,8 +151,8 @@
 
 
         let params1 = {
-                threshold: 0,
-                runoff:    100,
+                threshold: 50,
+                runoff:    30,
                 //direction: 'horizontal',
                 offsetX:     0,
                 offsetY:     0,
@@ -163,7 +164,7 @@
                 decay:       1,
                 reverse: false,
                 invert:  false,
-                accuracy: 2
+                accuracy: 5
             };
         let params2 = {
                 threshold:  50,
@@ -186,10 +187,10 @@
         fader1.target = document.querySelector('#alttarget');
         //fader1.target = null;
         //fader1.mode = 'cheesecake';
-        //fader1.addEffect('opacity', 100, 30);
-        fader1.addEffect('scale',   1, 0);
+        fader1.addEffect('opacity', 100, 30, {runoff: 0});
+        //fader1.addEffect('scale',   1, 0);
         //fader1.addEffect({rule:"transform", func:"scale"}, 1, 0.5);
-        // fader1.addEffect('rotateX',    0, {value: 0, scatter: 360});
+        //fader1.addEffect('rotateX',    0, 180);
         //fader1.addEffect('rotateY',    0, {value: 0, scatter: 360});
         // fader1.addEffect('rotateZ',    0, {value: 0, scatter: 360});
         // fader1.addEffect('translateX', 0, {value: 0, scatter: 200});
