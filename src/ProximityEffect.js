@@ -1,100 +1,4 @@
 ﻿/*
- * Utilities Class
- */
-
-class Utils
-{
-
-
-
-    static constrain = (num, min, max) => {
-        if (typeof num!=="number") {
-            return NaN;
-        }
-        if (min!==undefined && min!==null && typeof min==="number") {
-            num = Math.max(num, min);
-        }
-        if (max!==undefined && max!==null && typeof max==="number") {
-            num = Math.min(num, max);
-        }
-        return num;
-    };
-    
-
-    static roundTo = (num, dp=0) => {
-        let mult = Math.pow(dp+1,10);
-        return Math.round(num*mult)/mult;
-    };
-    
-
-    static delta = (num, a, b) => (b - a) * Utils.constrain(num, 0, 1) + a;
-    
-
-    static map = (num, inMin, inMax, outMin, outMax) =>
-            (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-    
-
-    static random = (v=2, m="uniform") => {
-        switch (m) {
-    
-            // intentional fall-throughs
-            case "gaussian" :
-            case "normal" :
-                let t = 0,
-                    c = 6;
-                for (let i=0; i<c; i++) {
-                    t += (Math.random()-0.5)*v;
-                }
-                return t/c;
-                break;
-    
-            case "uniform" :
-            default :
-                return (Math.random()-0.5)*v;
-        }
-    }
-    
-
-    static XOR = (a, b) => (a || b) && !(a && b);
-    
-
-    static pythagoras = (a, b) => Math.sqrt(a*a+b*b);
-
-
-    static isVisibleInViewport = (el) => {
-        let bounds = el.getBoundingClientRect(),
-            view   = document.documentElement;
-        return bounds.right >=0 && bounds.left<=view.clientWidth &&
-               bounds.bottom>=0 && bounds.top <=view.clientHeight;
-    };
-    
-
-    //static startTimer = (delay) =>
-    
-
-    static valToObj = (val, key="value") => {
-        let obj = {};
-        obj[key] = val;
-        return obj;
-    };
-    
-
-    static isObject = obj => obj==Object(obj);
-    
-    
-
-}
-
-
-
-
-
-
-
-
-
-
-/*
  * ProximityEffect class by Adasha
  * Licensed under MPL-2.0
  * Repository: https://github.com/Adasha/proximity-effect
@@ -109,6 +13,9 @@ class Utils
  * @author Adam Shailer <adasha76@outlook.com>
  * @class
  * @extends EventTarget
+ * @fires ProximityEffect#ready
+ * @fires ProximityEffect#redraw
+ * @fires ProximityEffect#reflow
  */
 class ProximityEffect extends EventTarget
 {
@@ -184,9 +91,6 @@ class ProximityEffect extends EventTarget
      * @param {number}  [params.accuracy] - The effect accuracy.
      * @param {Element} [params.target] - The effect tracker target.
      * @param {boolean} [params.doPresetDistances=false] - Prime the initial distances to create an initial transition. Only available through params argument in constructor.
-     * @fires ProximityEffect#ready
-     * @fires ProximityEffect#redraw
-     * @fires ProximityEffect#reflow
      */
     constructor(nodes, params = {})
     {
@@ -1192,3 +1096,208 @@ class ProximityEffect extends EventTarget
     } // update end
 
 }
+
+
+
+
+
+
+
+
+
+/**
+ * EffectInstance Class
+ */
+class EffectInstance
+{
+
+    #VALID_EFFECTS = {
+        translateX:      {                  default:       0, rule: "transform",       func: "translateX",  unit: "px"},
+        translateY:      {                  default:       0, rule: "transform",       func: "translateY",  unit: "px"},
+        translateZ:      {                  default:       0, rule: "transform",       func: "translateZ",  unit: "px"},
+        rotate:          {                  default:       0, rule: "transform",       func: "rotate",      unit: "deg"},
+        rotateX:         {                  default:       0, rule: "transform",       func: "rotateX",     unit: "deg"},
+        rotateY:         {                  default:       0, rule: "transform",       func: "rotateY",     unit: "deg"},
+        rotateZ:         {                  default:       0, rule: "transform",       func: "rotateZ",     unit: "deg"},
+        scale:           {                  default:       1, rule: "transform",       func: "scale"},
+        scaleX:          {                  default:       1, rule: "transform",       func: "scaleX"},
+        scaleY:          {                  default:       1, rule: "transform",       func: "scaleY"},
+        scaleZ:          {                  default:       1, rule: "transform",       func: "scaleZ"},
+        skewX:           {                  default:       0, rule: "transform",       func: "skewX",       unit: "deg"},
+        skewY:           {                  default:       0, rule: "transform",       func: "skewY",       unit: "deg"},
+        
+        blur:            {min: 0,           default:       0, rule: "filter",          func: "blur",        unit: "px"},
+        brightness:      {min: 0,           default:     100, rule: "filter",          func: "brightness",  unit: "%"},
+        contrast:        {min: 0,           default:     100, rule: "filter",          func: "contrast",    unit: "%"},
+        grayscale:       {min: 0, max: 100, default:       0, rule: "filter",          func: "grayscale",   unit: "%"},
+        hueRotate:       {                  default:       0, rule: "filter",          func: "hue-rotate",  unit: "deg"},
+        invert:          {min: 0, max: 100, default:       0, rule: "filter",          func: "invert",      unit: "%"},
+        opacity:         {min: 0, max: 100, default:     100, rule: "filter",          func: "opacity",     unit: "%"},
+        saturate:        {min: 0, max: 100, default:     100, rule: "filter",          func: "saturate",    unit: "%"},
+        sepia:           {min: 0, max: 100, default:       0, rule: "filter",          func: "sepia",       unit: "%"},
+
+        color:           {min: 0, max: 255, default: [0,0,0], rule: "color",           func: "rgb",                      args: 3},
+        backgroundColor: {min: 0, max: 255, default: [0,0,0], rule: "backgroundColor", func: "rgb",                      args: 3},
+        scale3D:         {                  default: [1,1,1], rule: "transform",       func: "scale3D",                  args: 3}
+    };
+
+
+    #VALID_RANDOM_METHODS   = new Set(["normal", "uniform"]);
+    #DEFAULT_SCATTER_METHOD = "uniform";
+    #name;
+
+
+
+    /**
+     * 
+     * @constructor
+     * @param {string|Object} property - The predefined style rule as a string, or an object containing a CSS style configuration.
+     * @param {string} [property.rule] - The custom CSS style rule to use.
+     * @param {string} [property.func] - The CSS function of the given style rule.
+     * @param {number} [property.min] - The minimum style value.
+     * @param {number} [property.max] - The maximum style value.
+     * @param {number} [property.default] - The default style value.
+     * @param {string} [property.unit] - The style rule's CSS unit.
+     * @param {number|Object} near - The style value at the closest distance, either a single number or an object containing more properties.
+     * @param {number} near.value - The style value at closest distance, as an object property.
+     * @param {number} [near.scatter] - The random distribution of the value at the closest distance.
+     * @param {string} [near.scatterMethod] - The random scatter method.
+     * @param {number|Object} far - The style value at the furthest distance, either a single number or an object containing more properties.
+     * @param {number} far.value - The style value at furthest distance, as an object property.
+     * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
+     * @param {string} [far.scatterMethod] - The random scatter method.
+     * @param {Object} [params] - An object containing additional effect parameters.
+     * @param {string} [params.id] - A unique string to identify the effect.
+     * @param {number} [params.threshold] - The effect threshold for this effect, overriding the global value.
+     * @param {number} [params.runoff] - The effect runoff for this effect, overriding the global value.
+     * @param {Boolean} [params.invert] - XXXXX, overriding the global value.
+     * @param {number} [params.attack] - , overriding the global value.
+     * @param {number} [params.decay] - , overriding the global value.
+     */
+    constructor(property, values, params={})
+    {
+        let cssParams;
+
+        // if specifying a preset effect
+        if(typeof property==="string")
+        {
+            if (this.#VALID_EFFECTS.hasOwnProperty(property))
+            {
+                cssParams = this.#VALID_EFFECTS[property];
+            }
+            else
+            {
+                throw new Error(`ProximityEffect: Couldn't find preset '${property}'`);
+            }
+        }
+        else if(Utils.isObject(property) && typeof property.rule==="string")
+        {
+            cssParams = property;
+        }
+        else return void console.log(`'${property}' is not a valid style rule.`);
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+
+/*
+ * Utilities Class
+ */
+
+class Utils
+{
+
+
+
+    static constrain = (num, min, max) => {
+        if (typeof num!=="number") {
+            return NaN;
+        }
+        if (min!==undefined && min!==null && typeof min==="number") {
+            num = Math.max(num, min);
+        }
+        if (max!==undefined && max!==null && typeof max==="number") {
+            num = Math.min(num, max);
+        }
+        return num;
+    };
+    
+
+    static roundTo = (num, dp=0) => {
+        let mult = Math.pow(dp+1,10);
+        return Math.round(num*mult)/mult;
+    };
+    
+
+    static delta = (num, a, b) => (b - a) * Utils.constrain(num, 0, 1) + a;
+    
+
+    static map = (num, inMin, inMax, outMin, outMax) =>
+            (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+    
+
+    static random = (v=2, m="uniform") => {
+        switch (m) {
+    
+            // intentional fall-throughs
+            case "gaussian" :
+            case "normal" :
+                let t = 0,
+                    c = 6;
+                for (let i=0; i<c; i++) {
+                    t += (Math.random()-0.5)*v;
+                }
+                return t/c;
+                break;
+    
+            case "uniform" :
+            default :
+                return (Math.random()-0.5)*v;
+        }
+    }
+    
+
+    static XOR = (a, b) => (a || b) && !(a && b);
+    
+
+    static pythagoras = (a, b) => Math.sqrt(a*a+b*b);
+
+
+    static isVisibleInViewport = (el) => {
+        let bounds = el.getBoundingClientRect(),
+            view   = document.documentElement;
+        return bounds.right >=0 && bounds.left<=view.clientWidth &&
+               bounds.bottom>=0 && bounds.top <=view.clientHeight;
+    };
+    
+
+    //static startTimer = (delay) =>
+    
+
+    static valToObj = (val, key="value") => {
+        let obj = {};
+        obj[key] = val;
+        return obj;
+    };
+    
+
+    static isObject = obj => obj==Object(obj);
+    
+    
+
+}
+
+
+
+
+
+

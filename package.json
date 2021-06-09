@@ -1,6 +1,6 @@
 {
 	"name": "proximity-effect",
-	"version": "v3.0.0-alpha1",
+	"version": "v3.0.0-alpha2",
 	"description": "Mass animate CSS properties based on proximity of mouse or arbitrary target.",
 	"author": {
 		"name": "Adam Shailer",
@@ -61,24 +61,21 @@
 		"event-target": "^1.2.3"
 	},
 	"devDependencies": {
-		"@babel/cli": "^7.11.6",
-		"@babel/core": "^7.11.6",
-		"@babel/plugin-proposal-class-properties": "^7.10.4",
-		"@babel/plugin-proposal-private-methods": "^7.10.4",
-		"@babel/preset-env": "^7.11.5",
+		"@babel/cli": "^7.14.3",
+		"@babel/core": "^7.14.3",
+		"@babel/preset-env": "^7.14.4",
 		"babel-eslint": "^10.1.0",
-		"eslint": "^7.8.1",
+		"eslint": "^7.28.0",
 		"gulp": "^4.0.2",
 		"gulp-babel": "^8.0.0",
 		"gulp-gzip": "^1.4.2",
 		"gulp-rename": "^2.0.0",
 		"gulp-uglify": "^3.0.2",
-		"jsdoc": "^3.6.5"
+		"jsdoc": "^3.6.7"
 	},
 	"scripts": {
 		"build": "gulp babel && gulp minify",
 		"build:docs": "jsdoc ./src/ProximityEffect.js -d ./docs -P ./package.json -R ./README.md",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	}
-
 }
