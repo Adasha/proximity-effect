@@ -61,7 +61,7 @@
 		"event-target": "^1.2.3"
 	},
 	"devDependencies": {
-		"@babel/cli": "^7.14.3",
+		"@babel/cli": "^7.14.5",
 		"@babel/core": "^7.14.3",
 		"@babel/preset-env": "^7.14.4",
 		"babel-eslint": "^10.1.0",
