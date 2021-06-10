@@ -9,7 +9,7 @@
 
 /**
  * Class representing a ProximityEffect.
- * @version 3.0.0-alpha1
+ * @version 3.0.0-alpha2
  * @author Adam Shailer <adasha76@outlook.com>
  * @class
  * @extends EventTarget
