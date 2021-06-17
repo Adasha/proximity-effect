@@ -670,7 +670,7 @@ class ProximityEffect extends EventTarget
      * @param {number} [params.attack] - , overriding the global value.
      * @param {number} [params.decay] - , overriding the global value.
      */
-    addEffect(property, near, far, effectParams)
+    addEffect(property, values, effectParams)
     {
         let cssParams;
 
@@ -693,14 +693,28 @@ class ProximityEffect extends EventTarget
         else return void console.log(`'${property}' is not a valid style rule.`);
 
 
-        if (typeof near==="number")
+        // // convenience function for adding basic near/far values like the old version
+        if(values.length===2)
         {
-            near = Utils.valToObj(Utils.constrain(near, cssParams.min, cssParams.max));
+            for(let v=0; v<values.length; v++)
+            {
+                let val = values[v];
+                if (typeof val==="number")
+                {
+                    values[v] = Utils.valToObj(Utils.constrain(val, cssParams.min, cssParams.max));
+                }
+            }
+
+            let near = values[0];
+            let far  = values[1];
         }
-        if (typeof far==="number")
-        {
-            far = Utils.valToObj(Utils.constrain(far, cssParams.min, cssParams.max));
+        else{
+            console.log('length must be 2 for now');
+
+            // TODO: implement complex transitions
         }
+        
+        
 
 
         this.#effects = this.#effects || [];

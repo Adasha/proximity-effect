@@ -7,7 +7,9 @@ Bulk modify CSS properties on elements based on mouse pointer or other arbitrary
 [View live demos](http://lab.adasha.com/proximity-effect)
 
 
-Version 3 has had an API makeover and is a little more efficient, but effects added from the predefined list should still work without changes. For custom effects, data provided to the old `params` argument should now be placed first inlieu of a preset name. The old `params` argument still exists but is unused at present.
+Version 3 has had an API makeover and is a little more flexible. Property value changes are now described as an array, replacing near and far. It's still near and far under the hood, but eventually this will allow for effects with complex animation tweening.
+
+For custom effects, data provided to the old `params` argument should now be placed first inlieu of a preset name. The old `params` argument still exists but is unused at present.
 
 Roadmap before full release:
 - More API stuff

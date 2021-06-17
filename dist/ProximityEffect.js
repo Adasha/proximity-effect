@@ -854,7 +854,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
   }, {
     key: "addEffect",
-    value: function addEffect(property, near, far, effectParams) {
+    value: function addEffect(property, values, effectParams) {
       var cssParams; // if specifying a preset effect
 
       if (typeof property === "string") {
@@ -865,14 +865,22 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         }
       } else if (Utils.isObject(property) && typeof property.rule === "string") {
         cssParams = property;
-      } else return void console.log("'".concat(property, "' is not a valid style rule."));
+      } else return void console.log("'".concat(property, "' is not a valid style rule.")); // // convenience function for adding basic near/far values like the old version
 
-      if (typeof near === "number") {
-        near = Utils.valToObj(Utils.constrain(near, cssParams.min, cssParams.max));
-      }
 
-      if (typeof far === "number") {
-        far = Utils.valToObj(Utils.constrain(far, cssParams.min, cssParams.max));
+      if (values.length === 2) {
+        for (var v = 0; v < values.length; v++) {
+          var val = values[v];
+
+          if (typeof val === "number") {
+            values[v] = Utils.valToObj(Utils.constrain(val, cssParams.min, cssParams.max));
+          }
+        }
+
+        var _near = values[0];
+        var _far = values[1];
+      } else {
+        console.log('length must be 2 for now'); // TODO: implement complex transitions
       }
 
       _classPrivateFieldSet(this, _effects, _classPrivateFieldGet(this, _effects) || []);
@@ -1123,12 +1131,12 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
           for (var f = 0; f < this.effects.length; f++) {
             var effect = this.effects[f],
                 nodeVals = this.getNodeIndexData(n, "effects")[f];
-            var near = nodeVals.near,
-                far = nodeVals.far,
+            var _near2 = nodeVals.near,
+                _far2 = nodeVals.far,
                 rule = effect.rules.rule,
                 func = effect.rules.func,
                 unit = effect.rules.unit || "",
-                val = Utils.delta(d, near, far);
+                val = Utils.delta(d, _near2, _far2);
 
             if (!func) {
               _node2.style[rule] = "".concat(val).concat(unit);
