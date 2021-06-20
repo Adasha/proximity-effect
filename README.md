@@ -87,12 +87,12 @@ Parameters can also be accessed as individual properties on the ProximityEffect 
 myEffect.invert = true;
 ```
 
-Finally add effects as you see fit. You can either specify a predefined CSS property:
+Finally add effects as you see fit:
 
 ```javascript
-myEffect.addEffect('opacity', [1,  0.5]);
-myEffect.addEffect('scale',   [1,  2]);
-myEffect.addEffect('blur',    [0, 10]);
+myEffect.addEffect('opacity', [100, 50]);
+myEffect.addEffect('scale',   [  1,  2]);
+myEffect.addEffect('blur',    [  0, 10]);
 ```
 
 The first argument defines the CSS property that will be affected. This can be a string that is the name of a pre-defined CSS property, or can be an object de3fining a property of your own. The following array defines the start and end values of this property when animated. Only the first and last values of the array are read currently; eventually more detailed animation will be possible.
@@ -105,13 +105,13 @@ myEffect.addEffect({rule: 'transform', func: 'perspective', unit: 'px'},  [100, 
 ...
 ```
 
-ProximityEffect comes pre-defined with [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-number CSS rule.
+ProximityEffect comes pre-defined with [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules. It currently only supports custom properties with single numerical values in them, so rgb() and the like can't be used yet.
 
-`near` and `far` can also be fed an object with a `value` key and other optional properties, including a `scatter` value:
+The `values` array can also contain objects with a `value` key and other optional properties, including a `scatter` value:
 
 ```javascript
-myEffect.addEffect('translateX', 0, {value: 50, scatter: 15});
-myEffect.addEffect({rule: 'padding', unit: 'px'}, {value: 20, scatter: 30}, {value: 100, scatter: 50});
+myEffect.addEffect('translateX', [0, {value: 50, scatter: 15}]);
+myEffect.addEffect({rule: 'padding', unit: 'px'}, [{value: 20, scatter: 30}, {value: 100, scatter: 50}]);
 ```
 
 ## API
