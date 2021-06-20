@@ -151,12 +151,12 @@
 
 
         let params1 = {
-                threshold: 50,
-                runoff:    30,
+                threshold: 100,
+                runoff:    100,
                 //direction: 'horizontal',
                 offsetX:     0,
                 offsetY:     0,
-    			jitter:     200,
+    			jitter:      0,
     			jitterX:     0,
                 jitterY:     0,
                 jitterMethod: 'gaussian',
@@ -181,30 +181,30 @@
             };
 
         let fader1 = new ProximityEffect(document.querySelectorAll('*.childelement'), params1);
-        //let fader2 = new ProximityEffect(document.querySelectorAll('*.childelement'), params2);
+        // let fader2 = new ProximityEffect(document.querySelectorAll('*.childelement'), params2);
 
 
-        fader1.target = document.querySelector('#alttarget');
+        //fader1.target = document.querySelector('#alttarget');
         //fader1.target = null;
         //fader1.mode = 'cheesecake';
-        fader1.addEffect('opacity', [100, 30], {runoff: 0});
-        //fader1.addEffect('scale',   [1, 0]);
-        //fader1.addEffect({rule:"transform", func:"scale"}, 1, 0.5);
-        //fader1.addEffect('rotateX',    0, 180);
-        //fader1.addEffect('rotateY',    0, {value: 0, scatter: 360});
-        // fader1.addEffect('rotateZ',    0, {value: 0, scatter: 360});
-        // fader1.addEffect('translateX', 0, {value: 0, scatter: 200});
-        // fader1.addEffect('translateY', 0, {value: 0, scatter: 200});
-        //fader1.addEffect('translateZ', 0, {value: 50, scatter: 200});
+        fader1.addEffect('opacity', [100, 0, 0, 0, 30], {runoff: 0});
+        // fader1.addEffect('scale',   [1, 0]);
+        // fader1.addEffect({rule:"transform", func:"scale"}, [1, 0.5]);
+        // fader1.addEffect('rotateX',    [0, 180]);
+        // fader1.addEffect('rotateY',    [0, {value: 0, scatter: 360}]);
+        // fader1.addEffect('rotateZ',    [0, {value: 0, scatter: 360}]);
+        // fader1.addEffect('translateX', [0, {value: 0, scatter: 200}]);
+        // fader1.addEffect('translateY', [0, {value: 0, scatter: 200}]);
+        // fader1.addEffect('translateZ', [0, {value: 50, scatter: 200}]);
         
-        //fader1.addEffect({rule: "border-width", unit:"px"}, 1, 10);
-        //fader1.addEffect({rule: 'padding', unit: 'px'}, {value: 20, scatter: 30}, {value: 100, scatter: 50});
-        //fader1.addEffect('opacity', 1, 0.5);
-        //fader2.addEffect('scale',   1, 0);
-        //fader1.addEffect('blur',    0, 5);
+        // fader1.addEffect({rule: "border-width", unit:"px"}, [1, 10]);
+        // fader1.addEffect({rule: 'padding', unit: 'px'}, [{value: 20, scatter: 30}, {value: 100, scatter: 50}]);
+        // fader1.addEffect('opacity', [100, 50]);
+        // fader2.addEffect('scale',   [2, 0]);
+        // fader1.addEffect('blur',    [0, 100, 5], {threshold: 300});
 
-        //fader2.addEffect('scale', 0, 2);
-        //fader2.addEffect('hueRotate', 0, 180);
+        //fader2.addEffect('scale', [0, 2]);
+        //fader2.addEffect('hueRotate', [0, 180]);
 
         // individual scale functions risking overwriting
         //fader1.addEffect('scaleX custom', 1, 0, {rule: 'transform', func: 'scaleX'});
@@ -226,11 +226,11 @@
         // }, 16);
 
 
-        window.setInterval(() => {
-            var alttarget = document.querySelector('#alttarget');
-            alttarget.style.left = fader1.pointer.x+'px';
-            alttarget.style.top  = fader1.pointer.y+'px';
-        }, 16);
+        // window.setInterval(() => {
+        //     var alttarget = document.querySelector('#alttarget');
+        //     alttarget.style.left = fader1.pointer.x+'px';
+        //     alttarget.style.top  = fader1.pointer.y+'px';
+        // }, 16);
 
     </script>
 </body>

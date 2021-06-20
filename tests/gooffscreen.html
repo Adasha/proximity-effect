@@ -91,10 +91,10 @@ function init() {
     };
 
 	let fader = new ProximityEffect(document.querySelectorAll('*.childelement'), params);
-	fader.addEffect('scaleX',       1,    0);
-	fader.addEffect('scaleY',       1,   10);
-	fader.addEffect('translateY',   0, 1000);
-	fader.addEffect('brightness', 100,    0);
+	fader.addEffect('scaleX',       [1,    0]);
+	fader.addEffect('scaleY',       [1,   10]);
+	fader.addEffect('translateY',  [ 0, 1000]);
+	fader.addEffect('brightness', [100,    0]);
 };
 
 init();

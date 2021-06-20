@@ -9,15 +9,13 @@ Bulk modify CSS properties on elements based on mouse pointer or other arbitrary
 
 Version 3 has had an API makeover and is a little more flexible. Property value changes are now described as an array, replacing near and far. It's still near and far under the hood, but eventually this will allow for effects with complex animation tweening.
 
-For custom effects, data provided to the old `params` argument should now be placed first inlieu of a preset name. The old `params` argument still exists but is unused at present.
+To add custom CSS properties, you can now provide an object defining it in place of a string for the first argument. This object is the same as the old `params` argument.
 
 Roadmap before full release:
 - More API stuff
 - Stackable ProximityEffects
 - Multiple-value CSS properties
 - Improved documentation
-
-**NOTE: current version requires capability to extend EventTarget - this knocks out Edge and Firefox before v59 until backwards compatibility is given more thought. To work around import a ponyfill such as `event-target` or `event-target-shim`. This lets you be disappointed with how slow Edge is.**
 
 ## Installation
 

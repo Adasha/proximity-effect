@@ -119,7 +119,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
    * @param {string}  [params.jitterMethod] - The random method for generating jitter values. 
    * @param {number}  [params.accuracy] - The effect accuracy.
    * @param {Element} [params.target] - The effect tracker target.
-   * @param {boolean} [params.doPresetDistances=false] - Prime the initial distances to create an initial transition. Only available through params argument in constructor.
+   * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
    */
   function ProximityEffect(nodes) {
     var _this;
@@ -377,14 +377,14 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
     if (!nodes) {
       throw new Error("ProximityEffect: nodes argument is required");
-    } // turn off centre calculations during setup to avoid calling repeatedly:
+    } // turn off centre calculations during setup to avoid calling repeatedly
 
 
     _this.preventCenterCalculations = true;
 
     _classPrivateFieldSet(_assertThisInitialized(_this), _globalParams, params);
 
-    _this.nodes = nodes; // default global parameter values:
+    _this.nodes = nodes; // set global parameter values
 
     _this.threshold = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).hasOwnProperty("threshold") ? _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).threshold : 0;
     _this.runoff = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).hasOwnProperty("runoff") ? _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).runoff : _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_RUNOFF);
@@ -401,7 +401,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     _this.direction = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).direction || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_DIRECTION);
     _this.FPS = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).FPS || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_FPS);
     _this.mode = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).mode || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_MODE);
-    _this.target = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).target;
+    _this.target = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).target; // finish setup once the document is ready
 
     if (document.readyState === "completed") {
       _classPrivateMethodGet(_assertThisInitialized(_this), _init, _init2).call(_assertThisInitialized(_this));
@@ -419,7 +419,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   /////////////////////////////////
 
   /**
-   * Get the current target
+   * Get the currently tracked target.
    * @return {Element|Falsy} The current target.
    */
 
@@ -430,7 +430,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       return _classPrivateFieldGet(this, _globalParams).target;
     }
     /**
-     * Set the current target
+     * Set the target to track.
      * @param {Element|Falsy} target - A reference to a DOM Element, or falsy to target mouse.
      */
     ,
@@ -438,7 +438,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       if (!target || target.getBoundingClientRect()) {
         _classPrivateFieldGet(this, _globalParams).target = target;
       } else {
-        return void console.log("".concat(target, " is not a valid target"));
+        throw new Error("ProximityEffect: ".concat(target, " is not a valid target."));
       }
     }
     /**
@@ -452,7 +452,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       return _classPrivateFieldGet(this, _nodes);
     }
     /**
-     * Set the list of nodes.
+     * Set the list of nodes to animate.
      * @param {NodeList<Element>} list - The list of nodes.
      */
     ,
@@ -460,21 +460,21 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       var _this2 = this;
 
       if (!(list instanceof NodeList)) {
-        throw new Error("".concat(list, " is not a node list"));
+        throw new Error("ProximityEffect: ".concat(list, " is not a node list."));
       }
 
       if (list.length < 1) {
-        throw new Error("No nodes found in ".concat(list));
+        throw new Error("ProximityEffect: No nodes found in ".concat(list, "."));
       }
 
-      _classPrivateFieldSet(this, _nodes, [].slice.call(list)); //convert to array
+      _classPrivateFieldSet(this, _nodes, [].slice.call(list)); // convert to array boilerplate
 
 
       _classPrivateFieldSet(this, _nodeData, _classPrivateFieldGet(this, _nodes).map(function (i) {
         return {
           node: i,
           style: i.style.cssText,
-          lastDelta: _classPrivateFieldGet(_this2, _globalParams).doPresetDistances ? 1 : null
+          lastDelta: _classPrivateFieldGet(_this2, _globalParams).primeDistances ? 1 : null
         };
       }));
 
@@ -865,23 +865,29 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         }
       } else if (Utils.isObject(property) && typeof property.rule === "string") {
         cssParams = property;
-      } else return void console.log("'".concat(property, "' is not a valid style rule.")); // // convenience function for adding basic near/far values like the old version
+      } else return void console.log("'".concat(property, "' is not a valid style rule.")); // convenience function for adding basic near/far values like the old version
 
 
-      if (values.length === 2) {
-        for (var v = 0; v < values.length; v++) {
-          var val = values[v];
+      for (var v = 0; v < values.length; v++) {
+        var val = values[v];
 
-          if (typeof val === "number") {
-            values[v] = Utils.valToObj(Utils.constrain(val, cssParams.min, cssParams.max));
+        if (typeof val === "number") {
+          values[v] = Utils.valToObj(Utils.constrain(val, cssParams.min, cssParams.max));
+
+          switch (v) {
+            case 0:
+              values[v].distance = 0;
+              break;
+
+            case values.length - 1:
+              values[v].distance = 1;
+              break;
           }
         }
-
-        var _near = values[0];
-        var _far = values[1];
-      } else {
-        console.log('length must be 2 for now'); // TODO: implement complex transitions
       }
+
+      var near = values[0];
+      var far = values[values.length - 1];
 
       _classPrivateFieldSet(this, _effects, _classPrivateFieldGet(this, _effects) || []);
 
@@ -961,10 +967,10 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "clearTarget",
     value: function clearTarget() {
-      _classPrivateFieldGet(this, _globalParams).target = null;
+      this.target = null;
     }
     /**
-     * Recalculate each node"s centre point, including global offset and jitter.
+     * Recalculate each node's centre point, including global offset and jitter.
      */
 
   }, {
@@ -973,12 +979,12 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       for (var n = 0; n < this.nodes.length; n++) {
         var _node = this.nodes[n],
             cssTxt = _node.style.cssText;
-        _node.style.cssText = this.getNodeIndexData(n, "style");
+        _node.style.cssText = this.getNodeIndexData(n, 'style');
 
         var bounds = _node.getBoundingClientRect(),
             x = (bounds.left + bounds.right) * 0.5 - this.offsetX,
             y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY,
-            jitter = this.getNodeIndexData(n, "jitter");
+            jitter = this.getNodeIndexData(n, 'jitter');
 
         if (jitter) {
           x += jitter.x;
@@ -987,7 +993,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
         _node.style.cssText = cssTxt;
 
-        _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, "center", {
+        _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, 'center', {
           x: x,
           y: y
         });
@@ -1001,10 +1007,10 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
 
     /**
-     * Return an object containing the given node"s effect data or a specific property of that data.
+     * Return an object containing the given node's effect data or a specific property of that data.
      * @param {Element} n - The node to return data for.
      * @param {string} [prop] - The data property to return, leave out to return the entire object.
-     * @return {mixed|NodeData} The chosen property value, or an object containing the node"s data.
+     * @return {mixed|NodeData} The chosen property value, or an object containing the node's data.
      */
 
   }, {
@@ -1020,7 +1026,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      * Return an object containing the given node index"s effect data.
      * @param {number} i - The node index to return data for.
      * @param {string} prop - The data property to return.
-     * @return {Object} True if the property exists, false otherwise.
+     * @return {Object} An object containing the node's data.
      */
 
   }, {
@@ -1029,10 +1035,10 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       return _classPrivateFieldGet(this, _nodeData)[i][prop];
     }
     /**
-     * Return a boolean determining if the given node has thegiven data.
+     * Return a boolean determining if the given node has the given data.
      * @param {number} i - The node index to return data for.
      * @param {string} prop - The data property to return.
-     * @return {boolean} An object containing the node"s data.
+     * @return {boolean} True if the property exists, false otherwise.
      */
 
   }, {
@@ -1131,12 +1137,12 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
           for (var f = 0; f < this.effects.length; f++) {
             var effect = this.effects[f],
                 nodeVals = this.getNodeIndexData(n, "effects")[f];
-            var _near2 = nodeVals.near,
-                _far2 = nodeVals.far,
+            var near = nodeVals.near,
+                far = nodeVals.far,
                 rule = effect.rules.rule,
                 func = effect.rules.func,
                 unit = effect.rules.unit || "",
-                val = Utils.delta(d, _near2, _far2);
+                val = Utils.delta(d, near, far);
 
             if (!func) {
               _node2.style[rule] = "".concat(val).concat(unit);
@@ -1178,12 +1184,12 @@ function _init2() {
   this.preventCenterCalculations = false;
   this.setCenterPoints();
   this.update = this.update.bind(this);
-  window.addEventListener("scroll", this.reflowEvent.bind(this));
-  window.addEventListener("resize", this.reflowEvent.bind(this));
-  document.addEventListener("mousemove", this.updatePointer.bind(this)); // TODO: add alternative trigger modes
+  window.addEventListener('scroll', this.reflowEvent.bind(this));
+  window.addEventListener('resize', this.reflowEvent.bind(this));
+  document.addEventListener('mousemove', this.updatePointer.bind(this)); // TODO: add alternative trigger modes
 
-  document.dispatchEvent(new MouseEvent("mousemove"));
-  this.dispatchEvent(new Event("ready"));
+  document.dispatchEvent(new MouseEvent('mousemove'));
+  this.dispatchEvent(new Event('ready'));
   window.requestAnimationFrame(this.update);
 }
 
@@ -1200,7 +1206,7 @@ function _calculateJitters2() {
   var method = this.jitterMethod ? this.jitterMethod : _classPrivateFieldGet(this, _DEFAULT_JITTER_METHOD);
 
   for (var i = 0; i < this.nodes.length; i++) {
-    _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, "jitter", {
+    _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, 'jitter', {
       x: Utils.random(this.jitter + this.jitterX, method),
       y: Utils.random(this.jitter + this.jitterY, method)
     });

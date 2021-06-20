@@ -90,7 +90,7 @@ class ProximityEffect extends EventTarget
      * @param {string}  [params.jitterMethod] - The random method for generating jitter values. 
      * @param {number}  [params.accuracy] - The effect accuracy.
      * @param {Element} [params.target] - The effect tracker target.
-     * @param {boolean} [params.doPresetDistances=false] - Prime the initial distances to create an initial transition. Only available through params argument in constructor.
+     * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
      */
     constructor(nodes, params = {})
     {
@@ -100,7 +100,7 @@ class ProximityEffect extends EventTarget
             throw new Error("ProximityEffect: nodes argument is required");
         }
 
-        // turn off centre calculations during setup to avoid calling repeatedly:
+        // turn off centre calculations during setup to avoid calling repeatedly
         this.preventCenterCalculations = true;
 
 
@@ -108,7 +108,7 @@ class ProximityEffect extends EventTarget
         this.nodes = nodes;
 
 
-        // default global parameter values:
+        // set global parameter values
         this.threshold = this.#globalParams.hasOwnProperty("threshold") ? this.#globalParams.threshold : 0;
         this.runoff    = this.#globalParams.hasOwnProperty("runoff")    ? this.#globalParams.runoff    : this.#DEFAULT_RUNOFF;
         this.attack    = this.#globalParams.hasOwnProperty("attack")    ? this.#globalParams.attack    : 1;
@@ -127,7 +127,7 @@ class ProximityEffect extends EventTarget
         this.target    = this.#globalParams.target;
 
 
-
+        // finish setup once the document is ready
         if (document.readyState==="completed")
         {
             this.#init();
@@ -151,7 +151,7 @@ class ProximityEffect extends EventTarget
 
 
     /**
-     * Get the current target
+     * Get the currently tracked target.
      * @return {Element|Falsy} The current target.
      */
     get target()
@@ -160,7 +160,7 @@ class ProximityEffect extends EventTarget
     }
 
     /**
-     * Set the current target
+     * Set the target to track.
      * @param {Element|Falsy} target - A reference to a DOM Element, or falsy to target mouse.
      */
     set target(target)
@@ -169,7 +169,7 @@ class ProximityEffect extends EventTarget
             this.#globalParams.target = target;
         }
         else {
-            return void console.log(`${target} is not a valid target`);
+            throw new Error(`ProximityEffect: ${target} is not a valid target.`);
         }
     }
 
@@ -187,26 +187,26 @@ class ProximityEffect extends EventTarget
     }
 
     /**
-     * Set the list of nodes.
+     * Set the list of nodes to animate.
      * @param {NodeList<Element>} list - The list of nodes.
      */
     set nodes(list)
     {
         if (!(list instanceof NodeList))
         {
-            throw new Error(`${list} is not a node list`);
+            throw new Error(`ProximityEffect: ${list} is not a node list.`);
         }
         if (list.length<1)
         {
-            throw new Error(`No nodes found in ${list}`);
+            throw new Error(`ProximityEffect: No nodes found in ${list}.`);
         }
 
 
-        this.#nodes = [].slice.call(list);  //convert to array
+        this.#nodes = [].slice.call(list);  // convert to array boilerplate
         this.#nodeData = this.#nodes.map(i => ({
             node:      i,
             style:     i.style.cssText,
-            lastDelta: this.#globalParams.doPresetDistances ? 1 : null
+            lastDelta: this.#globalParams.primeDistances ? 1 : null
         }));
 
 
@@ -693,27 +693,28 @@ class ProximityEffect extends EventTarget
         else return void console.log(`'${property}' is not a valid style rule.`);
 
 
-        // // convenience function for adding basic near/far values like the old version
-        if(values.length===2)
+        // convenience function for adding basic near/far values like the old version
+        for(let v=0; v<values.length; v++)
         {
-            for(let v=0; v<values.length; v++)
+            let val = values[v];
+            if (typeof val==="number")
             {
-                let val = values[v];
-                if (typeof val==="number")
+                values[v] = Utils.valToObj(Utils.constrain(val, cssParams.min, cssParams.max));
+                switch(v)
                 {
-                    values[v] = Utils.valToObj(Utils.constrain(val, cssParams.min, cssParams.max));
+                    case 0 :
+                        values[v].distance = 0;
+                        break;
+                    case values.length-1 :
+                        values[v].distance = 1;
+                        break;
                 }
             }
-
-            let near = values[0];
-            let far  = values[1];
         }
-        else{
-            console.log('length must be 2 for now');
 
-            // TODO: implement complex transitions
-        }
-        
+        let near = values[0];
+        let far  = values[values.length-1];
+
         
 
 
@@ -805,7 +806,7 @@ class ProximityEffect extends EventTarget
      */
     clearTarget()
     {
-        this.#globalParams.target = null;
+        this.target = null;
     }
 
 
@@ -813,7 +814,7 @@ class ProximityEffect extends EventTarget
 
 
     /**
-     * Recalculate each node"s centre point, including global offset and jitter.
+     * Recalculate each node's centre point, including global offset and jitter.
      */
     setCenterPoints()
     {
@@ -822,12 +823,12 @@ class ProximityEffect extends EventTarget
     		let node   = this.nodes[n],
                 cssTxt = node.style.cssText;
 
-            node.style.cssText = this.getNodeIndexData(n, "style");
+            node.style.cssText = this.getNodeIndexData(n, 'style');
 
     		let bounds = node.getBoundingClientRect(),
                 x      = (bounds.left+bounds.right )*0.5 - this.offsetX,
                 y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY,
-                jitter = this.getNodeIndexData(n, "jitter");
+                jitter = this.getNodeIndexData(n, 'jitter');
 
             if (jitter)
             {
@@ -836,7 +837,7 @@ class ProximityEffect extends EventTarget
             }
 
             node.style.cssText = cssTxt;
-    		this.#setNodeIndexData(n, "center", {x: x, y: y});
+    		this.#setNodeIndexData(n, 'center', {x: x, y: y});
         }
     }
 
@@ -851,10 +852,10 @@ class ProximityEffect extends EventTarget
      * @property {number} effects[].near - Did this work?.
      */
     /**
-     * Return an object containing the given node"s effect data or a specific property of that data.
+     * Return an object containing the given node's effect data or a specific property of that data.
      * @param {Element} n - The node to return data for.
      * @param {string} [prop] - The data property to return, leave out to return the entire object.
-     * @return {mixed|NodeData} The chosen property value, or an object containing the node"s data.
+     * @return {mixed|NodeData} The chosen property value, or an object containing the node's data.
      */
     getNodeData(n, prop)
     {
@@ -868,7 +869,7 @@ class ProximityEffect extends EventTarget
      * Return an object containing the given node index"s effect data.
      * @param {number} i - The node index to return data for.
      * @param {string} prop - The data property to return.
-     * @return {Object} True if the property exists, false otherwise.
+     * @return {Object} An object containing the node's data.
      */
     getNodeIndexData(i, prop)
     {
@@ -879,10 +880,10 @@ class ProximityEffect extends EventTarget
 
 
     /**
-     * Return a boolean determining if the given node has thegiven data.
+     * Return a boolean determining if the given node has the given data.
      * @param {number} i - The node index to return data for.
      * @param {string} prop - The data property to return.
-     * @return {boolean} An object containing the node"s data.
+     * @return {boolean} True if the property exists, false otherwise.
      */
     hasNodeIndexData(i, prop)
     {
@@ -908,15 +909,15 @@ class ProximityEffect extends EventTarget
 
         this.update = this.update.bind(this);
 
-        window.addEventListener("scroll", this.reflowEvent.bind(this));
-        window.addEventListener("resize", this.reflowEvent.bind(this));
+        window.addEventListener('scroll', this.reflowEvent.bind(this));
+        window.addEventListener('resize', this.reflowEvent.bind(this));
 
-        document.addEventListener("mousemove", this.updatePointer.bind(this));
+        document.addEventListener('mousemove', this.updatePointer.bind(this));
 
         // TODO: add alternative trigger modes
 
-        document.dispatchEvent(new MouseEvent("mousemove"));
-        this.dispatchEvent(new Event("ready"));
+        document.dispatchEvent(new MouseEvent('mousemove'));
+        this.dispatchEvent(new Event('ready'));
         window.requestAnimationFrame(this.update);
     }
 
@@ -942,7 +943,7 @@ class ProximityEffect extends EventTarget
     {
         let method = this.jitterMethod ? this.jitterMethod : this.#DEFAULT_JITTER_METHOD;
         for (let i=0; i<this.nodes.length; i++) {
-            this.#setNodeIndexData(i, "jitter", {
+            this.#setNodeIndexData(i, 'jitter', {
                 x: Utils.random(this.jitter + this.jitterX, method),
                 y: Utils.random(this.jitter + this.jitterY, method)
             });
