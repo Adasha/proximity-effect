@@ -71,7 +71,7 @@ let params = {
    jitterX:              0, // random X offset per element, stacks with jitter
    jitterY:              0, // random Y offset per element, stacks with jitter
    jitterMethod: 'uniform', // random generation method for jitter values
-   mode:          'redraw', // 'redraw' <del>| 'mousemove' | 'enterframe'</del>
+   mode:          'redraw', // 'redraw' <del>| 'enterframe'</del>
    FPS:                 30, // [n>0] 'enterframe' mode only, up to refresh rate
    accuracy:             5  // [n>0] rounds internal calculations to reduce CPU load
 }
@@ -90,20 +90,22 @@ myEffect.invert = true;
 Finally add effects as you see fit. You can either specify a predefined CSS property:
 
 ```javascript
-myEffect.addEffect('opacity', 1,  0.5);
-myEffect.addEffect('scale',   1,  2);
-myEffect.addEffect('blur',    0, 10);
+myEffect.addEffect('opacity', [1,  0.5]);
+myEffect.addEffect('scale',   [1,  2]);
+myEffect.addEffect('blur',    [0, 10]);
 ```
 
-Or you can define your own - any single-numerical-value property can be defined, with multiple-value property support coming:
+The first argument defines the CSS property that will be affected. This can be a string that is the name of a pre-defined CSS property, or can be an object de3fining a property of your own. The following array defines the start and end values of this property when animated. Only the first and last values of the array are read currently; eventually more detailed animation will be possible.
+
+Here are some example of defining custom properties:
 
 ```javascript
-myEffect.addEffect({rule: 'left', unit: 'em'}, 100, 50);
-myEffect.addEffect({rule: 'transform', func: 'perspective', unit: 'px'},  100, 50);
+myEffect.addEffect({rule: 'left', unit: 'em'}, [100, 50]);
+myEffect.addEffect({rule: 'transform', func: 'perspective', unit: 'px'},  [100, 50]);
 ...
 ```
 
-ProximityEffect comes predefined with [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-number CSS rule.
+ProximityEffect comes pre-defined with [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-number CSS rule.
 
 `near` and `far` can also be fed an object with a `value` key and other optional properties, including a `scatter` value:
 
