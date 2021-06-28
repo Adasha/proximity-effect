@@ -517,7 +517,7 @@ class ProximityEffect extends EventTarget
         }
         else
         {
-            return void console.log(`${str} not a valid direction.`);
+            return void console.log(`ProximityEffect: '${str}' is not a valid direction.`);
         }
     }
 
@@ -540,7 +540,7 @@ class ProximityEffect extends EventTarget
         }
         else
         {
-            return void console.log("Invalid FPS requested.");
+            return void console.log("ProximityEffect: Invalid FPS requested.");
         }
     }
 
@@ -561,20 +561,15 @@ class ProximityEffect extends EventTarget
         {
             if (mode===this.#globalParams.mode)
             {
-                return void console.log(`Already in ${mode} mode. Mode not changed.`);
+                return void console.log(`ProximityEffect: Already in ${mode} mode. Mode not changed.`);
             }
 
             let b = document.body;
-        	// b.removeEventListener("mousemove",  this.update());
         	// b.removeEventListener("enterframe", this.update());
         	// window.clearInterval(this._frameLoop);
 
             switch (mode)
             {
-        		case "mousemove" :
-        			b.addEventListener("mousemove", this.update());
-        			break;
-
         		case "enterframe" :
         			b.addEventListener("enterframe", this.update());
         			this._frameLoop = window.setInterval(() =>
