@@ -1,12 +1,13 @@
 # ProximityEffect.js
 
-v3.0.0
+v3.0.0a
 
-Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Very customisable, definitely overdeveloped. A fun toy project originally from the Flash days, remade in JS as a practice project. Version 3 has had an API makeover and is a little more flexible. More importantly, it can be a LOT more flexible in the future, and shouldn't see any more drastic changes to the syntax. 
+Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Very customisable, definitely overdeveloped. A fun pet project originally from the Flash days, remade in JS as a practice project. Version 3 has had an API makeover and is a little more flexible. More importantly, it can be a LOT more flexible in the future, and shouldn't see any more drastic changes to the syntax. 
 
 [View live demos](http://lab.adasha.com/components/proximity-effect)
 
 ## Roadmap
+
 - (for 3.1) Per-property parameters
 - (for 3.2) Multiple-value CSS properties
 - (for 3.3) Multi-point animations
@@ -20,11 +21,13 @@ npm install --save proximity-effect
 ```
 
 ### CDN
+
 ```html
 <script src="https://unpkg.com/proximity-effect"></script>
 ```
 
 ### Vanilla
+
 Latest ES6+ version is in `src`, ES5/minified versions are in `dist`. Download your version of choice and embed in your HTML:
 ```html
 <script src="ProximityEffect.min.js"></script>
@@ -34,7 +37,9 @@ Latest ES6+ version is in `src`, ES5/minified versions are in `dist`. Download y
 
 
 ### Add some content to affect
+
 In your `<body>` content add some elements you want to affect:
+
 ```html
 <div>
    <div class="foo">...</div>
@@ -45,12 +50,14 @@ In your `<body>` content add some elements you want to affect:
 ```
 
 ### Set-up
-Remaining set-up should be done after content has loaded. Store a reference to the chosen target:
+
+Remaining set-up should be done after content has loaded. ProximityEffect needs a NodeList containing all the elements to include. You can use any suitable DOM method for this, e.g.:
+
 ```javascript
-let elements = document.querySelectorAll("*.foo"); // requires NodeList
+let elements = document.querySelectorAll("*.foo");
 ```
 
-Then define parameters in an object. All parameters are optional, but without setting at least a value for `threshold` or `runoff` you won't see anything. Nearly all parameters can also be accessed as properties after instantiation.
+Next, define the effect parameters in an object. All parameters are optional, but without setting at least a value for `threshold` or `runoff` you won't see anything. Nearly all parameters can also be accessed as properties after instantiation.
 
 |Parameter |Type |Details |
 | :---: | :---: | :--- |
@@ -71,12 +78,11 @@ let params = {
    decay:      0.7,
    threshold: 40,
    runoff:   100,
-   jitter:    35,
-   direction: 'both'
+   jitter:    35
 }
 ```
 
-Next create a ProximityEfect instance, feeding in the list of nodes and the parameters:
+Next, create a ProximityEffect instance, feeding in the list of elements and the effect parameters:
 
 ```javascript
 let myEffect = new ProximityEffect(elements, params);
@@ -94,7 +100,15 @@ Finally, add animation properties to the ProximityEffect instance as you see fit
 ProximityEffect.addEffect (property, values, [params]);
 ```
 
-The first argument defines the CSS property that will be affected. This can be a string that is the name of a pre-defined CSS property, or can be an object defining a property of your own. The second argument must be an array defining the start and end values of this property when animated. Only the first and last values of the array are read currently; eventually more fine-grained animations will be possible.
+Here's how the arguments break down:
+
+| Argument | Type | Description |
+| :---: | :---: | :--- |
+| `property` | String or Object | Defines the CSS property that will be affected. This can be a string that is the name of a pre-defined CSS property, or can be an object defining a property of your own. [details to come] |
+| `values` | Array | An array defining the start and end values of this property when animated. Only the first and last values of the array are read currently; eventually more fine-grained animations will be possible. Values can be either a number specifying the value, or can be an object defining additional parameters. [details to come] |
+| `params` | Object | Currently unused. |
+
+ProximityEffect comes pre-defined with [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules. It currently only supports custom properties with single numerical values in them, so rgb() and the like can't be used yet.
 
 For example:
 
@@ -109,10 +123,7 @@ Here are some example of defining custom properties:
 ```javascript
 myEffect.addEffect({rule: 'left', unit: 'em'}, [100, 50]);
 myEffect.addEffect({rule: 'transform', func: 'perspective', unit: 'px'},  [100, 50]);
-...
 ```
-
-ProximityEffect comes pre-defined with [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules. It currently only supports custom properties with single numerical values in them, so rgb() and the like can't be used yet.
 
 The `values` array can also contain objects with a `value` key and other optional properties, including a `scatter` value:
 
@@ -122,6 +133,7 @@ myEffect.addEffect({rule: 'padding', unit: 'px'}, [{value: 20, scatter: 30}, {va
 ```
 
 ## API
+
 Full details on the API are forthcoming, for now there is only an unfinished [page on the wiki](https://github.com/Adasha/proximity-effect/wiki/API-reference).
 
 
