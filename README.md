@@ -50,19 +50,17 @@ Remaining set-up should be done after content has loaded. Store a reference to t
 let elements = document.querySelectorAll("*.foo"); // requires NodeList
 ```
 
-Then define parameters in an object. All parameters are optional, but without setting at least a value for `runoff` you won't see anything. Nearly all parameters can also be accessed as properties after instantiation.
+Then define parameters in an object. All parameters are optional, but without setting at least a value for `threshold` or `runoff` you won't see anything. Nearly all parameters can also be accessed as properties after instantiation.
 
 |Parameter |Type |Details |
-| :---: | :--- | :--- |
-| `attack`
-and
-`decay` | Number | Sets the rate of change when approaching (`attack`) or receding (`decay`), giving an effect of inertia. 1 is full speed,  0 is no movement (effectively disabling the animation). Default is 1. |
+| :---: | :---: | :--- |
+| `attack` and `decay` | Number | Sets the rate of change when approaching (`attack`) or receding (`decay`), giving an effect of inertia. 1 is full speed,  0 is no movement (effectively disabling the animation). Default is 1. |
 | `invert` | Boolean | Reverse the `values` array, effectively swapping near and far distances. Default is `false`. |
 | `threshold` | Number | The minimum distance (from element's mathematical centre) before effect starts, in pixels. Can be any positive number, default is 0. |
-| `runoff` | Number | The distance over which styles are interpolated, in pixels. |
+| `runoff` | Number | The distance over which styles are interpolated, in pixels. Default is 0. |
 | `direction` | String | The coordinates axis/axes to use for distance calculations. Can be `"both"`, `"horizontal"` or `"vertical"`. Default is `"both"`. |
 | `offsetX` and `offsetY` | Number | Global horizontal (`offsetX`) and vertical (`offsetY`) centre-point offset. Default is 0. |
-| `jitter`, `jitterX` and `jitterY` | Number |  |
+| `jitter`, `jitterX` and `jitterY` | Number | Random offset per element, in pixels. `jitter` affects both X and Y values, while `jitterX` and `jitterY` affect only their respective axis. All three values stack. Default is 0. |
 | `jitterMethod` | String | Random generation method for jitter values. Accepts `"uniform"` or `"gaussian"`. Default is `"uniform"`. |
 
 For example:
