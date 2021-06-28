@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Home</h1>
+
+    
+
+
+
+    
+
+
+    <h3>proximity-effect v3.0.0-alpha2</h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><h1>ProximityEffect.js</h1>
+<p>v3.0.0a</p>
+<p>Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Very customisable, definitely overdeveloped. A fun pet project originally from the Flash days, remade in JS as a practice project. Version 3 has had an API makeover and is a little more flexible. More importantly, it can be a LOT more flexible in the future, and shouldn't see any more drastic changes to the syntax.</p>
+<p><a href="http://lab.adasha.com/components/proximity-effect">View live demos</a></p>
+<h2>Roadmap</h2>
+<ul>
+<li>(for 3.1) Per-property parameters</li>
+<li>(for 3.2) Multiple-value CSS properties</li>
+<li>(for 3.3) Multi-point animations</li>
+</ul>
+<h2>Installation</h2>
+<h3>Vanilla</h3>
+<p>Latest ES6+ version is in <code>src</code>, ES5/minified versions are in <code>dist</code>. Download your version of choice and embed in your HTML:</p>
+<pre class="prettyprint source lang-html"><code>&lt;script src=&quot;ProximityEffect.min.js&quot;>&lt;/script>
+</code></pre>
+<h3>CDN</h3>
+<pre class="prettyprint source lang-html"><code>&lt;script src=&quot;https://unpkg.com/proximity-effect&quot;>&lt;/script>
+</code></pre>
+<h2>Use</h2>
+<h3>Add some content to affect</h3>
+<p>In your <code>&lt;body&gt;</code> content add some elements you want to affect:</p>
+<pre class="prettyprint source lang-html"><code>&lt;div>
+   &lt;div class=&quot;foo&quot;>...&lt;/div>
+   &lt;div class=&quot;foo&quot;>...&lt;/div>
+   &lt;div class=&quot;foo&quot;>...&lt;/div>
+   ...
+&lt;/div>
+</code></pre>
+<p>You could also generate some elements programmatically.</p>
+<h3>Set-up</h3>
+<p>Remaining set-up should be done after content has loaded. Start by defining your list of <code>elements</code> to animate, and <code>params</code> object to control the animation.</p>
+<h4>Elements</h4>
+<p>ProximityEffect needs a NodeList containing all the elements to include. You can use any suitable DOM method for this, e.g.:</p>
+<pre class="prettyprint source lang-javascript"><code>let elements = document.querySelectorAll(&quot;*.foo&quot;);
+</code></pre>
+<h4>Params</h4>
+<p>Next, define the effect parameters in an object. All parameters are optional, but without setting at least a value for <code>threshold</code> or <code>runoff</code> you won't see anything. Nearly all parameters can also be accessed as properties after instantiation.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Parameter</th>
+<th style="text-align:center">Type</th>
+<th style="text-align:left">Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><code>attack</code> and <code>decay</code></td>
+<td style="text-align:center">Number</td>
+<td style="text-align:left">Sets the rate of change when approaching (<code>attack</code>) or receding (<code>decay</code>), giving an effect of inertia. 1 is full speed,  0 is no movement (effectively disabling the animation). Default is 1.</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>invert</code></td>
+<td style="text-align:center">Boolean</td>
+<td style="text-align:left">Reverse the <code>values</code> array, effectively swapping near and far distances. Default is <code>false</code>.</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>threshold</code></td>
+<td style="text-align:center">Number</td>
+<td style="text-align:left">The minimum distance (from element's mathematical centre) before effect starts, in pixels. Can be any positive number, default is 0.</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>runoff</code></td>
+<td style="text-align:center">Number</td>
+<td style="text-align:left">The distance over which styles are interpolated, in pixels. Default is 0.</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>direction</code></td>
+<td style="text-align:center">String</td>
+<td style="text-align:left">The coordinates axis/axes to use for distance calculations. Can be <code>&quot;both&quot;</code>, <code>&quot;horizontal&quot;</code> or <code>&quot;vertical&quot;</code>. Default is <code>&quot;both&quot;</code>.</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>offsetX</code> and <code>offsetY</code></td>
+<td style="text-align:center">Number</td>
+<td style="text-align:left">Global horizontal (<code>offsetX</code>) and vertical (<code>offsetY</code>) centre-point offset. Default is 0. Stacks with individual element offsets.</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>jitter</code>, <code>jitterX</code> and <code>jitterY</code></td>
+<td style="text-align:center">Number</td>
+<td style="text-align:left">Random offset per element, in pixels. <code>jitter</code> affects both X and Y values, while <code>jitterX</code> and <code>jitterY</code> affect only their respective axis. All three values stack. Default is 0.</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>jitterMethod</code></td>
+<td style="text-align:center">String</td>
+<td style="text-align:left">Random generation method for jitter values. Accepts <code>&quot;uniform&quot;</code> or <code>&quot;gaussian&quot;</code>. Default is <code>&quot;uniform&quot;</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>For example:</p>
+<pre class="prettyprint source lang-javascript"><code>let params = {
+   attack:     0.8,
+   decay:      0.7,
+   threshold: 40,
+   runoff:   100,
+   jitter:    35
+}
+</code></pre>
+<h3>Create a new ProximityEffect instance</h3>
+<p>Next, create a ProximityEffect instance, feeding in the list of elements and the effect parameters:</p>
+<pre class="prettyprint source lang-javascript"><code>let myEffect = new ProximityEffect(elements, params);
+</code></pre>
+<p>The <code>params</code> object is optional - individual properties on the ProximityEffect instance can also be set after-the-fact, e.g.:</p>
+<pre class="prettyprint source lang-javascript"><code>myEffect.runoff = 250;
+myEffect.invert = true;
+</code></pre>
+<h3>Add effects</h3>
+<p>Finally, add animation properties to the ProximityEffect instance as you see fit. The <code>addEffect()</code> method is used for this:</p>
+<pre class="prettyprint source lang-javascript"><code>ProximityEffect.addEffect (property, values, [params]);
+</code></pre>
+<p>Here's how the arguments break down:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Argument</th>
+<th style="text-align:center">Type</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><code>property</code></td>
+<td style="text-align:center">String or Object</td>
+<td style="text-align:left">Defines the CSS property that will be modified. This can be a string that is the name of a <a href="https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects">pre-defined CSS property</a>, or can be an object defining a property of your own. [details to come]</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>values</code></td>
+<td style="text-align:center">Array</td>
+<td style="text-align:left">An array defining the start and end values of this property when animated. Only the first and last values of the array are read currently; eventually more fine-grained animations will be possible. Values can be either a number specifying the value, or can be an object defining additional parameters. [details to come]</td>
+</tr>
+<tr>
+<td style="text-align:center"><code>params</code></td>
+<td style="text-align:center">Object</td>
+<td style="text-align:left">Currently unused.</td>
+</tr>
+</tbody>
+</table>
+<p>ProximityEffect comes pre-defined with <a href="https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects">most permitted functions</a> of the <code>transform</code> and <code>filter</code> style rules. It currently only supports custom properties with single numerical values in them, so rgb() and the like can't be used yet.</p>
+<p>For example:</p>
+<pre class="prettyprint source lang-javascript"><code>myEffect.addEffect('opacity', [100, 50]);
+myEffect.addEffect('scale',   [  1,  2]);
+myEffect.addEffect('blur',    [  0, 10]);
+</code></pre>
+<p>Here are some example of defining custom properties:</p>
+<pre class="prettyprint source lang-javascript"><code>myEffect.addEffect({rule: 'left', unit: 'em'}, [100, 50]);
+myEffect.addEffect({rule: 'transform', func: 'perspective', unit: 'px'},  [100, 50]);
+</code></pre>
+<p>The <code>values</code> array can also contain objects with a <code>value</code> key and other optional properties, including a <code>scatter</code> value:</p>
+<pre class="prettyprint source lang-javascript"><code>myEffect.addEffect('translateX', [0, {value: 50, scatter: 15}]);
+myEffect.addEffect({rule: 'padding', unit: 'px'}, [{value: 20, scatter: 30}, {value: 100, scatter: 50}]);
+</code></pre>
+<h2>API</h2>
+<p>Full details on the API are forthcoming, for now there is only an unfinished <a href="https://github.com/Adasha/proximity-effect/wiki/API-reference">page on the wiki</a>.</p>
+<h2>License:</h2>
+<p>This software is provided under the Mozilla Public License 2.0. You can freely use the code in your own projects, using any license, without limitation, but if you modify the code base those changes must be pushed back under the same MPL2 license. Any copyright/credits must be left intact.</p></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="EffectInstance.html">EffectInstance</a></li><li><a href="ProximityEffect.html">ProximityEffect</a></li></ul><h3><a href="global.html">Global</a></h3>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.7</a> on Mon Jun 28 2021 23:08:26 GMT+0100 (British Summer Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

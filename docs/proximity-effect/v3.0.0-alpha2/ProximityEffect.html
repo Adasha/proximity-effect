@@ -222,7 +222,7 @@
                 </td>
             
 
-            <td class="description last">The effect threshold, in pixels.</td>
+            <td class="description last">The global effect threshold, in pixels.</td>
         </tr>
 
     
@@ -259,122 +259,7 @@
                 </td>
             
 
-            <td class="description last">The effect runoff, in pixels.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>attack</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    1
-                
-                </td>
-            
-
-            <td class="description last">The effect attack.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>decay</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    1
-                
-                </td>
-            
-
-            <td class="description last">The effect decay.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>accuracy</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                </td>
-            
-
-            <td class="description last">The effect accuracy.</td>
+            <td class="description last">The global effect runoff, in pixels.</td>
         </tr>
 
     
@@ -413,7 +298,124 @@
                 </td>
             
 
-            <td class="description last">Invert distances.</td>
+            <td class="description last">Invert distances globally.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>direction</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    "both"
+                
+                </td>
+            
+
+            <td class="description last">The effect direction, one of "both", "horizontal" or "vertical".</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>attack</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    1
+                
+                </td>
+            
+
+            <td class="description last">The global effect attack.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>decay</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    1
+                
+                </td>
+            
+
+            <td class="description last">The global effect decay.</td>
         </tr>
 
     
@@ -530,14 +532,92 @@
                 </td>
             
 
-            <td class="description last">The effect jitter, in pixels.</td>
+            <td class="description last">The effect jitter, in pixels. Affects X and Y.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>direction</code></td>
+                <td class="name"><code>jitterX</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    0
+                
+                </td>
+            
+
+            <td class="description last">The effect jitter for the X axis only, in pixels.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>jitterY</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    0
+                
+                </td>
+            
+
+            <td class="description last">The effect jitter for the Y axis only, in pixels.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>jitterMethod</code></td>
             
 
             <td class="type">
@@ -564,12 +644,47 @@
             
                 <td class="default">
                 
-                    "both"
+                </td>
+            
+
+            <td class="description last">The random method for generating jitter values.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>accuracy</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
                 
                 </td>
             
 
-            <td class="description last">The effect direction, one of "both", "horizontal" or "vertical".</td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last">The effect accuracy.</td>
         </tr>
 
     
@@ -613,7 +728,7 @@
 
         <tr>
             
-                <td class="name"><code>doPresetDistances</code></td>
+                <td class="name"><code>primeDistances</code></td>
             
 
             <td class="type">
@@ -645,7 +760,7 @@
                 </td>
             
 
-            <td class="description last">Prime the initial distances to create an initial transition. Only available through params argument in constructor.</td>
+            <td class="description last">Prime the initial distances to create a transition on load. Only available through params argument in constructor.</td>
         </tr>
 
     
@@ -668,7 +783,7 @@
 
     
     <dt class="tag-version">Version:</dt>
-    <dd class="tag-version"><ul class="dummy"><li>2.1.19</li></ul></dd>
+    <dd class="tag-version"><ul class="dummy"><li>3.0.0-alpha2</li></ul></dd>
     
 
     
@@ -703,7 +818,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line177">line 177</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line20">line 20</a>
     </li></ul></dd>
     
 
@@ -773,68 +888,6 @@
 
         
             
-<h4 class="name" id="%5Bundefined%5D"><span class="type-signature"></span>[undefined]<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    Register custom effect
-</div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line644">line 644</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
 <h4 class="name" id="accuracy"><span class="type-signature"></span>accuracy<span class="type-signature"></span></h4>
 
 
@@ -879,7 +932,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line577">line 577</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line599">line 599</a>
     </li></ul></dd>
     
 
@@ -941,7 +994,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line585">line 585</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line608">line 608</a>
     </li></ul></dd>
     
 
@@ -1003,7 +1056,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line377">line 377</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line320">line 320</a>
     </li></ul></dd>
     
 
@@ -1065,7 +1118,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line385">line 385</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line329">line 329</a>
     </li></ul></dd>
     
 
@@ -1127,7 +1180,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line345">line 345</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line285">line 285</a>
     </li></ul></dd>
     
 
@@ -1189,7 +1242,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line396">line 396</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line341">line 341</a>
     </li></ul></dd>
     
 
@@ -1251,7 +1304,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line404">line 404</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line350">line 350</a>
     </li></ul></dd>
     
 
@@ -1313,7 +1366,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line489">line 489</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line503">line 503</a>
     </li></ul></dd>
     
 
@@ -1375,7 +1428,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line497">line 497</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line512">line 512</a>
     </li></ul></dd>
     
 
@@ -1437,7 +1490,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line292">line 292</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line227">line 227</a>
     </li></ul></dd>
     
 
@@ -1499,7 +1552,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line357">line 357</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line298">line 298</a>
     </li></ul></dd>
     
 
@@ -1561,7 +1614,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line365">line 365</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line307">line 307</a>
     </li></ul></dd>
     
 
@@ -1623,7 +1676,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line460">line 460</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line412">line 412</a>
     </li></ul></dd>
     
 
@@ -1685,7 +1738,379 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line468">line 468</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line441">line 441</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="jitterMethod"><span class="type-signature"></span>jitterMethod<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Get the jitter method.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line476">line 476</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="jitterMethod"><span class="type-signature"></span>jitterMethod<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Set the jitter method.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line487">line 487</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="jitterX"><span class="type-signature"></span>jitterX<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Get the jitterX value.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line421">line 421</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="jitterX"><span class="type-signature"></span>jitterX<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Set the jitterX value.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line451">line 451</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="jitterY"><span class="type-signature"></span>jitterY<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Get the jitterY value.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line430">line 430</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="jitterY"><span class="type-signature"></span>jitterY<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Set the jitterY value.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line461">line 461</a>
     </li></ul></dd>
     
 
@@ -1747,7 +2172,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line256">line 256</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line184">line 184</a>
     </li></ul></dd>
     
 
@@ -1771,7 +2196,7 @@
 
 
 <div class="description">
-    Set the list of nodes.
+    Set the list of nodes to animate.
 </div>
 
 
@@ -1809,7 +2234,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line264">line 264</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line193">line 193</a>
     </li></ul></dd>
     
 
@@ -1871,7 +2296,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line416">line 416</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line363">line 363</a>
     </li></ul></dd>
     
 
@@ -1933,7 +2358,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line434">line 434</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line383">line 383</a>
     </li></ul></dd>
     
 
@@ -1995,7 +2420,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line424">line 424</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line372">line 372</a>
     </li></ul></dd>
     
 
@@ -2057,7 +2482,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line445">line 445</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line395">line 395</a>
     </li></ul></dd>
     
 
@@ -2119,7 +2544,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line597">line 597</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line621">line 621</a>
     </li></ul></dd>
     
 
@@ -2181,7 +2606,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line324">line 324</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line262">line 262</a>
     </li></ul></dd>
     
 
@@ -2243,7 +2668,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line332">line 332</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line271">line 271</a>
     </li></ul></dd>
     
 
@@ -2267,7 +2692,7 @@
 
 
 <div class="description">
-    Get the current target
+    Get the currently tracked target.
 </div>
 
 
@@ -2305,7 +2730,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line231">line 231</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line157">line 157</a>
     </li></ul></dd>
     
 
@@ -2329,7 +2754,7 @@
 
 
 <div class="description">
-    Set the current target
+    Set the target to track.
 </div>
 
 
@@ -2367,7 +2792,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line239">line 239</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line166">line 166</a>
     </li></ul></dd>
     
 
@@ -2429,7 +2854,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line304">line 304</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line240">line 240</a>
     </li></ul></dd>
     
 
@@ -2491,7 +2916,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line312">line 312</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line249">line 249</a>
     </li></ul></dd>
     
 
@@ -2519,7 +2944,7 @@
     
 
     
-    <h4 class="name" id="addEffect"><span class="type-signature"></span>addEffect<span class="signature">(name, near, far, params<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="addEffect"><span class="type-signature"></span>addEffect<span class="signature">(property, near, far, params<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
     
 
     
@@ -2565,13 +2990,16 @@
 
         <tr>
             
-                <td class="name"><code>name</code></td>
+                <td class="name"><code>property</code></td>
             
 
             <td class="type">
             
                 
 <span class="param-type">string</span>
+|
+
+<span class="param-type">Object</span>
 
 
             
@@ -2589,7 +3017,233 @@
 
             
 
-            <td class="description last">The effect name.</td>
+            <td class="description last">The predefined style rule as a string, or an object containing a CSS style configuration.
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>rule</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">The custom CSS style rule to use.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>func</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">The CSS function of the given style rule.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>min</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">The minimum style value.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>max</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">The maximum style value.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>default</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">The default style value.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>unit</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">The style rule's CSS unit.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -2623,7 +3277,7 @@
 
             
 
-            <td class="description last">The effect value at the closest distance.
+            <td class="description last">The style value at the closest distance, either a single number or an object containing more properties.
                 <h6>Properties</h6>
                 
 
@@ -2675,7 +3329,7 @@
 
             
 
-            <td class="description last">The effect value at closest distance, as an object property.</td>
+            <td class="description last">The style value at closest distance, as an object property.</td>
         </tr>
 
     
@@ -2782,7 +3436,7 @@
 
             
 
-            <td class="description last">The effect value at the furthest distance.
+            <td class="description last">The style value at the furthest distance, either a single number or an object containing more properties.
                 <h6>Properties</h6>
                 
 
@@ -2834,7 +3488,7 @@
 
             
 
-            <td class="description last">The effect value at furthest distance, as an object property.</td>
+            <td class="description last">The style value at furthest distance, as an object property.</td>
         </tr>
 
     
@@ -2968,7 +3622,7 @@
 
         <tr>
             
-                <td class="name"><code>rule</code></td>
+                <td class="name"><code>id</code></td>
             
 
             <td class="type">
@@ -2994,47 +3648,14 @@
 
             
 
-            <td class="description last">The CSS style rule to use.</td>
+            <td class="description last">A unique string to identify the effect.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>func</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">The CSS function of the given style rule.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>min</code></td>
+                <td class="name"><code>threshold</code></td>
             
 
             <td class="type">
@@ -3060,14 +3681,14 @@
 
             
 
-            <td class="description last">The minimum effect value.</td>
+            <td class="description last">The effect threshold for this effect, overriding the global value.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>max</code></td>
+                <td class="name"><code>runoff</code></td>
             
 
             <td class="type">
@@ -3093,14 +3714,47 @@
 
             
 
-            <td class="description last">The maximum effect value.</td>
+            <td class="description last">The effect runoff for this effect, overriding the global value.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>default</code></td>
+                <td class="name"><code>invert</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">XXXXX, overriding the global value.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>attack</code></td>
             
 
             <td class="type">
@@ -3126,20 +3780,20 @@
 
             
 
-            <td class="description last">The default effect value.</td>
+            <td class="description last">, overriding the global value.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>unit</code></td>
+                <td class="name"><code>decay</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">string</span>
+<span class="param-type">number</span>
 
 
             
@@ -3159,7 +3813,7 @@
 
             
 
-            <td class="description last">The effect CSS unit.</td>
+            <td class="description last">, overriding the global value.</td>
         </tr>
 
     
@@ -3207,7 +3861,95 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line637">line 637</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line668">line 668</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="clearTarget"><span class="type-signature"></span>clearTarget<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Clear the target
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line802">line 802</a>
     </li></ul></dd>
     
 
@@ -3344,7 +4086,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line713">line 713</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line779">line 779</a>
     </li></ul></dd>
     
 
@@ -3481,7 +4223,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line723">line 723</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line790">line 790</a>
     </li></ul></dd>
     
 
@@ -3525,7 +4267,7 @@
 
 
 <div class="description">
-    Return an object containing the given node"s effect data or a specific property of that data.
+    Return an object containing the given node's effect data or a specific property of that data.
 </div>
 
 
@@ -3661,7 +4403,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line772">line 772</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line855">line 855</a>
     </li></ul></dd>
     
 
@@ -3690,7 +4432,7 @@
 
         
 <div class="param-desc">
-    The chosen property value, or an object containing the node"s data.
+    The chosen property value, or an object containing the node's data.
 </div>
 
 
@@ -3846,7 +4588,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line785">line 785</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line869">line 869</a>
     </li></ul></dd>
     
 
@@ -3875,7 +4617,7 @@
 
         
 <div class="param-desc">
-    True if the property exists, false otherwise.
+    An object containing the node's data.
 </div>
 
 
@@ -4005,7 +4747,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line684">line 684</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line745">line 745</a>
     </li></ul></dd>
     
 
@@ -4071,7 +4813,7 @@
 
 
 <div class="description">
-    Return a boolean determining if the given node has thegiven data.
+    Return a boolean determining if the given node has the given data.
 </div>
 
 
@@ -4187,7 +4929,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line798">line 798</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line883">line 883</a>
     </li></ul></dd>
     
 
@@ -4216,7 +4958,7 @@
 
         
 <div class="param-desc">
-    An object containing the node"s data.
+    True if the property exists, false otherwise.
 </div>
 
 
@@ -4346,7 +5088,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line694">line 694</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line756">line 756</a>
     </li></ul></dd>
     
 
@@ -4390,7 +5132,7 @@
 
 
 <div class="description">
-    Recalculate each node"s centre point, including global offset and jitter.
+    Recalculate each node's centre point, including global offset and jitter.
 </div>
 
 
@@ -4434,7 +5176,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line734">line 734</a>
+        <a href="ProximityEffect.js.html">ProximityEffect.js</a>, <a href="ProximityEffect.js.html#line814">line 814</a>
     </li></ul></dd>
     
 
@@ -4480,13 +5222,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="ProximityEffect.html">ProximityEffect</a></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="EffectInstance.html">EffectInstance</a></li><li><a href="ProximityEffect.html">ProximityEffect</a></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.5</a> on Wed Aug 12 2020 11:11:17 GMT+0100 (British Summer Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.7</a> on Mon Jun 28 2021 23:08:26 GMT+0100 (British Summer Time)
 </footer>
 
 <script> prettyPrint(); </script>
