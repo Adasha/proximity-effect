@@ -46,7 +46,7 @@ You could also generate some elements programmatically.
 
 ### Set-up
 
-Remaining set-up should be done after content has loaded. Start by defining your `elements` and `params` objects...
+Remaining set-up should be done after content has loaded. Start by defining your list of `elements` to animate, and `params` object to control the animation.
 
 #### Elements
 
@@ -67,7 +67,7 @@ Next, define the effect parameters in an object. All parameters are optional, bu
 | `threshold` | Number | The minimum distance (from element's mathematical centre) before effect starts, in pixels. Can be any positive number, default is 0. |
 | `runoff` | Number | The distance over which styles are interpolated, in pixels. Default is 0. |
 | `direction` | String | The coordinates axis/axes to use for distance calculations. Can be `"both"`, `"horizontal"` or `"vertical"`. Default is `"both"`. |
-| `offsetX` and `offsetY` | Number | Global horizontal (`offsetX`) and vertical (`offsetY`) centre-point offset. Default is 0. |
+| `offsetX` and `offsetY` | Number | Global horizontal (`offsetX`) and vertical (`offsetY`) centre-point offset. Default is 0. Stacks with individual element offsets. |
 | `jitter`, `jitterX` and `jitterY` | Number | Random offset per element, in pixels. `jitter` affects both X and Y values, while `jitterX` and `jitterY` affect only their respective axis. All three values stack. Default is 0. |
 | `jitterMethod` | String | Random generation method for jitter values. Accepts `"uniform"` or `"gaussian"`. Default is `"uniform"`. |
 
@@ -83,7 +83,7 @@ let params = {
 }
 ```
 
-### Create a new instance
+### Create a new ProximityEffect instance
 
 Next, create a ProximityEffect instance, feeding in the list of elements and the effect parameters:
 
@@ -91,15 +91,16 @@ Next, create a ProximityEffect instance, feeding in the list of elements and the
 let myEffect = new ProximityEffect(elements, params);
 ```
 
-Parameters can also be accessed as individual properties on the ProximityEffect instance after-the-fact, e.g.:
+The `params` object is optional - individual properties on the ProximityEffect instance can also be set after-the-fact, e.g.:
 
 ```javascript
+myEffect.runoff = 250;
 myEffect.invert = true;
 ```
 
 ### Add effects
 
-Finally, add animation properties to the ProximityEffect instance as you see fit. The `addEffect` method is used for this:
+Finally, add animation properties to the ProximityEffect instance as you see fit. The `addEffect()` method is used for this:
 
 ```javascript
 ProximityEffect.addEffect (property, values, [params]);
@@ -109,7 +110,7 @@ Here's how the arguments break down:
 
 | Argument | Type | Description |
 | :---: | :---: | :--- |
-| `property` | String or Object | Defines the CSS property that will be affected. This can be a string that is the name of a pre-defined CSS property, or can be an object defining a property of your own. [details to come] |
+| `property` | String or Object | Defines the CSS property that will be modified. This can be a string that is the name of a [pre-defined CSS property](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects), or can be an object defining a property of your own. [details to come] |
 | `values` | Array | An array defining the start and end values of this property when animated. Only the first and last values of the array are read currently; eventually more fine-grained animations will be possible. Values can be either a number specifying the value, or can be an object defining additional parameters. [details to come] |
 | `params` | Object | Currently unused. |
 
