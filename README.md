@@ -1,46 +1,38 @@
 # ProximityEffect.js
 
-v3.0.0-alpha1
+v3.0.0a
 
-Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Does not override existing style sheets.
+Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Very customisable, definitely overdeveloped. A fun pet project originally from the Flash days, remade in JS as a practice project. Version 3 has had an API makeover and is a little more flexible. More importantly, it can be a LOT more flexible in the future, and shouldn't see any more drastic changes to the syntax. 
 
-[View live demos](http://lab.adasha.com/proximity-effect)
+[View live demos](http://lab.adasha.com/components/proximity-effect)
 
+## Roadmap
 
-Version 3 has had an API makeover and is a little more efficient, but effects added from the predefined list should still work without changes. For custom effects, data provided to the old `params` argument should now be placed first inlieu of a preset name. The old `params` argument still exists but is unused at present.
-
-Roadmap before full release:
-- More API stuff
-- Stackable ProximityEffects
-- Multiple-value CSS properties
-- Improved documentation
-
-**NOTE: current version requires capability to extend EventTarget - this knocks out Edge and Firefox before v59 until backwards compatibility is given more thought. To work around import a ponyfill such as `event-target` or `event-target-shim`. This lets you be disappointed with how slow Edge is.**
+- (for 3.1) Per-property parameters
+- (for 3.2) Multiple-value CSS properties
+- (for 3.3) Multi-point animations
 
 ## Installation
 
-### npm
-
-```
-npm install --save proximity-effect
-```
-
-### CDN
-```html
-<script src="https://unpkg.com/proximity-effect"></script>
-```
-
 ### Vanilla
+
 Latest ES6+ version is in `src`, ES5/minified versions are in `dist`. Download your version of choice and embed in your HTML:
 ```html
 <script src="ProximityEffect.min.js"></script>
 ```
 
-## To use
+### CDN
 
+```html
+<script src="https://unpkg.com/proximity-effect"></script>
+```
+
+## Use
 
 ### Add some content to affect
+
 In your `<body>` content add some elements you want to affect:
+
 ```html
 <div>
    <div class="foo">...</div>
@@ -50,72 +42,106 @@ In your `<body>` content add some elements you want to affect:
 </div>
 ```
 
+You could also generate some elements programmatically.
+
 ### Set-up
-Remaining set-up should be done after content has loaded. Store a reference to the chosen target:
+
+Remaining set-up should be done after content has loaded. Start by defining your list of `elements` to animate, and `params` object to control the animation.
+
+#### Elements
+
+ProximityEffect needs a NodeList containing all the elements to include. You can use any suitable DOM method for this, e.g.:
+
 ```javascript
-let elements = document.querySelectorAll("*.foo"); // requires NodeList
+let elements = document.querySelectorAll("*.foo");
 ```
 
-Then define parameters in an object:
+#### Params
+
+Next, define the effect parameters in an object. All parameters are optional, but without setting at least a value for `threshold` or `runoff` you won't see anything. Nearly all parameters can also be accessed as properties after instantiation.
+
+| Parameter | Type | Details |
+| :---: | :---: | :--- |
+| `attack` and `decay` | Number | Sets the rate of change when approaching (`attack`) or receding (`decay`), giving an effect of inertia. 1 is full speed,  0 is no movement (effectively disabling the animation). Default is 1. |
+| `invert` | Boolean | Reverse the `values` array, effectively swapping near and far distances. Default is `false`. |
+| `threshold` | Number | The minimum distance (from element's mathematical centre) before effect starts, in pixels. Can be any positive number, default is 0. |
+| `runoff` | Number | The distance over which styles are interpolated, in pixels. Default is 0. |
+| `direction` | String | The coordinates axis/axes to use for distance calculations. Can be `"both"`, `"horizontal"` or `"vertical"`. Default is `"both"`. |
+| `offsetX` and `offsetY` | Number | Global horizontal (`offsetX`) and vertical (`offsetY`) centre-point offset. Default is 0. Stacks with individual element offsets. |
+| `jitter`, `jitterX` and `jitterY` | Number | Random offset per element, in pixels. `jitter` affects both X and Y values, while `jitterX` and `jitterY` affect only their respective axis. All three values stack. Default is 0. |
+| `jitterMethod` | String | Random generation method for jitter values. Accepts `"uniform"` or `"gaussian"`. Default is `"uniform"`. |
+
+For example:
+
 ```javascript
 let params = {
-   attack:               1, // [0<=n>=1] rate of change when approaching, 1=full speed 0=no movement
-   decay:                1, // [0<=n>=1] rate of change when receding, 1=full speed 0=no movement
-   invert:           false, // [Boolean] swap near and far distances
-   threshold:            0, // [n>=0] minimum distance (from element's mathematical centre) before effect starts
-   runoff:             100, // [n>=0] distance over which styles are interpolated
-   direction:       'both', // 'both' | 'horizontal' | 'vertical'
-   offsetX:              0, // [n>=0] global horizontal centrepoint offset
-   offsetY:              0, // [n>=0] global vertical centrepoint offset
-   jitter:               0, // random offset per element
-   jitterX:              0, // random X offset per element, stacks with jitter
-   jitterY:              0, // random Y offset per element, stacks with jitter
-   jitterMethod: 'uniform', // random generation method for jitter values
-   mode:          'redraw', // 'redraw' <del>| 'mousemove' | 'enterframe'</del>
-   FPS:                 30, // [n>0] 'enterframe' mode only, up to refresh rate
-   accuracy:             5  // [n>0] rounds internal calculations to reduce CPU load
+   attack:     0.8,
+   decay:      0.7,
+   threshold: 40,
+   runoff:   100,
+   jitter:    35
 }
 ```
 
-Then create instance:
+### Create a new ProximityEffect instance
+
+Next, create a ProximityEffect instance, feeding in the list of elements and the effect parameters:
+
 ```javascript
 let myEffect = new ProximityEffect(elements, params);
 ```
 
-Parameters can also be accessed as individual properties on the ProximityEffect instance:
+The `params` object is optional - individual properties on the ProximityEffect instance can also be set after-the-fact, e.g.:
+
 ```javascript
+myEffect.runoff = 250;
 myEffect.invert = true;
 ```
 
-Finally add effects as you see fit. You can either specify a predefined CSS property:
+### Add effects
+
+Finally, add animation properties to the ProximityEffect instance as you see fit. The `addEffect()` method is used for this:
 
 ```javascript
-myEffect.addEffect('opacity', 1,  0.5);
-myEffect.addEffect('scale',   1,  2);
-myEffect.addEffect('blur',    0, 10);
+ProximityEffect.addEffect (property, values, [params]);
 ```
 
-Or you can define your own - any single-numerical-value property can be defined, with multiple-value property support coming:
+Here's how the arguments break down:
+
+| Argument | Type | Description |
+| :---: | :---: | :--- |
+| `property` | String or Object | Defines the CSS property that will be modified. This can be a string that is the name of a [pre-defined CSS property](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects), or can be an object defining a property of your own. [details to come] |
+| `values` | Array | An array defining the start and end values of this property when animated. Only the first and last values of the array are read currently; eventually more fine-grained animations will be possible. Values can be either a number specifying the value, or can be an object defining additional parameters. [details to come] |
+| `params` | Object | Currently unused. |
+
+ProximityEffect comes pre-defined with [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules. It currently only supports custom properties with single numerical values in them, so rgb() and the like can't be used yet.
+
+For example:
 
 ```javascript
-myEffect.addEffect({rule: 'left', unit: 'em'}, 100, 50);
-myEffect.addEffect({rule: 'transform', func: 'perspective', unit: 'px'},  100, 50);
-...
+myEffect.addEffect('opacity', [100, 50]);
+myEffect.addEffect('scale',   [  1,  2]);
+myEffect.addEffect('blur',    [  0, 10]);
 ```
 
-ProximityEffect comes predefined with [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules, or additional arguments can be provided to add any single-number CSS rule.
-
-`near` and `far` can also be fed an object with a `value` key and other optional properties, including a `scatter` value:
+Here are some example of defining custom properties:
 
 ```javascript
-myEffect.addEffect('translateX', 0, {value: 50, scatter: 15});
-myEffect.addEffect({rule: 'padding', unit: 'px'}, {value: 20, scatter: 30}, {value: 100, scatter: 50});
+myEffect.addEffect({rule: 'left', unit: 'em'}, [100, 50]);
+myEffect.addEffect({rule: 'transform', func: 'perspective', unit: 'px'},  [100, 50]);
+```
+
+The `values` array can also contain objects with a `value` key and other optional properties, including a `scatter` value:
+
+```javascript
+myEffect.addEffect('translateX', [0, {value: 50, scatter: 15}]);
+myEffect.addEffect({rule: 'padding', unit: 'px'}, [{value: 20, scatter: 30}, {value: 100, scatter: 50}]);
 ```
 
 ## API
+
 Full details on the API are forthcoming, for now there is only an unfinished [page on the wiki](https://github.com/Adasha/proximity-effect/wiki/API-reference).
 
-This is a hobby project and the API has evolved, much less been planned out. v3 is the target for everything to be locked down, after which semver all the way.
 
 
 ## License:

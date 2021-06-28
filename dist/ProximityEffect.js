@@ -2,6 +2,10 @@
 
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
@@ -18,7 +22,7 @@ function _wrapNativeSuper(Class) { var _cache = typeof Map === "function" ? new 
 
 function _construct(Parent, args, Class) { if (_isNativeReflectConstruct()) { _construct = Reflect.construct; } else { _construct = function _construct(Parent, args, Class) { var a = [null]; a.push.apply(a, args); var Constructor = Function.bind.apply(Parent, a); var instance = new Constructor(); if (Class) _setPrototypeOf(instance, Class.prototype); return instance; }; } return _construct.apply(null, arguments); }
 
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
 
 function _isNativeFunction(fn) { return Function.toString.call(fn).indexOf("[native code]") !== -1; }
 
@@ -28,20 +32,52 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 
 function _classPrivateMethodGet(receiver, privateSet, fn) { if (!privateSet.has(receiver)) { throw new TypeError("attempted to get private field on non-instance"); } return fn; }
 
-function _classPrivateFieldGet(receiver, privateMap) { var descriptor = privateMap.get(receiver); if (!descriptor) { throw new TypeError("attempted to get private field on non-instance"); } if (descriptor.get) { return descriptor.get.call(receiver); } return descriptor.value; }
+function _classPrivateFieldGet(receiver, privateMap) { var descriptor = _classExtractFieldDescriptor(receiver, privateMap, "get"); return _classApplyDescriptorGet(receiver, descriptor); }
 
-function _classPrivateFieldSet(receiver, privateMap, value) { var descriptor = privateMap.get(receiver); if (!descriptor) { throw new TypeError("attempted to set private field on non-instance"); } if (descriptor.set) { descriptor.set.call(receiver, value); } else { if (!descriptor.writable) { throw new TypeError("attempted to set read only private field"); } descriptor.value = value; } return value; }
+function _classApplyDescriptorGet(receiver, descriptor) { if (descriptor.get) { return descriptor.get.call(receiver); } return descriptor.value; }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+function _classPrivateFieldSet(receiver, privateMap, value) { var descriptor = _classExtractFieldDescriptor(receiver, privateMap, "set"); _classApplyDescriptorSet(receiver, descriptor, value); return value; }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+function _classExtractFieldDescriptor(receiver, privateMap, action) { if (!privateMap.has(receiver)) { throw new TypeError("attempted to " + action + " private field on non-instance"); } return privateMap.get(receiver); }
 
-/*
- * Utilities Class
- */
-var Utils = function Utils() {
-  _classCallCheck(this, Utils);
-};
+function _classApplyDescriptorSet(receiver, descriptor, value) { if (descriptor.set) { descriptor.set.call(receiver, value); } else { if (!descriptor.writable) { throw new TypeError("attempted to set read only private field"); } descriptor.value = value; } }
+
+var _VALID_DIRECTIONS = /*#__PURE__*/new WeakMap();
+
+var _DEFAULT_DIRECTION = /*#__PURE__*/new WeakMap();
+
+var _DEFAULT_ACCURACY = /*#__PURE__*/new WeakMap();
+
+var _DEFAULT_FPS = /*#__PURE__*/new WeakMap();
+
+var _DEFAULT_RUNOFF = /*#__PURE__*/new WeakMap();
+
+var _VALID_RANDOM_METHODS = /*#__PURE__*/new WeakMap();
+
+var _DEFAULT_SCATTER_METHOD = /*#__PURE__*/new WeakMap();
+
+var _DEFAULT_JITTER_METHOD = /*#__PURE__*/new WeakMap();
+
+var _DEFAULT_MODE = /*#__PURE__*/new WeakMap();
+
+var _VALID_EFFECTS = /*#__PURE__*/new WeakMap();
+
+var _globalParams = /*#__PURE__*/new WeakMap();
+
+var _pointer = /*#__PURE__*/new WeakMap();
+
+var _effects = /*#__PURE__*/new WeakMap();
+
+var _nodes = /*#__PURE__*/new WeakMap();
+
+var _nodeData = /*#__PURE__*/new WeakMap();
+
+var _init = /*#__PURE__*/new WeakSet();
+
+var _setNodeIndexData = /*#__PURE__*/new WeakSet();
+
+var _calculateJitters = /*#__PURE__*/new WeakSet();
+
 /*
  * ProximityEffect class by Adasha
  * Licensed under MPL-2.0
@@ -51,122 +87,14 @@ var Utils = function Utils() {
 
 /**
  * Class representing a ProximityEffect.
- * @version 3.0.0-alpha1
+ * @version 3.0.0-alpha2
  * @author Adam Shailer <adasha76@outlook.com>
  * @class
  * @extends EventTarget
+ * @fires ProximityEffect#ready
+ * @fires ProximityEffect#redraw
+ * @fires ProximityEffect#reflow
  */
-
-
-_defineProperty(Utils, "constrain", function (num, min, max) {
-  if (typeof num !== "number") {
-    return NaN;
-  }
-
-  if (min !== undefined && min !== null && typeof min === "number") {
-    num = Math.max(num, min);
-  }
-
-  if (max !== undefined && max !== null && typeof max === "number") {
-    num = Math.min(num, max);
-  }
-
-  return num;
-});
-
-_defineProperty(Utils, "roundTo", function (num) {
-  var dp = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-  var mult = Math.pow(dp + 1, 10);
-  return Math.round(num * mult) / mult;
-});
-
-_defineProperty(Utils, "delta", function (num, a, b) {
-  return (b - a) * Utils.constrain(num, 0, 1) + a;
-});
-
-_defineProperty(Utils, "map", function (num, inMin, inMax, outMin, outMax) {
-  return (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-});
-
-_defineProperty(Utils, "random", function () {
-  var v = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 2;
-  var m = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "uniform";
-
-  switch (m) {
-    // intentional fall-throughs
-    case "gaussian":
-    case "normal":
-      var t = 0,
-          c = 6;
-
-      for (var i = 0; i < c; i++) {
-        t += (Math.random() - 0.5) * v;
-      }
-
-      return t / c;
-      break;
-
-    case "uniform":
-    default:
-      return (Math.random() - 0.5) * v;
-  }
-});
-
-_defineProperty(Utils, "XOR", function (a, b) {
-  return (a || b) && !(a && b);
-});
-
-_defineProperty(Utils, "isVisibleInViewport", function (el) {
-  var bounds = el.getBoundingClientRect(),
-      view = document.documentElement;
-  return bounds.right >= 0 && bounds.left <= view.clientWidth && bounds.bottom >= 0 && bounds.top <= view.clientHeight;
-});
-
-_defineProperty(Utils, "valToObj", function (val) {
-  var key = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "value";
-  var obj = {};
-  obj[key] = val;
-  return obj;
-});
-
-_defineProperty(Utils, "isObject", function (obj) {
-  return obj == Object(obj);
-});
-
-var _globalParams = new WeakMap();
-
-var _pointer = new WeakMap();
-
-var _effects = new WeakMap();
-
-var _nodes = new WeakMap();
-
-var _nodeData = new WeakMap();
-
-var _VALID_DIRECTIONS = new WeakMap();
-
-var _DEFAULT_DIRECTION = new WeakMap();
-
-var _DEFAULT_ACCURACY = new WeakMap();
-
-var _DEFAULT_FPS = new WeakMap();
-
-var _DEFAULT_RUNOFF = new WeakMap();
-
-var _DEFAULT_SCATTER_METHOD = new WeakMap();
-
-var _DEFAULT_JITTER_METHOD = new WeakMap();
-
-var _DEFAULT_MODE = new WeakMap();
-
-var _VALID_EFFECTS = new WeakMap();
-
-var _init = new WeakSet();
-
-var _setNodeIndexData = new WeakSet();
-
-var _calculateJitters = new WeakSet();
-
 var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   _inherits(ProximityEffect, _EventTarget);
 
@@ -191,10 +119,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
    * @param {string}  [params.jitterMethod] - The random method for generating jitter values. 
    * @param {number}  [params.accuracy] - The effect accuracy.
    * @param {Element} [params.target] - The effect tracker target.
-   * @param {boolean} [params.doPresetDistances=false] - Prime the initial distances to create an initial transition. Only available through params argument in constructor.
-   * @fires ProximityEffect#ready
-   * @fires ProximityEffect#redraw
-   * @fires ProximityEffect#reflow
+   * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
    */
   function ProximityEffect(nodes) {
     var _this;
@@ -210,31 +135,6 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     _setNodeIndexData.add(_assertThisInitialized(_this));
 
     _init.add(_assertThisInitialized(_this));
-
-    _globalParams.set(_assertThisInitialized(_this), {
-      writable: true,
-      value: void 0
-    });
-
-    _pointer.set(_assertThisInitialized(_this), {
-      writable: true,
-      value: {}
-    });
-
-    _effects.set(_assertThisInitialized(_this), {
-      writable: true,
-      value: void 0
-    });
-
-    _nodes.set(_assertThisInitialized(_this), {
-      writable: true,
-      value: void 0
-    });
-
-    _nodeData.set(_assertThisInitialized(_this), {
-      writable: true,
-      value: void 0
-    });
 
     _VALID_DIRECTIONS.set(_assertThisInitialized(_this), {
       writable: true,
@@ -259,6 +159,11 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     _DEFAULT_RUNOFF.set(_assertThisInitialized(_this), {
       writable: true,
       value: 100
+    });
+
+    _VALID_RANDOM_METHODS.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: new Set(["normal", "uniform"])
     });
 
     _DEFAULT_SCATTER_METHOD.set(_assertThisInitialized(_this), {
@@ -445,16 +350,41 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       }
     });
 
+    _globalParams.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: void 0
+    });
+
+    _pointer.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: {}
+    });
+
+    _effects.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: void 0
+    });
+
+    _nodes.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: void 0
+    });
+
+    _nodeData.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: void 0
+    });
+
     if (!nodes) {
       throw new Error("ProximityEffect: nodes argument is required");
-    } // turn off centre calculations during setup to avoid calling repeatedly:
+    } // turn off centre calculations during setup to avoid calling repeatedly
 
 
     _this.preventCenterCalculations = true;
 
     _classPrivateFieldSet(_assertThisInitialized(_this), _globalParams, params);
 
-    _this.nodes = nodes; // default global parameter values:
+    _this.nodes = nodes; // set global parameter values
 
     _this.threshold = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).hasOwnProperty("threshold") ? _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).threshold : 0;
     _this.runoff = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).hasOwnProperty("runoff") ? _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).runoff : _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_RUNOFF);
@@ -471,7 +401,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     _this.direction = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).direction || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_DIRECTION);
     _this.FPS = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).FPS || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_FPS);
     _this.mode = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).mode || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_MODE);
-    _this.target = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).target;
+    _this.target = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).target; // finish setup once the document is ready
 
     if (document.readyState === "completed") {
       _classPrivateMethodGet(_assertThisInitialized(_this), _init, _init2).call(_assertThisInitialized(_this));
@@ -489,351 +419,18 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
   /////////////////////////////////
 
   /**
-   * Get the current target
+   * Get the currently tracked target.
    * @return {Element|Falsy} The current target.
    */
 
 
   _createClass(ProximityEffect, [{
-    key: "addEffect",
-    ////////////////////////////
-    //                        //
-    //     PUBLIC METHODS     //
-    //                        //
-    ////////////////////////////
-
-    /**
-     * Add a new effect to the effect stack.
-     * @param {string|Object} property - The predefined effect name, or an object containing an effect configuration.
-     * @param {string} [property.rule] - The CSS style rule to use.
-     * @param {string} [property.func] - The CSS function of the given style rule.
-     * @param {number} [property.min] - The minimum effect value.
-     * @param {number} [property.max] - The maximum effect value.
-     * @param {number} [property.default] - The default effect value.
-     * @param {string} [property.unit] - The effect CSS unit.
-     * @param {number|Object} near - The effect value at the closest distance.
-     * @param {number} near.value - The effect value at closest distance, as an object property.
-     * @param {number} [near.scatter] - The random distribution of the value at the closest distance.
-     * @param {string} [near.scatterMethod] - The random scatter method.
-     * @param {number|Object} far - The effect value at the furthest distance.
-     * @param {number} far.value - The effect value at furthest distance, as an object property.
-     * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
-     * @param {string} [far.scatterMethod] - The random scatter method.
-     * @param {Object} [params] - An object containing additional effect parameters.
-     * @param {string} [params.id] - A unique string to identify the effect.
-     * @param {number} [params.threshold] - The effect threshold for this effect, overriding the global value.
-     * @param {number} [params.runoff] - The effect runoff for this effect, overriding the global value.
-     */
-    value: function addEffect(property, near, far, params) {
-      var styleParams; // if specifying a preset effect
-
-      if (typeof property === "string") {
-        if (_classPrivateFieldGet(this, _VALID_EFFECTS).hasOwnProperty(property)) {
-          styleParams = _classPrivateFieldGet(this, _VALID_EFFECTS)[property];
-        } else {
-          throw new Error("ProximityEffect: Couldn't find preset '".concat(property, "'"));
-        }
-      } else if (Utils.isObject(property) && typeof property.rule === "string") {
-        styleParams = property;
-      } else return void console.log("".concat(property, " is not a valid effect type"));
-
-      if (typeof near === "number") {
-        near = Utils.valToObj(Utils.constrain(near, styleParams.min, styleParams.max));
-      }
-
-      if (typeof far === "number") {
-        far = Utils.valToObj(Utils.constrain(far, styleParams.min, styleParams.max));
-      }
-
-      _classPrivateFieldSet(this, _effects, _classPrivateFieldGet(this, _effects) || []);
-
-      _classPrivateFieldGet(this, _effects).push({
-        rules: styleParams,
-        near: near,
-        far: far,
-        params: params
-      });
-
-      for (var i = 0; i < _classPrivateFieldGet(this, _nodeData).length; i++) {
-        var effects = this.getNodeIndexData(i, "effects") || _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, "effects", [])["effects"];
-
-        var nearMethod = near.scatterMethod ? near.scatterMethod : _classPrivateFieldGet(this, _DEFAULT_SCATTER_METHOD),
-            farMethod = far.scatterMethod ? far.scatterMethod : _classPrivateFieldGet(this, _DEFAULT_SCATTER_METHOD);
-        effects.push({
-          near: near.scatter ? near.value + Utils.random(near.scatter, nearMethod) : near.value,
-          far: far.scatter ? far.value + Utils.random(far.scatter, farMethod) : far.value
-        });
-      }
-    }
-    /**
-     * Check if a named effect is already on the stack.
-     * @param {string} name - The name of the effect to check for.
-     * @return {boolean} True if the effect exists at least once.
-     */
-
-  }, {
-    key: "hasEffect",
-    value: function hasEffect(name) {
-      return this.effects.find(function (eff) {
-        return eff["type"] === name;
-      }) !== undefined;
-    }
-    /**
-     * Remove all instances of an effect from the stack.
-     * @param {string} name - The name of the effect to remove.
-     */
-
-  }, {
-    key: "removeEffect",
-    value: function removeEffect(name) {
-      if (this.hasEffect(name)) {
-        for (var i = 0; i < _classPrivateFieldGet(this, _effects).length; i++) {
-          var eff = _classPrivateFieldGet(this, _effects)[i];
-
-          if (eff["type"] === name) {
-            _classPrivateFieldGet(this, _effects).splice(i, 1);
-          }
-        }
-      }
-    }
-    /**
-     * Get the distance to the current target from the given node, in pixels.
-     * @param {Element} n - The node to check.
-     */
-
-  }, {
-    key: "distanceFrom",
-    value: function distanceFrom(n) {
-      return this.getNodeData(n, "distance");
-    }
-    /**
-     * Get the distance to the current target from the given node index, in pixels.
-     * @param {number} i - The node index to check.
-     */
-
-  }, {
-    key: "distanceFromIndex",
-    value: function distanceFromIndex(i) {
-      return this.getNodeIndexData(i, "distance");
-    }
-    /**
-     * Clear the target
-     */
-
-  }, {
-    key: "clearTarget",
-    value: function clearTarget() {
-      _classPrivateFieldGet(this, _globalParams).target = null;
-    }
-    /**
-     * Recalculate each node"s centre point, including global offset and jitter.
-     */
-
-  }, {
-    key: "setCenterPoints",
-    value: function setCenterPoints() {
-      for (var n = 0; n < this.nodes.length; n++) {
-        var _node = this.nodes[n],
-            cssTxt = _node.style.cssText;
-        _node.style.cssText = this.getNodeIndexData(n, "style");
-
-        var bounds = _node.getBoundingClientRect(),
-            x = (bounds.left + bounds.right) * 0.5 - this.offsetX,
-            y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY,
-            jitter = this.getNodeIndexData(n, "jitter");
-
-        if (jitter) {
-          x += jitter.x;
-          y += jitter.y;
-        }
-
-        _node.style.cssText = cssTxt;
-
-        _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, "center", {
-          x: x,
-          y: y
-        });
-      }
-    }
-    /**
-     * @typedef {Object} NodeData
-     * @property {Element} node - A reference to the node.
-     * @property {Array<Object>} effects - An array of applied effects containing near and far values for each.
-     * @property {number} effects[].near - Did this work?.
-     */
-
-    /**
-     * Return an object containing the given node"s effect data or a specific property of that data.
-     * @param {Element} n - The node to return data for.
-     * @param {string} [prop] - The data property to return, leave out to return the entire object.
-     * @return {mixed|NodeData} The chosen property value, or an object containing the node"s data.
-     */
-
-  }, {
-    key: "getNodeData",
-    value: function getNodeData(n, prop) {
-      var data = _classPrivateFieldGet(this, _nodeData)[this.nodes.findIndex(function (n) {
-        return n === node;
-      })];
-
-      return prop ? data[prop] : data;
-    }
-    /**
-     * Return an object containing the given node index"s effect data.
-     * @param {number} i - The node index to return data for.
-     * @param {string} prop - The data property to return.
-     * @return {Object} True if the property exists, false otherwise.
-     */
-
-  }, {
-    key: "getNodeIndexData",
-    value: function getNodeIndexData(i, prop) {
-      return _classPrivateFieldGet(this, _nodeData)[i][prop];
-    }
-    /**
-     * Return a boolean determining if the given node has thegiven data.
-     * @param {number} i - The node index to return data for.
-     * @param {string} prop - The data property to return.
-     * @return {boolean} An object containing the node"s data.
-     */
-
-  }, {
-    key: "hasNodeIndexData",
-    value: function hasNodeIndexData(i, prop) {
-      return _classPrivateFieldGet(this, _nodeData)[i].hasOwnProperty(prop);
-    } ///////////////////////////////
-    //                           //
-    //      PRIVATE METHODS      //
-    //                           //
-    ///////////////////////////////
-
-  }, {
-    key: "updatePointer",
-    ////////////////////
-    //                //
-    //     EVENTS     //
-    //                //
-    ////////////////////
-    value: function updatePointer(evt) {
-      _classPrivateFieldGet(this, _pointer).x = evt.clientX;
-      _classPrivateFieldGet(this, _pointer).y = evt.clientY;
-    }
-  }, {
-    key: "reflowEvent",
-    value: function reflowEvent(evt) {
-      var _this2 = this;
-
-      if (evt.currentTarget !== this) {
-        this.dispatchEvent(new Event("reflow"));
-      } // TODO: is this a hack? or the best way to do it?
-
-
-      if (!this.preventCenterCalculations) {
-        window.setTimeout(function () {
-          return _this2.setCenterPoints();
-        }, 1);
-      }
-    }
-  }, {
-    key: "update",
-    value: function update(timestamp) {
-      var view = document.documentElement;
-
-      for (var n = 0; n < this.nodes.length; n++) {
-        var _node2 = this.nodes[n],
-            bounds = _node2.getBoundingClientRect(),
-            center = this.getNodeIndexData(n, "center");
-
-        var centerX = center.x - (_node2.dataset["offsetx"] || 0),
-            centerY = center.y - (_node2.dataset["offsety"] || 0);
-        var tx = void 0,
-            ty = void 0,
-            last = this.getNodeIndexData(n, "lastDelta");
-
-        if (this.target) {
-          var b = this.target.getBoundingClientRect();
-          tx = (b.left + b.right) * 0.5;
-          ty = (b.top + b.bottom) * 0.5;
-        } else {
-          tx = this.pointer.x;
-          ty = this.pointer.y;
-        }
-
-        var dx = tx - centerX,
-            dy = ty - centerY,
-            dd = void 0,
-            td = void 0,
-            d = void 0; // calculate distance
-
-        if (this.direction === "both") {
-          dd = Math.sqrt(dx * dx + dy * dy);
-        } else {
-          dd = Math.abs(this.direction === "horizontal" ? dx : dy);
-        } // normalise to boundaries
-
-
-        td = Utils.constrain((dd - this.threshold) * _classPrivateFieldGet(this, _globalParams).invRunoff, 0, 1);
-
-        if (this.invert) {
-          td = 1 - td;
-        }
-
-        _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, "distance", td); // apply easing
-
-
-        d = last + (td - last) * (Utils.XOR(td > last, this.invert) ? this.decay : this.attack); // round value to reduce jitter
-
-        d = Utils.roundTo(d, this.accuracy);
-
-        _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, "lastDelta", d);
-
-        if (this.effects.length > 0) {
-          var styles = {};
-
-          for (var f = 0; f < this.effects.length; f++) {
-            var effect = this.effects[f],
-                nodeVals = this.getNodeIndexData(n, "effects")[f];
-            var near = nodeVals.near,
-                far = nodeVals.far,
-                rule = effect.rules.rule,
-                func = effect.rules.func,
-                unit = effect.rules.unit || "",
-                val = Utils.delta(d, near, far);
-
-            if (!func) {
-              _node2.style[rule] = "".concat(val).concat(unit);
-            } else {
-              if (!styles[rule]) {
-                styles[rule] = [];
-              }
-
-              styles[rule].push(func + "(" + val + unit + ")");
-            }
-          }
-
-          for (var _rule in styles) {
-            _node2.style[_rule] = styles[_rule].join(" ");
-          }
-
-          var ix = Math.floor(d * 1000);
-          _node2.style.zIndex = this.invert ? ix : 1000 - ix;
-        }
-      }
-
-      if (this.mode === "redraw") {
-        window.requestAnimationFrame(this.update);
-      }
-
-      this.dispatchEvent(new Event("redraw"));
-    } // update end
-
-  }, {
     key: "target",
     get: function get() {
       return _classPrivateFieldGet(this, _globalParams).target;
     }
     /**
-     * Set the current target
+     * Set the target to track.
      * @param {Element|Falsy} target - A reference to a DOM Element, or falsy to target mouse.
      */
     ,
@@ -841,7 +438,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       if (!target || target.getBoundingClientRect()) {
         _classPrivateFieldGet(this, _globalParams).target = target;
       } else {
-        return void console.log("".concat(target, " is not a valid target"));
+        throw new Error("ProximityEffect: ".concat(target, " is not a valid target."));
       }
     }
     /**
@@ -855,29 +452,29 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       return _classPrivateFieldGet(this, _nodes);
     }
     /**
-     * Set the list of nodes.
+     * Set the list of nodes to animate.
      * @param {NodeList<Element>} list - The list of nodes.
      */
     ,
     set: function set(list) {
-      var _this3 = this;
+      var _this2 = this;
 
       if (!(list instanceof NodeList)) {
-        throw new Error("".concat(list, " is not a node list"));
+        throw new Error("ProximityEffect: ".concat(list, " is not a node list."));
       }
 
       if (list.length < 1) {
-        throw new Error("No nodes found in ".concat(list));
+        throw new Error("ProximityEffect: No nodes found in ".concat(list, "."));
       }
 
-      _classPrivateFieldSet(this, _nodes, [].slice.call(list)); //convert to array
+      _classPrivateFieldSet(this, _nodes, [].slice.call(list)); // convert to array boilerplate
 
 
       _classPrivateFieldSet(this, _nodeData, _classPrivateFieldGet(this, _nodes).map(function (i) {
         return {
           node: i,
           style: i.style.cssText,
-          lastDelta: _classPrivateFieldGet(_this3, _globalParams).doPresetDistances ? 1 : null
+          lastDelta: _classPrivateFieldGet(_this2, _globalParams).primeDistances ? 1 : null
         };
       }));
 
@@ -1011,12 +608,12 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      * @return {number} The offset value, in pixels.
      */
     ,
-
+    set:
     /**
      * Set the global horizontal offset.
      * @param {number} value - The new offset value, in pixels.
      */
-    set: function set(value) {
+    function set(value) {
       _classPrivateFieldGet(this, _globalParams).offsetX = value;
 
       if (!this.preventCenterCalculations) {
@@ -1055,12 +652,12 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      * @return {number} The jitterX value, in pixels.
      */
     ,
-
+    set:
     /**
      * Set the jitter value.
      * @param {number} num - The new jitter value, in pixels.
      */
-    set: function set(num) {
+    function set(num) {
       _classPrivateFieldGet(this, _globalParams).jitter = Utils.constrain(num, 0);
 
       _classPrivateMethodGet(this, _calculateJitters, _calculateJitters2).call(this);
@@ -1223,39 +820,393 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         x: _classPrivateFieldGet(this, _pointer).x,
         y: _classPrivateFieldGet(this, _pointer).y
       };
+    } ////////////////////////////
+    //                        //
+    //     PUBLIC METHODS     //
+    //                        //
+    ////////////////////////////
+
+    /**
+     * Add a new effect to the effect stack.
+     * @param {string|Object} property - The predefined style rule as a string, or an object containing a CSS style configuration.
+     * @param {string} [property.rule] - The custom CSS style rule to use.
+     * @param {string} [property.func] - The CSS function of the given style rule.
+     * @param {number} [property.min] - The minimum style value.
+     * @param {number} [property.max] - The maximum style value.
+     * @param {number} [property.default] - The default style value.
+     * @param {string} [property.unit] - The style rule's CSS unit.
+     * @param {number|Object} near - The style value at the closest distance, either a single number or an object containing more properties.
+     * @param {number} near.value - The style value at closest distance, as an object property.
+     * @param {number} [near.scatter] - The random distribution of the value at the closest distance.
+     * @param {string} [near.scatterMethod] - The random scatter method.
+     * @param {number|Object} far - The style value at the furthest distance, either a single number or an object containing more properties.
+     * @param {number} far.value - The style value at furthest distance, as an object property.
+     * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
+     * @param {string} [far.scatterMethod] - The random scatter method.
+     * @param {Object} [params] - An object containing additional effect parameters.
+     * @param {string} [params.id] - A unique string to identify the effect.
+     * @param {number} [params.threshold] - The effect threshold for this effect, overriding the global value.
+     * @param {number} [params.runoff] - The effect runoff for this effect, overriding the global value.
+     * @param {Boolean} [params.invert] - XXXXX, overriding the global value.
+     * @param {number} [params.attack] - , overriding the global value.
+     * @param {number} [params.decay] - , overriding the global value.
+     */
+
+  }, {
+    key: "addEffect",
+    value: function addEffect(property, values, effectParams) {
+      var cssParams; // if specifying a preset effect
+
+      if (typeof property === "string") {
+        if (_classPrivateFieldGet(this, _VALID_EFFECTS).hasOwnProperty(property)) {
+          cssParams = _classPrivateFieldGet(this, _VALID_EFFECTS)[property];
+        } else {
+          throw new Error("ProximityEffect: Couldn't find preset '".concat(property, "'"));
+        }
+      } else if (Utils.isObject(property) && typeof property.rule === "string") {
+        cssParams = property;
+      } else return void console.log("'".concat(property, "' is not a valid style rule.")); // convenience function for adding basic near/far values like the old version
+
+
+      for (var v = 0; v < values.length; v++) {
+        var val = values[v];
+
+        if (typeof val === "number") {
+          values[v] = Utils.valToObj(Utils.constrain(val, cssParams.min, cssParams.max));
+
+          switch (v) {
+            case 0:
+              values[v].distance = 0;
+              break;
+
+            case values.length - 1:
+              values[v].distance = 1;
+              break;
+          }
+        }
+      }
+
+      var near = values[0];
+      var far = values[values.length - 1];
+
+      _classPrivateFieldSet(this, _effects, _classPrivateFieldGet(this, _effects) || []);
+
+      _classPrivateFieldGet(this, _effects).push({
+        rules: cssParams,
+        near: near,
+        far: far,
+        params: effectParams
+      });
+
+      for (var i = 0; i < _classPrivateFieldGet(this, _nodeData).length; i++) {
+        var effects = this.getNodeIndexData(i, "effects") || _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, "effects", [])["effects"];
+
+        var nearMethod = near.scatterMethod ? near.scatterMethod : _classPrivateFieldGet(this, _DEFAULT_SCATTER_METHOD),
+            farMethod = far.scatterMethod ? far.scatterMethod : _classPrivateFieldGet(this, _DEFAULT_SCATTER_METHOD);
+        effects.push({
+          near: near.scatter ? near.value + Utils.random(near.scatter, nearMethod) : near.value,
+          far: far.scatter ? far.value + Utils.random(far.scatter, farMethod) : far.value
+        });
+      }
     }
+    /**
+     * Check if a named effect is already on the stack.
+     * @param {string} name - The name of the effect to check for.
+     * @return {boolean} True if the effect exists at least once.
+     */
+
+  }, {
+    key: "hasEffect",
+    value: function hasEffect(name) {
+      return this.effects.find(function (eff) {
+        return eff["type"] === name;
+      }) !== undefined;
+    }
+    /**
+     * Remove all instances of an effect from the stack.
+     * @param {string} name - The name of the effect to remove.
+     */
+
+  }, {
+    key: "removeEffect",
+    value: function removeEffect(name) {
+      if (this.hasEffect(name)) {
+        for (var i = 0; i < _classPrivateFieldGet(this, _effects).length; i++) {
+          var eff = _classPrivateFieldGet(this, _effects)[i];
+
+          if (eff["type"] === name) {
+            _classPrivateFieldGet(this, _effects).splice(i, 1);
+          }
+        }
+      }
+    }
+    /**
+     * Get the distance to the current target from the given node, in pixels.
+     * @param {Element} n - The node to check.
+     */
+
+  }, {
+    key: "distanceFrom",
+    value: function distanceFrom(n) {
+      return this.getNodeData(n, "distance");
+    }
+    /**
+     * Get the distance to the current target from the given node index, in pixels.
+     * @param {number} i - The node index to check.
+     */
+
+  }, {
+    key: "distanceFromIndex",
+    value: function distanceFromIndex(i) {
+      return this.getNodeIndexData(i, "distance");
+    }
+    /**
+     * Clear the target
+     */
+
+  }, {
+    key: "clearTarget",
+    value: function clearTarget() {
+      this.target = null;
+    }
+    /**
+     * Recalculate each node's centre point, including global offset and jitter.
+     */
+
+  }, {
+    key: "setCenterPoints",
+    value: function setCenterPoints() {
+      for (var n = 0; n < this.nodes.length; n++) {
+        var _node = this.nodes[n],
+            cssTxt = _node.style.cssText;
+        _node.style.cssText = this.getNodeIndexData(n, 'style');
+
+        var bounds = _node.getBoundingClientRect(),
+            x = (bounds.left + bounds.right) * 0.5 - this.offsetX,
+            y = (bounds.top + bounds.bottom) * 0.5 - this.offsetY,
+            jitter = this.getNodeIndexData(n, 'jitter');
+
+        if (jitter) {
+          x += jitter.x;
+          y += jitter.y;
+        }
+
+        _node.style.cssText = cssTxt;
+
+        _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, 'center', {
+          x: x,
+          y: y
+        });
+      }
+    }
+    /**
+     * @typedef {Object} NodeData
+     * @property {Element} node - A reference to the node.
+     * @property {Array<Object>} effects - An array of applied effects containing near and far values for each.
+     * @property {number} effects[].near - Did this work?.
+     */
+
+    /**
+     * Return an object containing the given node's effect data or a specific property of that data.
+     * @param {Element} n - The node to return data for.
+     * @param {string} [prop] - The data property to return, leave out to return the entire object.
+     * @return {mixed|NodeData} The chosen property value, or an object containing the node's data.
+     */
+
+  }, {
+    key: "getNodeData",
+    value: function getNodeData(n, prop) {
+      var data = _classPrivateFieldGet(this, _nodeData)[this.nodes.findIndex(function (n) {
+        return n === node;
+      })];
+
+      return prop ? data[prop] : data;
+    }
+    /**
+     * Return an object containing the given node index"s effect data.
+     * @param {number} i - The node index to return data for.
+     * @param {string} prop - The data property to return.
+     * @return {Object} An object containing the node's data.
+     */
+
+  }, {
+    key: "getNodeIndexData",
+    value: function getNodeIndexData(i, prop) {
+      return _classPrivateFieldGet(this, _nodeData)[i][prop];
+    }
+    /**
+     * Return a boolean determining if the given node has the given data.
+     * @param {number} i - The node index to return data for.
+     * @param {string} prop - The data property to return.
+     * @return {boolean} True if the property exists, false otherwise.
+     */
+
+  }, {
+    key: "hasNodeIndexData",
+    value: function hasNodeIndexData(i, prop) {
+      return _classPrivateFieldGet(this, _nodeData)[i].hasOwnProperty(prop);
+    } ///////////////////////////////
+    //                           //
+    //      PRIVATE METHODS      //
+    //                           //
+    ///////////////////////////////
+
+  }, {
+    key: "updatePointer",
+    value: ////////////////////
+    //                //
+    //     EVENTS     //
+    //                //
+    ////////////////////
+    function updatePointer(evt) {
+      _classPrivateFieldGet(this, _pointer).x = evt.clientX;
+      _classPrivateFieldGet(this, _pointer).y = evt.clientY;
+    }
+  }, {
+    key: "reflowEvent",
+    value: function reflowEvent(evt) {
+      var _this3 = this;
+
+      if (evt.currentTarget !== this) {
+        this.dispatchEvent(new Event("reflow"));
+      } // TODO: is this a hack? or the best way to do it?
+
+
+      if (!this.preventCenterCalculations) {
+        window.setTimeout(function () {
+          return _this3.setCenterPoints();
+        }, 1);
+      }
+    }
+  }, {
+    key: "update",
+    value: function update(timestamp) {
+      var view = document.documentElement;
+
+      for (var n = 0; n < this.nodes.length; n++) {
+        var _node2 = this.nodes[n],
+            bounds = _node2.getBoundingClientRect(),
+            center = this.getNodeIndexData(n, "center");
+
+        var centerX = center.x - (_node2.dataset["offsetx"] || 0),
+            centerY = center.y - (_node2.dataset["offsety"] || 0);
+        var tx = void 0,
+            ty = void 0,
+            last = this.getNodeIndexData(n, "lastDelta");
+
+        if (this.target) {
+          var b = this.target.getBoundingClientRect();
+          tx = (b.left + b.right) * 0.5;
+          ty = (b.top + b.bottom) * 0.5;
+        } else {
+          tx = this.pointer.x;
+          ty = this.pointer.y;
+        }
+
+        var dx = tx - centerX,
+            dy = ty - centerY,
+            dd = void 0,
+            td = void 0,
+            d = void 0; // calculate distance
+
+        if (this.direction === "both") {
+          dd = Utils.pythagoras(dx, dy);
+        } else {
+          dd = Math.abs(this.direction === "horizontal" ? dx : dy);
+        } // normalise to boundaries
+
+
+        td = Utils.constrain((dd - this.threshold) * _classPrivateFieldGet(this, _globalParams).invRunoff, 0, 1);
+
+        if (this.invert) {
+          td = 1 - td;
+        }
+
+        _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, "distance", td); // apply easing
+
+
+        d = last + (td - last) * (Utils.XOR(td > last, this.invert) ? this.decay : this.attack); // round value to reduce jitter
+
+        d = Utils.roundTo(d, this.accuracy);
+
+        _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, "lastDelta", d);
+
+        if (this.effects.length > 0) {
+          var styles = {};
+
+          for (var f = 0; f < this.effects.length; f++) {
+            var effect = this.effects[f],
+                nodeVals = this.getNodeIndexData(n, "effects")[f];
+            var near = nodeVals.near,
+                far = nodeVals.far,
+                rule = effect.rules.rule,
+                func = effect.rules.func,
+                unit = effect.rules.unit || "",
+                val = Utils.delta(d, near, far);
+
+            if (!func) {
+              _node2.style[rule] = "".concat(val).concat(unit);
+            } else {
+              if (!styles[rule]) {
+                styles[rule] = [];
+              }
+
+              styles[rule].push(func + "(" + val + unit + ")");
+            }
+          }
+
+          for (var _rule in styles) {
+            _node2.style[_rule] = styles[_rule].join(" ");
+          }
+
+          var ix = Math.floor(d * 1000);
+          _node2.style.zIndex = this.invert ? ix : 1000 - ix;
+        }
+      }
+
+      if (this.mode === "redraw") {
+        window.requestAnimationFrame(this.update);
+      }
+
+      this.dispatchEvent(new Event("redraw"));
+    } // update end
+
   }]);
 
   return ProximityEffect;
 }( /*#__PURE__*/_wrapNativeSuper(EventTarget));
+/**
+ * EffectInstance Class
+ */
 
-var _init2 = function _init2() {
+
+function _init2() {
   this.preventCenterCalculations = false;
   this.setCenterPoints();
   this.update = this.update.bind(this);
-  window.addEventListener("scroll", this.reflowEvent.bind(this));
-  window.addEventListener("resize", this.reflowEvent.bind(this));
-  document.addEventListener("mousemove", this.updatePointer.bind(this)); // TODO: add alternative trigger modes
+  window.addEventListener('scroll', this.reflowEvent.bind(this));
+  window.addEventListener('resize', this.reflowEvent.bind(this));
+  document.addEventListener('mousemove', this.updatePointer.bind(this)); // TODO: add alternative trigger modes
 
-  document.dispatchEvent(new MouseEvent("mousemove"));
-  this.dispatchEvent(new Event("ready"));
+  document.dispatchEvent(new MouseEvent('mousemove'));
+  this.dispatchEvent(new Event('ready'));
   window.requestAnimationFrame(this.update);
-};
+}
 
-var _setNodeIndexData2 = function _setNodeIndexData2(n, prop, val) {
+function _setNodeIndexData2(n, prop, val) {
   if (!_classPrivateFieldGet(this, _nodeData)[n]) {
     _classPrivateFieldGet(this, _nodeData)[n] = {};
   }
 
   _classPrivateFieldGet(this, _nodeData)[n][prop] = val;
   return _classPrivateFieldGet(this, _nodeData)[n];
-};
+}
 
-var _calculateJitters2 = function _calculateJitters2() {
+function _calculateJitters2() {
   var method = this.jitterMethod ? this.jitterMethod : _classPrivateFieldGet(this, _DEFAULT_JITTER_METHOD);
 
   for (var i = 0; i < this.nodes.length; i++) {
-    _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, "jitter", {
+    _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, 'jitter', {
       x: Utils.random(this.jitter + this.jitterX, method),
       y: Utils.random(this.jitter + this.jitterY, method)
     });
@@ -1264,4 +1215,328 @@ var _calculateJitters2 = function _calculateJitters2() {
   if (!this.preventCenterCalculations) {
     this.setCenterPoints();
   }
+}
+
+var _VALID_EFFECTS2 = /*#__PURE__*/new WeakMap();
+
+var _VALID_RANDOM_METHODS2 = /*#__PURE__*/new WeakMap();
+
+var _DEFAULT_SCATTER_METHOD2 = /*#__PURE__*/new WeakMap();
+
+var _name = /*#__PURE__*/new WeakMap();
+
+var EffectInstance =
+/**
+ * 
+ * @constructor
+ * @param {string|Object} property - The predefined style rule as a string, or an object containing a CSS style configuration.
+ * @param {string} [property.rule] - The custom CSS style rule to use.
+ * @param {string} [property.func] - The CSS function of the given style rule.
+ * @param {number} [property.min] - The minimum style value.
+ * @param {number} [property.max] - The maximum style value.
+ * @param {number} [property.default] - The default style value.
+ * @param {string} [property.unit] - The style rule's CSS unit.
+ * @param {number|Object} near - The style value at the closest distance, either a single number or an object containing more properties.
+ * @param {number} near.value - The style value at closest distance, as an object property.
+ * @param {number} [near.scatter] - The random distribution of the value at the closest distance.
+ * @param {string} [near.scatterMethod] - The random scatter method.
+ * @param {number|Object} far - The style value at the furthest distance, either a single number or an object containing more properties.
+ * @param {number} far.value - The style value at furthest distance, as an object property.
+ * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
+ * @param {string} [far.scatterMethod] - The random scatter method.
+ * @param {Object} [params] - An object containing additional effect parameters.
+ * @param {string} [params.id] - A unique string to identify the effect.
+ * @param {number} [params.threshold] - The effect threshold for this effect, overriding the global value.
+ * @param {number} [params.runoff] - The effect runoff for this effect, overriding the global value.
+ * @param {Boolean} [params.invert] - XXXXX, overriding the global value.
+ * @param {number} [params.attack] - , overriding the global value.
+ * @param {number} [params.decay] - , overriding the global value.
+ */
+function EffectInstance(property, values) {
+  var params = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+  _classCallCheck(this, EffectInstance);
+
+  _VALID_EFFECTS2.set(this, {
+    writable: true,
+    value: {
+      translateX: {
+        "default": 0,
+        rule: "transform",
+        func: "translateX",
+        unit: "px"
+      },
+      translateY: {
+        "default": 0,
+        rule: "transform",
+        func: "translateY",
+        unit: "px"
+      },
+      translateZ: {
+        "default": 0,
+        rule: "transform",
+        func: "translateZ",
+        unit: "px"
+      },
+      rotate: {
+        "default": 0,
+        rule: "transform",
+        func: "rotate",
+        unit: "deg"
+      },
+      rotateX: {
+        "default": 0,
+        rule: "transform",
+        func: "rotateX",
+        unit: "deg"
+      },
+      rotateY: {
+        "default": 0,
+        rule: "transform",
+        func: "rotateY",
+        unit: "deg"
+      },
+      rotateZ: {
+        "default": 0,
+        rule: "transform",
+        func: "rotateZ",
+        unit: "deg"
+      },
+      scale: {
+        "default": 1,
+        rule: "transform",
+        func: "scale"
+      },
+      scaleX: {
+        "default": 1,
+        rule: "transform",
+        func: "scaleX"
+      },
+      scaleY: {
+        "default": 1,
+        rule: "transform",
+        func: "scaleY"
+      },
+      scaleZ: {
+        "default": 1,
+        rule: "transform",
+        func: "scaleZ"
+      },
+      skewX: {
+        "default": 0,
+        rule: "transform",
+        func: "skewX",
+        unit: "deg"
+      },
+      skewY: {
+        "default": 0,
+        rule: "transform",
+        func: "skewY",
+        unit: "deg"
+      },
+      blur: {
+        min: 0,
+        "default": 0,
+        rule: "filter",
+        func: "blur",
+        unit: "px"
+      },
+      brightness: {
+        min: 0,
+        "default": 100,
+        rule: "filter",
+        func: "brightness",
+        unit: "%"
+      },
+      contrast: {
+        min: 0,
+        "default": 100,
+        rule: "filter",
+        func: "contrast",
+        unit: "%"
+      },
+      grayscale: {
+        min: 0,
+        max: 100,
+        "default": 0,
+        rule: "filter",
+        func: "grayscale",
+        unit: "%"
+      },
+      hueRotate: {
+        "default": 0,
+        rule: "filter",
+        func: "hue-rotate",
+        unit: "deg"
+      },
+      invert: {
+        min: 0,
+        max: 100,
+        "default": 0,
+        rule: "filter",
+        func: "invert",
+        unit: "%"
+      },
+      opacity: {
+        min: 0,
+        max: 100,
+        "default": 100,
+        rule: "filter",
+        func: "opacity",
+        unit: "%"
+      },
+      saturate: {
+        min: 0,
+        max: 100,
+        "default": 100,
+        rule: "filter",
+        func: "saturate",
+        unit: "%"
+      },
+      sepia: {
+        min: 0,
+        max: 100,
+        "default": 0,
+        rule: "filter",
+        func: "sepia",
+        unit: "%"
+      },
+      color: {
+        min: 0,
+        max: 255,
+        "default": [0, 0, 0],
+        rule: "color",
+        func: "rgb",
+        args: 3
+      },
+      backgroundColor: {
+        min: 0,
+        max: 255,
+        "default": [0, 0, 0],
+        rule: "backgroundColor",
+        func: "rgb",
+        args: 3
+      },
+      scale3D: {
+        "default": [1, 1, 1],
+        rule: "transform",
+        func: "scale3D",
+        args: 3
+      }
+    }
+  });
+
+  _VALID_RANDOM_METHODS2.set(this, {
+    writable: true,
+    value: new Set(["normal", "uniform"])
+  });
+
+  _DEFAULT_SCATTER_METHOD2.set(this, {
+    writable: true,
+    value: "uniform"
+  });
+
+  _name.set(this, {
+    writable: true,
+    value: void 0
+  });
+
+  var cssParams; // if specifying a preset effect
+
+  if (typeof property === "string") {
+    if (_classPrivateFieldGet(this, _VALID_EFFECTS2).hasOwnProperty(property)) {
+      cssParams = _classPrivateFieldGet(this, _VALID_EFFECTS2)[property];
+    } else {
+      throw new Error("ProximityEffect: Couldn't find preset '".concat(property, "'"));
+    }
+  } else if (Utils.isObject(property) && typeof property.rule === "string") {
+    cssParams = property;
+  } else return void console.log("'".concat(property, "' is not a valid style rule."));
 };
+/*
+ * Utilities Class
+ */
+
+
+var Utils = function Utils() {
+  _classCallCheck(this, Utils);
+};
+
+_defineProperty(Utils, "constrain", function (num, min, max) {
+  if (typeof num !== "number") {
+    return NaN;
+  }
+
+  if (min !== undefined && min !== null && typeof min === "number") {
+    num = Math.max(num, min);
+  }
+
+  if (max !== undefined && max !== null && typeof max === "number") {
+    num = Math.min(num, max);
+  }
+
+  return num;
+});
+
+_defineProperty(Utils, "roundTo", function (num) {
+  var dp = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+  var mult = Math.pow(dp + 1, 10);
+  return Math.round(num * mult) / mult;
+});
+
+_defineProperty(Utils, "delta", function (num, a, b) {
+  return (b - a) * Utils.constrain(num, 0, 1) + a;
+});
+
+_defineProperty(Utils, "map", function (num, inMin, inMax, outMin, outMax) {
+  return (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+});
+
+_defineProperty(Utils, "random", function () {
+  var v = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 2;
+  var m = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "uniform";
+
+  switch (m) {
+    // intentional fall-throughs
+    case "gaussian":
+    case "normal":
+      var t = 0,
+          c = 6;
+
+      for (var i = 0; i < c; i++) {
+        t += (Math.random() - 0.5) * v;
+      }
+
+      return t / c;
+      break;
+
+    case "uniform":
+    default:
+      return (Math.random() - 0.5) * v;
+  }
+});
+
+_defineProperty(Utils, "XOR", function (a, b) {
+  return (a || b) && !(a && b);
+});
+
+_defineProperty(Utils, "pythagoras", function (a, b) {
+  return Math.sqrt(a * a + b * b);
+});
+
+_defineProperty(Utils, "isVisibleInViewport", function (el) {
+  var bounds = el.getBoundingClientRect(),
+      view = document.documentElement;
+  return bounds.right >= 0 && bounds.left <= view.clientWidth && bounds.bottom >= 0 && bounds.top <= view.clientHeight;
+});
+
+_defineProperty(Utils, "valToObj", function (val) {
+  var key = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "value";
+  var obj = {};
+  obj[key] = val;
+  return obj;
+});
+
+_defineProperty(Utils, "isObject", function (obj) {
+  return obj == Object(obj);
+});
