@@ -14,10 +14,11 @@ Bulk modify CSS properties on elements based on mouse pointer or other arbitrary
 
 ## Installation
 
-### npm
+### Vanilla
 
-```
-npm install --save proximity-effect
+Latest ES6+ version is in `src`, ES5/minified versions are in `dist`. Download your version of choice and embed in your HTML:
+```html
+<script src="ProximityEffect.min.js"></script>
 ```
 
 ### CDN
@@ -26,15 +27,7 @@ npm install --save proximity-effect
 <script src="https://unpkg.com/proximity-effect"></script>
 ```
 
-### Vanilla
-
-Latest ES6+ version is in `src`, ES5/minified versions are in `dist`. Download your version of choice and embed in your HTML:
-```html
-<script src="ProximityEffect.min.js"></script>
-```
-
-## To use
-
+## Use
 
 ### Add some content to affect
 
@@ -49,17 +42,25 @@ In your `<body>` content add some elements you want to affect:
 </div>
 ```
 
+You could also generate some elements programmatically.
+
 ### Set-up
 
-Remaining set-up should be done after content has loaded. ProximityEffect needs a NodeList containing all the elements to include. You can use any suitable DOM method for this, e.g.:
+Remaining set-up should be done after content has loaded. Start by defining your `elements` and `params` objects...
+
+#### Elements
+
+ProximityEffect needs a NodeList containing all the elements to include. You can use any suitable DOM method for this, e.g.:
 
 ```javascript
 let elements = document.querySelectorAll("*.foo");
 ```
 
+#### Params
+
 Next, define the effect parameters in an object. All parameters are optional, but without setting at least a value for `threshold` or `runoff` you won't see anything. Nearly all parameters can also be accessed as properties after instantiation.
 
-|Parameter |Type |Details |
+| Parameter | Type | Details |
 | :---: | :---: | :--- |
 | `attack` and `decay` | Number | Sets the rate of change when approaching (`attack`) or receding (`decay`), giving an effect of inertia. 1 is full speed,  0 is no movement (effectively disabling the animation). Default is 1. |
 | `invert` | Boolean | Reverse the `values` array, effectively swapping near and far distances. Default is `false`. |
@@ -82,6 +83,8 @@ let params = {
 }
 ```
 
+### Create a new instance
+
 Next, create a ProximityEffect instance, feeding in the list of elements and the effect parameters:
 
 ```javascript
@@ -93,6 +96,8 @@ Parameters can also be accessed as individual properties on the ProximityEffect 
 ```javascript
 myEffect.invert = true;
 ```
+
+### Add effects
 
 Finally, add animation properties to the ProximityEffect instance as you see fit. The `addEffect` method is used for this:
 
