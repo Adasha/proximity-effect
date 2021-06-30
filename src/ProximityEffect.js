@@ -248,7 +248,7 @@ class ProximityEffect extends EventTarget
      */
     set threshold(value)
     {
-    	this.#globalParams.threshold = Utils.constrain(value, 0);
+    	this.#globalParams.threshold = Adasha_Utils.constrain(value, 0);
     }
 
 
@@ -270,7 +270,7 @@ class ProximityEffect extends EventTarget
      */
     set runoff(value)
     {
-    	this.#globalParams.runoff = Utils.constrain(value, 0);
+    	this.#globalParams.runoff = Adasha_Utils.constrain(value, 0);
         this.#globalParams.invRunoff = 1/this.#globalParams.runoff;
     }
 
@@ -328,7 +328,7 @@ class ProximityEffect extends EventTarget
      */
     set attack(value)
     {
-    	this.#globalParams.attack = Utils.constrain(value, 0, 1);
+    	this.#globalParams.attack = Adasha_Utils.constrain(value, 0, 1);
     }
 
 
@@ -349,7 +349,7 @@ class ProximityEffect extends EventTarget
      */
     set decay(value)
     {
-    	this.#globalParams.decay = Utils.constrain(value, 0, 1);
+    	this.#globalParams.decay = Adasha_Utils.constrain(value, 0, 1);
     }
 
 
@@ -440,7 +440,7 @@ class ProximityEffect extends EventTarget
      */
     set jitter(num)
     {
-        this.#globalParams.jitter = Utils.constrain(num, 0);
+        this.#globalParams.jitter = Adasha_Utils.constrain(num, 0);
         this.#calculateJitters();
   	}
 
@@ -450,7 +450,7 @@ class ProximityEffect extends EventTarget
      */
     set jitterX(num)
     {
-        this.#globalParams.jitterX = Utils.constrain(num, 0);
+        this.#globalParams.jitterX = Adasha_Utils.constrain(num, 0);
         this.#calculateJitters();
   	}
 
@@ -460,7 +460,7 @@ class ProximityEffect extends EventTarget
      */
     set jitterY(num)
     {
-        this.#globalParams.jitterY = Utils.constrain(num, 0);
+        this.#globalParams.jitterY = Adasha_Utils.constrain(num, 0);
         this.#calculateJitters();
   	}
 
@@ -536,7 +536,7 @@ class ProximityEffect extends EventTarget
     {
         if (num>0)
         {
-            this.#globalParams.FPS = Utils.constrain(num, 0);
+            this.#globalParams.FPS = Adasha_Utils.constrain(num, 0);
         }
         else
         {
@@ -607,7 +607,7 @@ class ProximityEffect extends EventTarget
      */
     set accuracy(num)
     {
-        this.#globalParams.accuracy = Math.floor(Utils.constrain(num, 0));
+        this.#globalParams.accuracy = Math.floor(Adasha_Utils.constrain(num, 0));
     }
 
 
@@ -681,7 +681,7 @@ class ProximityEffect extends EventTarget
                 throw new Error(`ProximityEffect: Couldn't find preset '${property}'`);
             }
         }
-        else if(Utils.isObject(property) && typeof property.rule==="string")
+        else if(Adasha_Utils.isObject(property) && typeof property.rule==="string")
         {
             cssParams = property;
         }
@@ -694,7 +694,7 @@ class ProximityEffect extends EventTarget
             let val = values[v];
             if (typeof val==="number")
             {
-                values[v] = Utils.valToObj(Utils.constrain(val, cssParams.min, cssParams.max));
+                values[v] = Adasha_Utils.valToObj(Adasha_Utils.constrain(val, cssParams.min, cssParams.max));
                 switch(v)
                 {
                     case 0 :
@@ -729,8 +729,8 @@ class ProximityEffect extends EventTarget
                  farMethod =  far.scatterMethod ?  far.scatterMethod : this.#DEFAULT_SCATTER_METHOD;
 
             effects.push({
-                near: near.scatter ? near.value+Utils.random(near.scatter, nearMethod) : near.value,
-                far:   far.scatter ?  far.value+Utils.random( far.scatter,  farMethod) :  far.value
+                near: near.scatter ? near.value+Adasha_Utils.random(near.scatter, nearMethod) : near.value,
+                far:   far.scatter ?  far.value+Adasha_Utils.random( far.scatter,  farMethod) :  far.value
             });
         }
     }
@@ -939,8 +939,8 @@ class ProximityEffect extends EventTarget
         let method = this.jitterMethod ? this.jitterMethod : this.#DEFAULT_JITTER_METHOD;
         for (let i=0; i<this.nodes.length; i++) {
             this.#setNodeIndexData(i, 'jitter', {
-                x: Utils.random(this.jitter + this.jitterX, method),
-                y: Utils.random(this.jitter + this.jitterY, method)
+                x: Adasha_Utils.random(this.jitter + this.jitterX, method),
+                y: Adasha_Utils.random(this.jitter + this.jitterY, method)
             });
         }
         if (!this.preventCenterCalculations) {
@@ -1029,7 +1029,7 @@ class ProximityEffect extends EventTarget
             // calculate distance
             if (this.direction==="both")
             {
-                dd = Utils.pythagoras(dx, dy);
+                dd = Adasha_Utils.pythagoras(dx, dy);
             }
             else
             {
@@ -1037,7 +1037,7 @@ class ProximityEffect extends EventTarget
             }
 
             // normalise to boundaries
-    		td = Utils.constrain((dd-this.threshold) * this.#globalParams.invRunoff, 0, 1);
+    		td = Adasha_Utils.constrain((dd-this.threshold) * this.#globalParams.invRunoff, 0, 1);
             if (this.invert)
             {
                 td = 1 - td;
@@ -1046,10 +1046,10 @@ class ProximityEffect extends EventTarget
             this.#setNodeIndexData(n, "distance", td);
 
             // apply easing
-            d = last+(td-last)*(Utils.XOR(td>last, this.invert) ? this.decay : this.attack);
+            d = last+(td-last)*(Adasha_Utils.XOR(td>last, this.invert) ? this.decay : this.attack);
 
             // round value to reduce jitter
-            d = Utils.roundTo(d, this.accuracy);
+            d = Adasha_Utils.roundTo(d, this.accuracy);
 
             this.#setNodeIndexData(n, "lastDelta", d);
 
@@ -1068,7 +1068,7 @@ class ProximityEffect extends EventTarget
                         rule     = effect.rules.rule,
                         func     = effect.rules.func,
                         unit     = effect.rules.unit || "",
-                        val      = Utils.delta(d, near, far);
+                        val      = Adasha_Utils.delta(d, near, far);
 
 
                     if (!func)
@@ -1200,7 +1200,7 @@ class EffectInstance
                 throw new Error(`ProximityEffect: Couldn't find preset '${property}'`);
             }
         }
-        else if(Utils.isObject(property) && typeof property.rule==="string")
+        else if(Adasha_Utils.isObject(property) && typeof property.rule==="string")
         {
             cssParams = property;
         }
@@ -1223,7 +1223,7 @@ class EffectInstance
  * Utilities Class
  */
 
-class Utils
+class Adasha_Utils
 {
 
 
@@ -1248,7 +1248,7 @@ class Utils
     };
     
 
-    static delta = (num, a, b) => (b - a) * Utils.constrain(num, 0, 1) + a;
+    static delta = (num, a, b) => (b - a) * Adasha_Utils.constrain(num, 0, 1) + a;
     
 
     static map = (num, inMin, inMax, outMin, outMax) =>

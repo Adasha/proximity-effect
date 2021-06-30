@@ -508,7 +508,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      _classPrivateFieldGet(this, _globalParams).threshold = Utils.constrain(value, 0);
+      _classPrivateFieldGet(this, _globalParams).threshold = Adasha_Utils.constrain(value, 0);
     }
     /**
      * Get the effect runoff.
@@ -526,7 +526,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      _classPrivateFieldGet(this, _globalParams).runoff = Utils.constrain(value, 0);
+      _classPrivateFieldGet(this, _globalParams).runoff = Adasha_Utils.constrain(value, 0);
       _classPrivateFieldGet(this, _globalParams).invRunoff = 1 / _classPrivateFieldGet(this, _globalParams).runoff;
     }
     /**
@@ -573,7 +573,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      _classPrivateFieldGet(this, _globalParams).attack = Utils.constrain(value, 0, 1);
+      _classPrivateFieldGet(this, _globalParams).attack = Adasha_Utils.constrain(value, 0, 1);
     }
     /**
      * Get the effect decay.
@@ -591,7 +591,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(value) {
-      _classPrivateFieldGet(this, _globalParams).decay = Utils.constrain(value, 0, 1);
+      _classPrivateFieldGet(this, _globalParams).decay = Adasha_Utils.constrain(value, 0, 1);
     }
     /**
      * Get the global horizontal offset.
@@ -658,7 +658,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      * @param {number} num - The new jitter value, in pixels.
      */
     function set(num) {
-      _classPrivateFieldGet(this, _globalParams).jitter = Utils.constrain(num, 0);
+      _classPrivateFieldGet(this, _globalParams).jitter = Adasha_Utils.constrain(num, 0);
 
       _classPrivateMethodGet(this, _calculateJitters, _calculateJitters2).call(this);
     }
@@ -678,7 +678,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(num) {
-      _classPrivateFieldGet(this, _globalParams).jitterX = Utils.constrain(num, 0);
+      _classPrivateFieldGet(this, _globalParams).jitterX = Adasha_Utils.constrain(num, 0);
 
       _classPrivateMethodGet(this, _calculateJitters, _calculateJitters2).call(this);
     }
@@ -693,7 +693,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       return _classPrivateFieldGet(this, _globalParams).jitterY;
     },
     set: function set(num) {
-      _classPrivateFieldGet(this, _globalParams).jitterY = Utils.constrain(num, 0);
+      _classPrivateFieldGet(this, _globalParams).jitterY = Adasha_Utils.constrain(num, 0);
 
       _classPrivateMethodGet(this, _calculateJitters, _calculateJitters2).call(this);
     }
@@ -736,7 +736,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       if (_classPrivateFieldGet(this, _VALID_DIRECTIONS).has(str)) {
         _classPrivateFieldGet(this, _globalParams).direction = str;
       } else {
-        return void console.log("".concat(str, " not a valid direction."));
+        return void console.log("ProximityEffect: '".concat(str, "' is not a valid direction."));
       }
     } // FPS [Number>0]
 
@@ -747,9 +747,9 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     },
     set: function set(num) {
       if (num > 0) {
-        _classPrivateFieldGet(this, _globalParams).FPS = Utils.constrain(num, 0);
+        _classPrivateFieldGet(this, _globalParams).FPS = Adasha_Utils.constrain(num, 0);
       } else {
-        return void console.log("Invalid FPS requested.");
+        return void console.log("ProximityEffect: Invalid FPS requested.");
       }
     } // MODE [String]
 
@@ -761,18 +761,13 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     set: function set(mode) {
       if (mode) {
         if (mode === _classPrivateFieldGet(this, _globalParams).mode) {
-          return void console.log("Already in ".concat(mode, " mode. Mode not changed."));
+          return void console.log("ProximityEffect: Already in ".concat(mode, " mode. Mode not changed."));
         }
 
-        var b = document.body; // b.removeEventListener("mousemove",  this.update());
-        // b.removeEventListener("enterframe", this.update());
+        var b = document.body; // b.removeEventListener("enterframe", this.update());
         // window.clearInterval(this._frameLoop);
 
         switch (mode) {
-          case "mousemove":
-            b.addEventListener("mousemove", this.update());
-            break;
-
           case "enterframe":
             b.addEventListener("enterframe", this.update());
             this._frameLoop = window.setInterval(function () {
@@ -806,7 +801,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      */
     ,
     set: function set(num) {
-      _classPrivateFieldGet(this, _globalParams).accuracy = Math.floor(Utils.constrain(num, 0));
+      _classPrivateFieldGet(this, _globalParams).accuracy = Math.floor(Adasha_Utils.constrain(num, 0));
     }
     /**
      * Get the last known mouse pointer coordinates, relative to the viewport, in pixels.
@@ -863,7 +858,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         } else {
           throw new Error("ProximityEffect: Couldn't find preset '".concat(property, "'"));
         }
-      } else if (Utils.isObject(property) && typeof property.rule === "string") {
+      } else if (Adasha_Utils.isObject(property) && typeof property.rule === "string") {
         cssParams = property;
       } else return void console.log("'".concat(property, "' is not a valid style rule.")); // convenience function for adding basic near/far values like the old version
 
@@ -872,7 +867,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         var val = values[v];
 
         if (typeof val === "number") {
-          values[v] = Utils.valToObj(Utils.constrain(val, cssParams.min, cssParams.max));
+          values[v] = Adasha_Utils.valToObj(Adasha_Utils.constrain(val, cssParams.min, cssParams.max));
 
           switch (v) {
             case 0:
@@ -904,8 +899,8 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         var nearMethod = near.scatterMethod ? near.scatterMethod : _classPrivateFieldGet(this, _DEFAULT_SCATTER_METHOD),
             farMethod = far.scatterMethod ? far.scatterMethod : _classPrivateFieldGet(this, _DEFAULT_SCATTER_METHOD);
         effects.push({
-          near: near.scatter ? near.value + Utils.random(near.scatter, nearMethod) : near.value,
-          far: far.scatter ? far.value + Utils.random(far.scatter, farMethod) : far.value
+          near: near.scatter ? near.value + Adasha_Utils.random(near.scatter, nearMethod) : near.value,
+          far: far.scatter ? far.value + Adasha_Utils.random(far.scatter, farMethod) : far.value
         });
       }
     }
@@ -1110,13 +1105,13 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
             d = void 0; // calculate distance
 
         if (this.direction === "both") {
-          dd = Utils.pythagoras(dx, dy);
+          dd = Adasha_Utils.pythagoras(dx, dy);
         } else {
           dd = Math.abs(this.direction === "horizontal" ? dx : dy);
         } // normalise to boundaries
 
 
-        td = Utils.constrain((dd - this.threshold) * _classPrivateFieldGet(this, _globalParams).invRunoff, 0, 1);
+        td = Adasha_Utils.constrain((dd - this.threshold) * _classPrivateFieldGet(this, _globalParams).invRunoff, 0, 1);
 
         if (this.invert) {
           td = 1 - td;
@@ -1125,9 +1120,9 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, "distance", td); // apply easing
 
 
-        d = last + (td - last) * (Utils.XOR(td > last, this.invert) ? this.decay : this.attack); // round value to reduce jitter
+        d = last + (td - last) * (Adasha_Utils.XOR(td > last, this.invert) ? this.decay : this.attack); // round value to reduce jitter
 
-        d = Utils.roundTo(d, this.accuracy);
+        d = Adasha_Utils.roundTo(d, this.accuracy);
 
         _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, "lastDelta", d);
 
@@ -1142,7 +1137,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
                 rule = effect.rules.rule,
                 func = effect.rules.func,
                 unit = effect.rules.unit || "",
-                val = Utils.delta(d, near, far);
+                val = Adasha_Utils.delta(d, near, far);
 
             if (!func) {
               _node2.style[rule] = "".concat(val).concat(unit);
@@ -1207,8 +1202,8 @@ function _calculateJitters2() {
 
   for (var i = 0; i < this.nodes.length; i++) {
     _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, 'jitter', {
-      x: Utils.random(this.jitter + this.jitterX, method),
-      y: Utils.random(this.jitter + this.jitterY, method)
+      x: Adasha_Utils.random(this.jitter + this.jitterX, method),
+      y: Adasha_Utils.random(this.jitter + this.jitterY, method)
     });
   }
 
@@ -1449,7 +1444,7 @@ function EffectInstance(property, values) {
     } else {
       throw new Error("ProximityEffect: Couldn't find preset '".concat(property, "'"));
     }
-  } else if (Utils.isObject(property) && typeof property.rule === "string") {
+  } else if (Adasha_Utils.isObject(property) && typeof property.rule === "string") {
     cssParams = property;
   } else return void console.log("'".concat(property, "' is not a valid style rule."));
 };
@@ -1458,11 +1453,11 @@ function EffectInstance(property, values) {
  */
 
 
-var Utils = function Utils() {
-  _classCallCheck(this, Utils);
+var Adasha_Utils = function Adasha_Utils() {
+  _classCallCheck(this, Adasha_Utils);
 };
 
-_defineProperty(Utils, "constrain", function (num, min, max) {
+_defineProperty(Adasha_Utils, "constrain", function (num, min, max) {
   if (typeof num !== "number") {
     return NaN;
   }
@@ -1478,21 +1473,21 @@ _defineProperty(Utils, "constrain", function (num, min, max) {
   return num;
 });
 
-_defineProperty(Utils, "roundTo", function (num) {
+_defineProperty(Adasha_Utils, "roundTo", function (num) {
   var dp = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
   var mult = Math.pow(dp + 1, 10);
   return Math.round(num * mult) / mult;
 });
 
-_defineProperty(Utils, "delta", function (num, a, b) {
-  return (b - a) * Utils.constrain(num, 0, 1) + a;
+_defineProperty(Adasha_Utils, "delta", function (num, a, b) {
+  return (b - a) * Adasha_Utils.constrain(num, 0, 1) + a;
 });
 
-_defineProperty(Utils, "map", function (num, inMin, inMax, outMin, outMax) {
+_defineProperty(Adasha_Utils, "map", function (num, inMin, inMax, outMin, outMax) {
   return (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 });
 
-_defineProperty(Utils, "random", function () {
+_defineProperty(Adasha_Utils, "random", function () {
   var v = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 2;
   var m = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "uniform";
 
@@ -1516,27 +1511,27 @@ _defineProperty(Utils, "random", function () {
   }
 });
 
-_defineProperty(Utils, "XOR", function (a, b) {
+_defineProperty(Adasha_Utils, "XOR", function (a, b) {
   return (a || b) && !(a && b);
 });
 
-_defineProperty(Utils, "pythagoras", function (a, b) {
+_defineProperty(Adasha_Utils, "pythagoras", function (a, b) {
   return Math.sqrt(a * a + b * b);
 });
 
-_defineProperty(Utils, "isVisibleInViewport", function (el) {
+_defineProperty(Adasha_Utils, "isVisibleInViewport", function (el) {
   var bounds = el.getBoundingClientRect(),
       view = document.documentElement;
   return bounds.right >= 0 && bounds.left <= view.clientWidth && bounds.bottom >= 0 && bounds.top <= view.clientHeight;
 });
 
-_defineProperty(Utils, "valToObj", function (val) {
+_defineProperty(Adasha_Utils, "valToObj", function (val) {
   var key = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "value";
   var obj = {};
   obj[key] = val;
   return obj;
 });
 
-_defineProperty(Utils, "isObject", function (obj) {
+_defineProperty(Adasha_Utils, "isObject", function (obj) {
   return obj == Object(obj);
 });
