@@ -1,6 +1,6 @@
 {
 	"name": "proximity-effect",
-	"version": "v3.0.0-alpha2",
+	"version": "v3.0.0-alpha3",
 	"description": "Mass animate CSS properties based on proximity of mouse or arbitrary target.",
 	"author": {
 		"name": "Adam Shailer",

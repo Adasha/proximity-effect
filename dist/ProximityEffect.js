@@ -58,8 +58,6 @@ var _DEFAULT_SCATTER_METHOD = /*#__PURE__*/new WeakMap();
 
 var _DEFAULT_JITTER_METHOD = /*#__PURE__*/new WeakMap();
 
-var _DEFAULT_MODE = /*#__PURE__*/new WeakMap();
-
 var _VALID_EFFECTS = /*#__PURE__*/new WeakMap();
 
 var _globalParams = /*#__PURE__*/new WeakMap();
@@ -87,7 +85,7 @@ var _calculateJitters = /*#__PURE__*/new WeakSet();
 
 /**
  * Class representing a ProximityEffect.
- * @version 3.0.0-alpha2
+ * @version 3.0.0-alpha3
  * @author Adam Shailer <adasha76@outlook.com>
  * @class
  * @extends EventTarget
@@ -118,6 +116,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
    * @param {number}  [params.jitterY=0] - The effect jitter for the Y axis only, in pixels.
    * @param {string}  [params.jitterMethod] - The random method for generating jitter values. 
    * @param {number}  [params.accuracy] - The effect accuracy.
+   * @param {number}  [params.FPS] - 
    * @param {Element} [params.target] - The effect tracker target.
    * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
    */
@@ -174,11 +173,6 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     _DEFAULT_JITTER_METHOD.set(_assertThisInitialized(_this), {
       writable: true,
       value: "uniform"
-    });
-
-    _DEFAULT_MODE.set(_assertThisInitialized(_this), {
-      writable: true,
-      value: "redraw"
     });
 
     _VALID_EFFECTS.set(_assertThisInitialized(_this), {
@@ -399,8 +393,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     _this.jitterX = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).jitterX || 0;
     _this.jitterY = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).jitterY || 0;
     _this.direction = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).direction || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_DIRECTION);
-    _this.FPS = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).FPS || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_FPS);
-    _this.mode = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).mode || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_MODE);
+    _this.FPS = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).FPS;
     _this.target = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).target; // finish setup once the document is ready
 
     if (document.readyState === "completed") {
@@ -746,43 +739,10 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       return _classPrivateFieldGet(this, _globalParams).FPS;
     },
     set: function set(num) {
-      if (num > 0) {
+      if (typeof num === 'number' && num > 0) {
         _classPrivateFieldGet(this, _globalParams).FPS = Adasha_Utils.constrain(num, 0);
       } else {
-        return void console.log("ProximityEffect: Invalid FPS requested.");
-      }
-    } // MODE [String]
-
-  }, {
-    key: "mode",
-    get: function get() {
-      return _classPrivateFieldGet(this, _globalParams).mode;
-    },
-    set: function set(mode) {
-      if (mode) {
-        if (mode === _classPrivateFieldGet(this, _globalParams).mode) {
-          return void console.log("ProximityEffect: Already in ".concat(mode, " mode. Mode not changed."));
-        }
-
-        var b = document.body; // b.removeEventListener("enterframe", this.update());
-        // window.clearInterval(this._frameLoop);
-
-        switch (mode) {
-          case "enterframe":
-            b.addEventListener("enterframe", this.update());
-            this._frameLoop = window.setInterval(function () {
-              return b.dispatchEvent(new Event("enterframe"));
-            }, 1000 / this.FPS);
-            break;
-
-          case "redraw":
-            break;
-
-          default:
-            return void console.log("".concat(mode, " is not a recognised mode."));
-        }
-
-        _classPrivateFieldGet(this, _globalParams).mode = mode;
+        _classPrivateFieldGet(this, _globalParams).FPS = null;
       }
     }
     /**
@@ -956,7 +916,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       return this.getNodeIndexData(i, "distance");
     }
     /**
-     * Clear the target
+     * Clear the target, reverting to tracking the pointer.
      */
 
   }, {
@@ -1159,7 +1119,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         }
       }
 
-      if (this.mode === "redraw") {
+      if (!this.FPS) {
         window.requestAnimationFrame(this.update);
       }
 
@@ -1170,8 +1130,8 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
   return ProximityEffect;
 }( /*#__PURE__*/_wrapNativeSuper(EventTarget));
-/**
- * EffectInstance Class
+/*
+ * Utilities Class
  */
 
 
@@ -1211,247 +1171,6 @@ function _calculateJitters2() {
     this.setCenterPoints();
   }
 }
-
-var _VALID_EFFECTS2 = /*#__PURE__*/new WeakMap();
-
-var _VALID_RANDOM_METHODS2 = /*#__PURE__*/new WeakMap();
-
-var _DEFAULT_SCATTER_METHOD2 = /*#__PURE__*/new WeakMap();
-
-var _name = /*#__PURE__*/new WeakMap();
-
-var EffectInstance =
-/**
- * 
- * @constructor
- * @param {string|Object} property - The predefined style rule as a string, or an object containing a CSS style configuration.
- * @param {string} [property.rule] - The custom CSS style rule to use.
- * @param {string} [property.func] - The CSS function of the given style rule.
- * @param {number} [property.min] - The minimum style value.
- * @param {number} [property.max] - The maximum style value.
- * @param {number} [property.default] - The default style value.
- * @param {string} [property.unit] - The style rule's CSS unit.
- * @param {number|Object} near - The style value at the closest distance, either a single number or an object containing more properties.
- * @param {number} near.value - The style value at closest distance, as an object property.
- * @param {number} [near.scatter] - The random distribution of the value at the closest distance.
- * @param {string} [near.scatterMethod] - The random scatter method.
- * @param {number|Object} far - The style value at the furthest distance, either a single number or an object containing more properties.
- * @param {number} far.value - The style value at furthest distance, as an object property.
- * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
- * @param {string} [far.scatterMethod] - The random scatter method.
- * @param {Object} [params] - An object containing additional effect parameters.
- * @param {string} [params.id] - A unique string to identify the effect.
- * @param {number} [params.threshold] - The effect threshold for this effect, overriding the global value.
- * @param {number} [params.runoff] - The effect runoff for this effect, overriding the global value.
- * @param {Boolean} [params.invert] - XXXXX, overriding the global value.
- * @param {number} [params.attack] - , overriding the global value.
- * @param {number} [params.decay] - , overriding the global value.
- */
-function EffectInstance(property, values) {
-  var params = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-
-  _classCallCheck(this, EffectInstance);
-
-  _VALID_EFFECTS2.set(this, {
-    writable: true,
-    value: {
-      translateX: {
-        "default": 0,
-        rule: "transform",
-        func: "translateX",
-        unit: "px"
-      },
-      translateY: {
-        "default": 0,
-        rule: "transform",
-        func: "translateY",
-        unit: "px"
-      },
-      translateZ: {
-        "default": 0,
-        rule: "transform",
-        func: "translateZ",
-        unit: "px"
-      },
-      rotate: {
-        "default": 0,
-        rule: "transform",
-        func: "rotate",
-        unit: "deg"
-      },
-      rotateX: {
-        "default": 0,
-        rule: "transform",
-        func: "rotateX",
-        unit: "deg"
-      },
-      rotateY: {
-        "default": 0,
-        rule: "transform",
-        func: "rotateY",
-        unit: "deg"
-      },
-      rotateZ: {
-        "default": 0,
-        rule: "transform",
-        func: "rotateZ",
-        unit: "deg"
-      },
-      scale: {
-        "default": 1,
-        rule: "transform",
-        func: "scale"
-      },
-      scaleX: {
-        "default": 1,
-        rule: "transform",
-        func: "scaleX"
-      },
-      scaleY: {
-        "default": 1,
-        rule: "transform",
-        func: "scaleY"
-      },
-      scaleZ: {
-        "default": 1,
-        rule: "transform",
-        func: "scaleZ"
-      },
-      skewX: {
-        "default": 0,
-        rule: "transform",
-        func: "skewX",
-        unit: "deg"
-      },
-      skewY: {
-        "default": 0,
-        rule: "transform",
-        func: "skewY",
-        unit: "deg"
-      },
-      blur: {
-        min: 0,
-        "default": 0,
-        rule: "filter",
-        func: "blur",
-        unit: "px"
-      },
-      brightness: {
-        min: 0,
-        "default": 100,
-        rule: "filter",
-        func: "brightness",
-        unit: "%"
-      },
-      contrast: {
-        min: 0,
-        "default": 100,
-        rule: "filter",
-        func: "contrast",
-        unit: "%"
-      },
-      grayscale: {
-        min: 0,
-        max: 100,
-        "default": 0,
-        rule: "filter",
-        func: "grayscale",
-        unit: "%"
-      },
-      hueRotate: {
-        "default": 0,
-        rule: "filter",
-        func: "hue-rotate",
-        unit: "deg"
-      },
-      invert: {
-        min: 0,
-        max: 100,
-        "default": 0,
-        rule: "filter",
-        func: "invert",
-        unit: "%"
-      },
-      opacity: {
-        min: 0,
-        max: 100,
-        "default": 100,
-        rule: "filter",
-        func: "opacity",
-        unit: "%"
-      },
-      saturate: {
-        min: 0,
-        max: 100,
-        "default": 100,
-        rule: "filter",
-        func: "saturate",
-        unit: "%"
-      },
-      sepia: {
-        min: 0,
-        max: 100,
-        "default": 0,
-        rule: "filter",
-        func: "sepia",
-        unit: "%"
-      },
-      color: {
-        min: 0,
-        max: 255,
-        "default": [0, 0, 0],
-        rule: "color",
-        func: "rgb",
-        args: 3
-      },
-      backgroundColor: {
-        min: 0,
-        max: 255,
-        "default": [0, 0, 0],
-        rule: "backgroundColor",
-        func: "rgb",
-        args: 3
-      },
-      scale3D: {
-        "default": [1, 1, 1],
-        rule: "transform",
-        func: "scale3D",
-        args: 3
-      }
-    }
-  });
-
-  _VALID_RANDOM_METHODS2.set(this, {
-    writable: true,
-    value: new Set(["normal", "uniform"])
-  });
-
-  _DEFAULT_SCATTER_METHOD2.set(this, {
-    writable: true,
-    value: "uniform"
-  });
-
-  _name.set(this, {
-    writable: true,
-    value: void 0
-  });
-
-  var cssParams; // if specifying a preset effect
-
-  if (typeof property === "string") {
-    if (_classPrivateFieldGet(this, _VALID_EFFECTS2).hasOwnProperty(property)) {
-      cssParams = _classPrivateFieldGet(this, _VALID_EFFECTS2)[property];
-    } else {
-      throw new Error("ProximityEffect: Couldn't find preset '".concat(property, "'"));
-    }
-  } else if (Adasha_Utils.isObject(property) && typeof property.rule === "string") {
-    cssParams = property;
-  } else return void console.log("'".concat(property, "' is not a valid style rule."));
-};
-/*
- * Utilities Class
- */
-
 
 var Adasha_Utils = function Adasha_Utils() {
   _classCallCheck(this, Adasha_Utils);
