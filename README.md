@@ -8,9 +8,10 @@ Bulk modify CSS properties on elements based on mouse pointer or other arbitrary
 
 ## Roadmap
 
-- (for 3.1) Per-property parameters
-- (for 3.2) Multiple-value CSS properties
-- (for 3.3) Multi-point animations
+- (for 3.0) Manually input coords. Specify FPS. Fix up code. Stable API. Better documentation.
+- (for 3.1) Multiple-value CSS properties.
+- (for 3.2) Per-property parameters.
+- (for 3.3) Multi-point animations.
 
 ## Installation
 

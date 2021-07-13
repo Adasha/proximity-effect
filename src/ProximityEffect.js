@@ -23,7 +23,6 @@ class ProximityEffect extends EventTarget
     #VALID_DIRECTIONS       = new Set(["both", "horizontal", "vertical"]);
     #DEFAULT_DIRECTION      = "both";
     #DEFAULT_ACCURACY       =   5;
-    #DEFAULT_FPS            =  15;
     #DEFAULT_RUNOFF         = 100;
     #VALID_RANDOM_METHODS   = new Set(["normal", "uniform"]);
     #DEFAULT_SCATTER_METHOD = "uniform";
@@ -66,6 +65,8 @@ class ProximityEffect extends EventTarget
     #effects;
     #nodes;
     #nodeData;
+    #fpsTimerRef;
+
 
 
 
@@ -88,7 +89,7 @@ class ProximityEffect extends EventTarget
      * @param {number}  [params.jitterY=0] - The effect jitter for the Y axis only, in pixels.
      * @param {string}  [params.jitterMethod] - The random method for generating jitter values. 
      * @param {number}  [params.accuracy] - The effect accuracy.
-     * @param {number}  [params.FPS] - 
+     * @param {number|Falsy}  [params.FPS] - The frame rate of the effect, either the number specified or with the screen refresh.
      * @param {Element} [params.target] - The effect tracker target.
      * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
      */
@@ -122,7 +123,7 @@ class ProximityEffect extends EventTarget
         this.jitterX   = this.#globalParams.jitterX   || 0;
         this.jitterY   = this.#globalParams.jitterY   || 0;
         this.direction = this.#globalParams.direction || this.#DEFAULT_DIRECTION;
-        this.FPS       = this.#globalParams.FPS;
+        //this.FPS       = this.#globalParams.FPS;
         this.target    = this.#globalParams.target;
 
 
@@ -535,9 +536,17 @@ class ProximityEffect extends EventTarget
 
     set FPS(num)
     {
+        if(this.#fpsTimerRef)
+        {
+            window.clearInterval(this.#fpsTimerRef);
+            this.#fpsTimerRef = null;
+        }
+
+
         if (typeof num==='number' && num>0)
         {
             this.#globalParams.FPS = Adasha_Utils.constrain(num, 0);
+            this.#runFrames();
         }
         else
         {
@@ -867,10 +876,9 @@ class ProximityEffect extends EventTarget
 
         document.addEventListener('mousemove', this.updatePointer.bind(this));
 
-        // TODO: add alternative trigger modes
-
         document.dispatchEvent(new MouseEvent('mousemove'));
         this.dispatchEvent(new Event('ready'));
+        this.FPS = this.#globalParams.FPS;
         window.requestAnimationFrame(this.update);
     }
 
@@ -907,6 +915,14 @@ class ProximityEffect extends EventTarget
     }
 
 
+
+
+
+    #runFrames()
+    {
+        let ms = Math.round(1000/this.FPS);
+        this.#fpsTimerRef = window.setInterval(this.update, ms);
+    }
 
 
 

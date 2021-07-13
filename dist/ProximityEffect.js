@@ -48,8 +48,6 @@ var _DEFAULT_DIRECTION = /*#__PURE__*/new WeakMap();
 
 var _DEFAULT_ACCURACY = /*#__PURE__*/new WeakMap();
 
-var _DEFAULT_FPS = /*#__PURE__*/new WeakMap();
-
 var _DEFAULT_RUNOFF = /*#__PURE__*/new WeakMap();
 
 var _VALID_RANDOM_METHODS = /*#__PURE__*/new WeakMap();
@@ -70,11 +68,15 @@ var _nodes = /*#__PURE__*/new WeakMap();
 
 var _nodeData = /*#__PURE__*/new WeakMap();
 
+var _fpsTimerRef = /*#__PURE__*/new WeakMap();
+
 var _init = /*#__PURE__*/new WeakSet();
 
 var _setNodeIndexData = /*#__PURE__*/new WeakSet();
 
 var _calculateJitters = /*#__PURE__*/new WeakSet();
+
+var _runFrames = /*#__PURE__*/new WeakSet();
 
 var _refresh = /*#__PURE__*/new WeakSet();
 
@@ -118,7 +120,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
    * @param {number}  [params.jitterY=0] - The effect jitter for the Y axis only, in pixels.
    * @param {string}  [params.jitterMethod] - The random method for generating jitter values. 
    * @param {number}  [params.accuracy] - The effect accuracy.
-   * @param {number}  [params.FPS] - 
+   * @param {number|Falsy}  [params.FPS] - The frame rate of the effect, either the number specified or with the screen refresh.
    * @param {Element} [params.target] - The effect tracker target.
    * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
    */
@@ -132,6 +134,8 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     _this = _super.call(this);
 
     _refresh.add(_assertThisInitialized(_this));
+
+    _runFrames.add(_assertThisInitialized(_this));
 
     _calculateJitters.add(_assertThisInitialized(_this));
 
@@ -152,11 +156,6 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     _DEFAULT_ACCURACY.set(_assertThisInitialized(_this), {
       writable: true,
       value: 5
-    });
-
-    _DEFAULT_FPS.set(_assertThisInitialized(_this), {
-      writable: true,
-      value: 15
     });
 
     _DEFAULT_RUNOFF.set(_assertThisInitialized(_this), {
@@ -373,6 +372,11 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       value: void 0
     });
 
+    _fpsTimerRef.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: void 0
+    });
+
     if (!nodes) {
       throw new Error("ProximityEffect: nodes argument is required");
     } // turn off centre calculations during setup to avoid calling repeatedly
@@ -396,8 +400,8 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     _this.jitter = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).jitter || 0;
     _this.jitterX = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).jitterX || 0;
     _this.jitterY = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).jitterY || 0;
-    _this.direction = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).direction || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_DIRECTION);
-    _this.FPS = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).FPS;
+    _this.direction = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).direction || _classPrivateFieldGet(_assertThisInitialized(_this), _DEFAULT_DIRECTION); //this.FPS       = this.#globalParams.FPS;
+
     _this.target = _classPrivateFieldGet(_assertThisInitialized(_this), _globalParams).target; // finish setup once the document is ready
 
     if (document.readyState === "completed") {
@@ -743,8 +747,16 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       return _classPrivateFieldGet(this, _globalParams).FPS;
     },
     set: function set(num) {
+      if (_classPrivateFieldGet(this, _fpsTimerRef)) {
+        window.clearInterval(_classPrivateFieldGet(this, _fpsTimerRef));
+
+        _classPrivateFieldSet(this, _fpsTimerRef, null);
+      }
+
       if (typeof num === 'number' && num > 0) {
         _classPrivateFieldGet(this, _globalParams).FPS = Adasha_Utils.constrain(num, 0);
+
+        _classPrivateMethodGet(this, _runFrames, _runFrames2).call(this);
       } else {
         _classPrivateFieldGet(this, _globalParams).FPS = null;
       }
@@ -1143,10 +1155,10 @@ function _init2() {
   this.update = this.update.bind(this);
   window.addEventListener('scroll', this.reflowEvent.bind(this));
   window.addEventListener('resize', this.reflowEvent.bind(this));
-  document.addEventListener('mousemove', this.updatePointer.bind(this)); // TODO: add alternative trigger modes
-
+  document.addEventListener('mousemove', this.updatePointer.bind(this));
   document.dispatchEvent(new MouseEvent('mousemove'));
   this.dispatchEvent(new Event('ready'));
+  this.FPS = _classPrivateFieldGet(this, _globalParams).FPS;
   window.requestAnimationFrame(this.update);
 }
 
@@ -1172,6 +1184,12 @@ function _calculateJitters2() {
   if (!this.preventCenterCalculations) {
     this.setCenterPoints();
   }
+}
+
+function _runFrames2() {
+  var ms = Math.round(1000 / this.FPS);
+
+  _classPrivateFieldSet(this, _fpsTimerRef, window.setInterval(this.update, ms));
 }
 
 function _refresh2() {
