@@ -912,6 +912,18 @@ class ProximityEffect extends EventTarget
 
 
 
+    #refresh()
+    {
+        window.requestAnimationFrame(this.update);
+        this.dispatchEvent(new Event("redraw"));
+    }
+
+
+
+
+
+
+
 
 
 
@@ -1056,10 +1068,9 @@ class ProximityEffect extends EventTarget
 
         if (!this.FPS)
         {
-            window.requestAnimationFrame(this.update);
+            this.#refresh();
         }
 
-        this.dispatchEvent(new Event("redraw"));
 
     } // update end
 

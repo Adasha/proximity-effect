@@ -76,6 +76,8 @@ var _setNodeIndexData = /*#__PURE__*/new WeakSet();
 
 var _calculateJitters = /*#__PURE__*/new WeakSet();
 
+var _refresh = /*#__PURE__*/new WeakSet();
+
 /*
  * ProximityEffect class by Adasha
  * Licensed under MPL-2.0
@@ -128,6 +130,8 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     _classCallCheck(this, ProximityEffect);
 
     _this = _super.call(this);
+
+    _refresh.add(_assertThisInitialized(_this));
 
     _calculateJitters.add(_assertThisInitialized(_this));
 
@@ -1120,10 +1124,8 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       }
 
       if (!this.FPS) {
-        window.requestAnimationFrame(this.update);
+        _classPrivateMethodGet(this, _refresh, _refresh2).call(this);
       }
-
-      this.dispatchEvent(new Event("redraw"));
     } // update end
 
   }]);
@@ -1170,6 +1172,11 @@ function _calculateJitters2() {
   if (!this.preventCenterCalculations) {
     this.setCenterPoints();
   }
+}
+
+function _refresh2() {
+  window.requestAnimationFrame(this.update);
+  this.dispatchEvent(new Event("redraw"));
 }
 
 var Adasha_Utils = function Adasha_Utils() {
