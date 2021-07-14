@@ -71,6 +71,8 @@ Next, define the effect parameters in an object. All parameters are optional, bu
 | `offsetX` and `offsetY` | Number | Global horizontal (`offsetX`) and vertical (`offsetY`) centre-point offset. Default is 0. Stacks with individual element offsets. |
 | `jitter`, `jitterX` and `jitterY` | Number | Random offset per element, in pixels. `jitter` affects both X and Y values, while `jitterX` and `jitterY` affect only their respective axis. All three values stack. Default is 0. |
 | `jitterMethod` | String | Random generation method for jitter values. Accepts `"uniform"` or `"gaussian"`. Default is `"uniform"`. |
+| `FPS` | Number or Falsy | If set to a positive number, will attempt to refresh any effects at the specified frame rate. Effect updates cannot be displayed quicker than your screen's refresh rate, but internal calculations can take place more quickly. Specifying any value that is not a positive number, or no value at all, will clear the FPS property and attempt to refresh at the screen's refresh rate. |
+| `primeDistances` | Boolean | If `true`, will initialise all distances to 0, so the effect will appear to spring into its starting position. Can only be set as part of the `params` object during instantiation - it cannot be accessed as a property. |
 
 For example:
 
