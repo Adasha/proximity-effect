@@ -62,6 +62,8 @@ var _globalParams = /*#__PURE__*/new WeakMap();
 
 var _pointer = /*#__PURE__*/new WeakMap();
 
+var _coords = /*#__PURE__*/new WeakMap();
+
 var _effects = /*#__PURE__*/new WeakMap();
 
 var _nodes = /*#__PURE__*/new WeakMap();
@@ -89,7 +91,7 @@ var _refresh = /*#__PURE__*/new WeakSet();
 
 /**
  * Class representing a ProximityEffect.
- * @version 3.0.0-alpha3
+ * @version 3.0.0-alpha4
  * @author Adam Shailer <adasha76@outlook.com>
  * @class
  * @extends EventTarget
@@ -355,6 +357,11 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     _pointer.set(_assertThisInitialized(_this), {
       writable: true,
       value: {}
+    });
+
+    _coords.set(_assertThisInitialized(_this), {
+      writable: true,
+      value: void 0
     });
 
     _effects.set(_assertThisInitialized(_this), {
@@ -941,6 +948,43 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       this.target = null;
     }
     /**
+     * Return an object containing manual coordinates, if specified.
+     */
+
+  }, {
+    key: "getCoords",
+    value: function getCoords() {
+      return _classPrivateFieldGet(this, _coords);
+    }
+    /**
+     * Manually specify coordinates
+     * @param {Number} x - 
+     * @param {Number} y - 
+     */
+
+  }, {
+    key: "setCoords",
+    value: function setCoords(x, y) {
+      if (!(typeof x === 'Number') || !(typeof y === 'Number')) {
+        _classPrivateFieldSet(this, _coords, {
+          x: x,
+          y: y
+        }); //this.update();
+
+      }
+    }
+    /**
+     * Clear manual coordinates if specified, returning to target-based coordinates.
+     */
+
+  }, {
+    key: "clearCoords",
+    value: function clearCoords() {
+      if (_classPrivateFieldGet(this, _coords)) {
+        _classPrivateFieldSet(this, _coords, null);
+      }
+    }
+    /**
      * Recalculate each node's centre point, including global offset and jitter.
      */
 
@@ -1065,7 +1109,11 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
             ty = void 0,
             last = this.getNodeIndexData(n, "lastDelta");
 
-        if (this.target) {
+        if (_classPrivateFieldGet(this, _coords)) {
+          var m = this.getCoords();
+          tx = m.x;
+          ty = m.y;
+        } else if (this.target) {
           var b = this.target.getBoundingClientRect();
           tx = (b.left + b.right) * 0.5;
           ty = (b.top + b.bottom) * 0.5;
@@ -1135,7 +1183,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         }
       }
 
-      if (!this.FPS) {
+      if (!this.FPS && !_classPrivateFieldGet(this, _coords)) {
         _classPrivateMethodGet(this, _refresh, _refresh2).call(this);
       }
     } // update end

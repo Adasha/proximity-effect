@@ -9,7 +9,7 @@
 
 /**
  * Class representing a ProximityEffect.
- * @version 3.0.0-alpha3
+ * @version 3.0.0-alpha4
  * @author Adam Shailer <adasha76@outlook.com>
  * @class
  * @extends EventTarget
@@ -62,6 +62,7 @@ class ProximityEffect extends EventTarget
 
     #globalParams;
     #pointer = {};
+    #coords;
     #effects;
     #nodes;
     #nodeData;
@@ -776,6 +777,44 @@ class ProximityEffect extends EventTarget
 
 
     /**
+     * Return an object containing manual coordinates, if specified.
+     */
+    getCoords()
+    {
+        return this.#coords;
+    }
+
+    /**
+     * Manually specify coordinates
+     * @param {Number} x - 
+     * @param {Number} y - 
+     */
+    setCoords(x, y)
+    {
+        if(!(typeof x==='Number') || !(typeof y==='Number'))
+        {
+            this.#coords = {x:x, y:y};
+            //this.update();
+        }
+    }
+
+
+    /**
+     * Clear manual coordinates if specified, returning to target-based coordinates.
+     */
+    clearCoords()
+    {
+        if(this.#coords)
+        {
+            this.#coords = null;
+        }
+    }
+
+
+
+
+
+    /**
      * Recalculate each node's centre point, including global offset and jitter.
      */
     setCenterPoints()
@@ -996,7 +1035,13 @@ class ProximityEffect extends EventTarget
                    last = this.getNodeIndexData(n, "lastDelta");
 
 
-            if (this.target)
+            if(this.#coords)
+            {
+                let m = this.getCoords();
+                tx = m.x;
+                ty = m.y;
+            }
+            else if (this.target)
             {
                 let b = this.target.getBoundingClientRect();
                 tx = (b.left + b.right)*0.5;
@@ -1082,7 +1127,7 @@ class ProximityEffect extends EventTarget
             }
         }
 
-        if (!this.FPS)
+        if (!this.FPS && !this.#coords)
         {
             this.#refresh();
         }
