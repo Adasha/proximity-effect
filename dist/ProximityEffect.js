@@ -122,7 +122,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
    * @param {number}  [params.jitterY=0] - The effect jitter for the Y axis only, in pixels.
    * @param {string}  [params.jitterMethod] - The random method for generating jitter values. 
    * @param {number}  [params.accuracy] - The effect accuracy.
-   * @param {number|Falsy}  [params.FPS] - The frame rate of the effect, either the number specified or with the screen refresh.
+   * @param {number|Falsy} [params.FPS] - The frame rate of the effect, either the number specified or with the screen refresh.
    * @param {Element} [params.target] - The effect tracker target.
    * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
    */
@@ -385,7 +385,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     });
 
     if (!nodes) {
-      throw new Error("ProximityEffect: nodes argument is required");
+      throw new Error("ProximityEffect: nodes argument is required.");
     } // turn off centre calculations during setup to avoid calling repeatedly
 
 
@@ -841,9 +841,15 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         } else {
           throw new Error("ProximityEffect: Couldn't find preset '".concat(property, "'"));
         }
-      } else if (Adasha_Utils.isObject(property) && typeof property.rule === "string") {
-        cssParams = property;
-      } else return void console.log("'".concat(property, "' is not a valid style rule.")); // convenience function for adding basic near/far values like the old version
+      } else if (Adasha_Utils.isObject(property)) {
+        if (typeof property.rule === "string") {
+          cssParams = property;
+        } else {
+          throw new Error("ProximityEffect: '".concat(property, "' object does not define style rule."));
+        }
+      } else {
+        throw new Error("ProximityEffect: '".concat(property, "' is not a valid style rule."));
+      } // convenience function for adding basic near/far values like the old version
 
 
       for (var v = 0; v < values.length; v++) {

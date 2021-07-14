@@ -90,7 +90,7 @@ class ProximityEffect extends EventTarget
      * @param {number}  [params.jitterY=0] - The effect jitter for the Y axis only, in pixels.
      * @param {string}  [params.jitterMethod] - The random method for generating jitter values. 
      * @param {number}  [params.accuracy] - The effect accuracy.
-     * @param {number|Falsy}  [params.FPS] - The frame rate of the effect, either the number specified or with the screen refresh.
+     * @param {number|Falsy} [params.FPS] - The frame rate of the effect, either the number specified or with the screen refresh.
      * @param {Element} [params.target] - The effect tracker target.
      * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
      */
@@ -99,7 +99,7 @@ class ProximityEffect extends EventTarget
         super();
 
         if (!nodes) {
-            throw new Error("ProximityEffect: nodes argument is required");
+            throw new Error(`ProximityEffect: nodes argument is required.`);
         }
 
         // turn off centre calculations during setup to avoid calling repeatedly
@@ -649,11 +649,22 @@ class ProximityEffect extends EventTarget
                 throw new Error(`ProximityEffect: Couldn't find preset '${property}'`);
             }
         }
-        else if(Adasha_Utils.isObject(property) && typeof property.rule==="string")
+        else if(Adasha_Utils.isObject(property))
         {
-            cssParams = property;
+            if(typeof property.rule==="string")
+            {
+                cssParams = property;
+            }
+            else
+            {
+                throw new Error(`ProximityEffect: '${property}' object does not define style rule.`);
+            }
         }
-        else return void console.log(`'${property}' is not a valid style rule.`);
+        else
+        {
+            throw new Error(`ProximityEffect: '${property}' is not a valid style rule.`);
+        }
+
 
 
         // convenience function for adding basic near/far values like the old version
