@@ -633,7 +633,7 @@ class ProximityEffect extends EventTarget
      * @param {number} [params.attack] - , overriding the global value.
      * @param {number} [params.decay] - , overriding the global value.
      */
-    addEffect(property, values, effectParams)
+    addEffect(property, keyframes, effectParams)
     {
         let cssParams;
 
@@ -668,26 +668,26 @@ class ProximityEffect extends EventTarget
 
 
         // convenience function for adding basic near/far values like the old version
-        for(let v=0; v<values.length; v++)
+        for(let v=0; v<keyframes.length; v++)
         {
-            let val = values[v];
+            let val = keyframes[v];
             if (typeof val==="number")
             {
-                values[v] = Adasha_Utils.valToObj(Adasha_Utils.constrain(val, cssParams.min, cssParams.max));
+                keyframes[v] = Adasha_Utils.valToObj(Adasha_Utils.constrain(val, cssParams.min, cssParams.max));
                 switch(v)
                 {
                     case 0 :
-                        values[v].distance = 0;
+                        keyframes[v].distance = 0;
                         break;
-                    case values.length-1 :
-                        values[v].distance = 1;
+                    case keyframes.length-1 :
+                        keyframes[v].distance = 1;
                         break;
                 }
             }
         }
 
-        let near = values[0];
-        let far  = values[values.length-1];
+        let near = keyframes[0];
+        let far  = keyframes[keyframes.length-1];
 
         
 

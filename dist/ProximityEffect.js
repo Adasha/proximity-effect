@@ -832,7 +832,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
   }, {
     key: "addEffect",
-    value: function addEffect(property, values, effectParams) {
+    value: function addEffect(property, keyframes, effectParams) {
       var cssParams; // if specifying a preset effect
 
       if (typeof property === "string") {
@@ -852,26 +852,26 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       } // convenience function for adding basic near/far values like the old version
 
 
-      for (var v = 0; v < values.length; v++) {
-        var val = values[v];
+      for (var v = 0; v < keyframes.length; v++) {
+        var val = keyframes[v];
 
         if (typeof val === "number") {
-          values[v] = Adasha_Utils.valToObj(Adasha_Utils.constrain(val, cssParams.min, cssParams.max));
+          keyframes[v] = Adasha_Utils.valToObj(Adasha_Utils.constrain(val, cssParams.min, cssParams.max));
 
           switch (v) {
             case 0:
-              values[v].distance = 0;
+              keyframes[v].distance = 0;
               break;
 
-            case values.length - 1:
-              values[v].distance = 1;
+            case keyframes.length - 1:
+              keyframes[v].distance = 1;
               break;
           }
         }
       }
 
-      var near = values[0];
-      var far = values[values.length - 1];
+      var near = keyframes[0];
+      var far = keyframes[keyframes.length - 1];
 
       _classPrivateFieldSet(this, _effects, _classPrivateFieldGet(this, _effects) || []);
 
