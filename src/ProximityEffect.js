@@ -29,7 +29,7 @@ class ProximityEffect extends EventTarget
     #DEFAULT_JITTER_METHOD  = "uniform";
 
 
-    #VALID_EFFECTS          = {
+    #DEFINED_STYLES          = {
         translateX:      {                  default:       0, rule: "transform",       func: "translateX",  unit: "px"},
         translateY:      {                  default:       0, rule: "transform",       func: "translateY",  unit: "px"},
         translateZ:      {                  default:       0, rule: "transform",       func: "translateZ",  unit: "px"},
@@ -63,7 +63,8 @@ class ProximityEffect extends EventTarget
     #globalParams;
     #pointer = {};
     #coords;
-    #effects;
+    #styles;
+    #properties;
     #nodes;
     #nodeData;
     #fpsTimerRef;
@@ -222,12 +223,12 @@ class ProximityEffect extends EventTarget
 
 
     /**
-     * Get the list of effects.
-     * @return {Array<Object>} The effects array.
+     * Get the list of styles.
+     * @return {Array<Object>} The styles array.
      */
-    get effects()
+    get styles()
     {
-        return this.#effects;
+        return this.#styles;
     }
 
 
@@ -609,7 +610,7 @@ class ProximityEffect extends EventTarget
 
 
     /**
-     * Add a new effect to the effect stack.
+     * Add a new style rule to the styles animation stack.
      * @param {string|Object} property - The predefined style rule as a string, or an object containing a CSS style configuration.
      * @param {string} [property.rule] - The custom CSS style rule to use.
      * @param {string} [property.func] - The CSS function of the given style rule.
@@ -626,23 +627,23 @@ class ProximityEffect extends EventTarget
      * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
      * @param {string} [far.scatterMethod] - The random scatter method.
      * @param {Object} [params] - An object containing additional effect parameters.
-     * @param {string} [params.id] - A unique string to identify the effect.
-     * @param {number} [params.threshold] - The effect threshold for this effect, overriding the global value.
-     * @param {number} [params.runoff] - The effect runoff for this effect, overriding the global value.
+     * @param {string} [params.id] - A unique string to identify the style rule.
+     * @param {number} [params.threshold] - The animation distance threshold for this style, overriding the global value.
+     * @param {number} [params.runoff] - The animation runoff distance for this style, overriding the global value.
      * @param {Boolean} [params.invert] - XXXXX, overriding the global value.
      * @param {number} [params.attack] - , overriding the global value.
      * @param {number} [params.decay] - , overriding the global value.
      */
-    addEffect(property, keyframes, effectParams)
+    addStyle(property, keyframes, styleParams)
     {
         let cssParams;
 
-        // if specifying a preset effect
+        // if specifying a preset style
         if(typeof property==="string")
         {
-            if (this.#VALID_EFFECTS.hasOwnProperty(property))
+            if (this.#DEFINED_STYLES.hasOwnProperty(property))
             {
-                cssParams = this.#VALID_EFFECTS[property];
+                cssParams = this.#DEFINED_STYLES[property];
             }
             else
             {
@@ -657,7 +658,7 @@ class ProximityEffect extends EventTarget
             }
             else
             {
-                throw new Error(`ProximityEffect: '${property}' object does not define style rule.`);
+                throw new Error(`ProximityEffect: '${property}' object does not define a style rule.`);
             }
         }
         else
@@ -692,22 +693,22 @@ class ProximityEffect extends EventTarget
         
 
 
-        this.#effects = this.#effects || [];
-        this.#effects.push({
+        this.#styles = this.#styles || [];
+        this.#styles.push({
             rules:  cssParams,
             near:   near,
             far:    far,
-            params: effectParams
+            params: styleParams
         });
 
 
         for (let i=0; i<this.#nodeData.length; i++)
         {
-            let effects = this.getNodeIndexData(i, "effects") || this.#setNodeIndexData(i, "effects", [])["effects"];
+            let styles = this.getNodeIndexData(i, "styles") || this.#setNodeIndexData(i, "styles", [])["styles"];
             let nearMethod = near.scatterMethod ? near.scatterMethod : this.#DEFAULT_SCATTER_METHOD,
                  farMethod =  far.scatterMethod ?  far.scatterMethod : this.#DEFAULT_SCATTER_METHOD;
 
-            effects.push({
+            styles.push({
                 near: near.scatter ? near.value+Adasha_Utils.random(near.scatter, nearMethod) : near.value,
                 far:   far.scatter ?  far.value+Adasha_Utils.random( far.scatter,  farMethod) :  far.value
             });
@@ -717,31 +718,31 @@ class ProximityEffect extends EventTarget
 
 
     /**
-     * Check if a named effect is already on the stack.
-     * @param {string} name - The name of the effect to check for.
-     * @return {boolean} True if the effect exists at least once.
+     * Check if a named style is already on the stack.
+     * @param {string} name - The name of the style to check for.
+     * @return {boolean} True if the style exists at least once.
      */
-    hasEffect(name)
+    hasStyle(name)
     {
-        return this.effects.find(eff => eff["type"]===name)!==undefined;
+        return this.styles.find(eff => eff["type"]===name)!==undefined;
     }
 
 
 
     /**
-     * Remove all instances of an effect from the stack.
-     * @param {string} name - The name of the effect to remove.
+     * Remove all instances of a style from the stack.
+     * @param {string} name - The name of the style to remove.
      */
-    removeEffect(name)
+    removeStyle(name)
     {
-        if (this.hasEffect(name))
+        if (this.hasStyle(name))
         {
-            for (let i=0; i<this.#effects.length; i++)
+            for (let i=0; i<this.#styles.length; i++)
             {
-                let eff = this.#effects[i];
+                let eff = this.#styles[i];
                 if (eff["type"]===name)
                 {
-                    this.#effects.splice(i, 1);
+                    this.#styles.splice(i, 1);
                 }
             }
         }
@@ -860,8 +861,8 @@ class ProximityEffect extends EventTarget
     /**
      * @typedef {Object} NodeData
      * @property {Element} node - A reference to the node.
-     * @property {Array<Object>} effects - An array of applied effects containing near and far values for each.
-     * @property {number} effects[].near - Did this work?.
+     * @property {Array<Object>} styles - An array of applied styles containing near and far values for each.
+     * @property {number} styles[].near - Did this work?.
      */
     /**
      * Return an object containing the given node's effect data or a specific property of that data.
@@ -1096,20 +1097,20 @@ class ProximityEffect extends EventTarget
             this.#setNodeIndexData(n, "lastDelta", d);
 
 
-            if (this.effects.length>0)
+            if (this.styles.length>0)
             {
                 let styles = {};
 
-                for (let f=0; f<this.effects.length; f++)
+                for (let f=0; f<this.styles.length; f++)
                 {
-      				let effect   = this.effects[f],
-                        nodeVals = this.getNodeIndexData(n, "effects")[f];
+      				let style   = this.styles[f],
+                        nodeVals = this.getNodeIndexData(n, "styles")[f];
 
                     let near     = nodeVals.near,
                         far      = nodeVals.far,
-                        rule     = effect.rules.rule,
-                        func     = effect.rules.func,
-                        unit     = effect.rules.unit || "",
+                        rule     = style.rules.rule,
+                        func     = style.rules.func,
+                        unit     = style.rules.unit || "",
                         val      = Adasha_Utils.delta(d, near, far);
 
 

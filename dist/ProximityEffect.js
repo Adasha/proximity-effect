@@ -1,6 +1,6 @@
 "use strict";
 
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -8,13 +8,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } Object.defineProperty(subClass, "prototype", { value: Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }), writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
 
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
@@ -29,6 +29,12 @@ function _isNativeFunction(fn) { return Function.toString.call(fn).indexOf("[nat
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _classPrivateMethodInitSpec(obj, privateSet) { _checkPrivateRedeclaration(obj, privateSet); privateSet.add(obj); }
+
+function _classPrivateFieldInitSpec(obj, privateMap, value) { _checkPrivateRedeclaration(obj, privateMap); privateMap.set(obj, value); }
+
+function _checkPrivateRedeclaration(obj, privateCollection) { if (privateCollection.has(obj)) { throw new TypeError("Cannot initialize the same private elements twice on an object"); } }
 
 function _classPrivateMethodGet(receiver, privateSet, fn) { if (!privateSet.has(receiver)) { throw new TypeError("attempted to get private field on non-instance"); } return fn; }
 
@@ -56,7 +62,7 @@ var _DEFAULT_SCATTER_METHOD = /*#__PURE__*/new WeakMap();
 
 var _DEFAULT_JITTER_METHOD = /*#__PURE__*/new WeakMap();
 
-var _VALID_EFFECTS = /*#__PURE__*/new WeakMap();
+var _DEFINED_STYLES = /*#__PURE__*/new WeakMap();
 
 var _globalParams = /*#__PURE__*/new WeakMap();
 
@@ -64,7 +70,9 @@ var _pointer = /*#__PURE__*/new WeakMap();
 
 var _coords = /*#__PURE__*/new WeakMap();
 
-var _effects = /*#__PURE__*/new WeakMap();
+var _styles = /*#__PURE__*/new WeakMap();
+
+var _properties = /*#__PURE__*/new WeakMap();
 
 var _nodes = /*#__PURE__*/new WeakMap();
 
@@ -135,52 +143,52 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
     _this = _super.call(this);
 
-    _refresh.add(_assertThisInitialized(_this));
+    _classPrivateMethodInitSpec(_assertThisInitialized(_this), _refresh);
 
-    _runFrames.add(_assertThisInitialized(_this));
+    _classPrivateMethodInitSpec(_assertThisInitialized(_this), _runFrames);
 
-    _calculateJitters.add(_assertThisInitialized(_this));
+    _classPrivateMethodInitSpec(_assertThisInitialized(_this), _calculateJitters);
 
-    _setNodeIndexData.add(_assertThisInitialized(_this));
+    _classPrivateMethodInitSpec(_assertThisInitialized(_this), _setNodeIndexData);
 
-    _init.add(_assertThisInitialized(_this));
+    _classPrivateMethodInitSpec(_assertThisInitialized(_this), _init);
 
-    _VALID_DIRECTIONS.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _VALID_DIRECTIONS, {
       writable: true,
       value: new Set(["both", "horizontal", "vertical"])
     });
 
-    _DEFAULT_DIRECTION.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _DEFAULT_DIRECTION, {
       writable: true,
       value: "both"
     });
 
-    _DEFAULT_ACCURACY.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _DEFAULT_ACCURACY, {
       writable: true,
       value: 5
     });
 
-    _DEFAULT_RUNOFF.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _DEFAULT_RUNOFF, {
       writable: true,
       value: 100
     });
 
-    _VALID_RANDOM_METHODS.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _VALID_RANDOM_METHODS, {
       writable: true,
       value: new Set(["normal", "uniform"])
     });
 
-    _DEFAULT_SCATTER_METHOD.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _DEFAULT_SCATTER_METHOD, {
       writable: true,
       value: "uniform"
     });
 
-    _DEFAULT_JITTER_METHOD.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _DEFAULT_JITTER_METHOD, {
       writable: true,
       value: "uniform"
     });
 
-    _VALID_EFFECTS.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _DEFINED_STYLES, {
       writable: true,
       value: {
         translateX: {
@@ -349,37 +357,42 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       }
     });
 
-    _globalParams.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _globalParams, {
       writable: true,
       value: void 0
     });
 
-    _pointer.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _pointer, {
       writable: true,
       value: {}
     });
 
-    _coords.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _coords, {
       writable: true,
       value: void 0
     });
 
-    _effects.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _styles, {
       writable: true,
       value: void 0
     });
 
-    _nodes.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _properties, {
       writable: true,
       value: void 0
     });
 
-    _nodeData.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _nodes, {
       writable: true,
       value: void 0
     });
 
-    _fpsTimerRef.set(_assertThisInitialized(_this), {
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _nodeData, {
+      writable: true,
+      value: void 0
+    });
+
+    _classPrivateFieldInitSpec(_assertThisInitialized(_this), _fpsTimerRef, {
       writable: true,
       value: void 0
     });
@@ -491,14 +504,14 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       }
     }
     /**
-     * Get the list of effects.
-     * @return {Array<Object>} The effects array.
+     * Get the list of styles.
+     * @return {Array<Object>} The styles array.
      */
 
   }, {
-    key: "effects",
+    key: "styles",
     get: function get() {
-      return _classPrivateFieldGet(this, _effects);
+      return _classPrivateFieldGet(this, _styles);
     }
     /**
      * Get the effect threshold.
@@ -805,7 +818,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     ////////////////////////////
 
     /**
-     * Add a new effect to the effect stack.
+     * Add a new style rule to the styles animation stack.
      * @param {string|Object} property - The predefined style rule as a string, or an object containing a CSS style configuration.
      * @param {string} [property.rule] - The custom CSS style rule to use.
      * @param {string} [property.func] - The CSS function of the given style rule.
@@ -822,22 +835,22 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
      * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
      * @param {string} [far.scatterMethod] - The random scatter method.
      * @param {Object} [params] - An object containing additional effect parameters.
-     * @param {string} [params.id] - A unique string to identify the effect.
-     * @param {number} [params.threshold] - The effect threshold for this effect, overriding the global value.
-     * @param {number} [params.runoff] - The effect runoff for this effect, overriding the global value.
+     * @param {string} [params.id] - A unique string to identify the style rule.
+     * @param {number} [params.threshold] - The animation distance threshold for this style, overriding the global value.
+     * @param {number} [params.runoff] - The animation runoff distance for this style, overriding the global value.
      * @param {Boolean} [params.invert] - XXXXX, overriding the global value.
      * @param {number} [params.attack] - , overriding the global value.
      * @param {number} [params.decay] - , overriding the global value.
      */
 
   }, {
-    key: "addEffect",
-    value: function addEffect(property, keyframes, effectParams) {
-      var cssParams; // if specifying a preset effect
+    key: "addStyle",
+    value: function addStyle(property, keyframes, styleParams) {
+      var cssParams; // if specifying a preset style
 
       if (typeof property === "string") {
-        if (_classPrivateFieldGet(this, _VALID_EFFECTS).hasOwnProperty(property)) {
-          cssParams = _classPrivateFieldGet(this, _VALID_EFFECTS)[property];
+        if (_classPrivateFieldGet(this, _DEFINED_STYLES).hasOwnProperty(property)) {
+          cssParams = _classPrivateFieldGet(this, _DEFINED_STYLES)[property];
         } else {
           throw new Error("ProximityEffect: Couldn't find preset '".concat(property, "'"));
         }
@@ -845,7 +858,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         if (typeof property.rule === "string") {
           cssParams = property;
         } else {
-          throw new Error("ProximityEffect: '".concat(property, "' object does not define style rule."));
+          throw new Error("ProximityEffect: '".concat(property, "' object does not define a style rule."));
         }
       } else {
         throw new Error("ProximityEffect: '".concat(property, "' is not a valid style rule."));
@@ -873,53 +886,53 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
       var near = keyframes[0];
       var far = keyframes[keyframes.length - 1];
 
-      _classPrivateFieldSet(this, _effects, _classPrivateFieldGet(this, _effects) || []);
+      _classPrivateFieldSet(this, _styles, _classPrivateFieldGet(this, _styles) || []);
 
-      _classPrivateFieldGet(this, _effects).push({
+      _classPrivateFieldGet(this, _styles).push({
         rules: cssParams,
         near: near,
         far: far,
-        params: effectParams
+        params: styleParams
       });
 
       for (var i = 0; i < _classPrivateFieldGet(this, _nodeData).length; i++) {
-        var effects = this.getNodeIndexData(i, "effects") || _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, "effects", [])["effects"];
+        var styles = this.getNodeIndexData(i, "styles") || _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, "styles", [])["styles"];
 
         var nearMethod = near.scatterMethod ? near.scatterMethod : _classPrivateFieldGet(this, _DEFAULT_SCATTER_METHOD),
             farMethod = far.scatterMethod ? far.scatterMethod : _classPrivateFieldGet(this, _DEFAULT_SCATTER_METHOD);
-        effects.push({
+        styles.push({
           near: near.scatter ? near.value + Adasha_Utils.random(near.scatter, nearMethod) : near.value,
           far: far.scatter ? far.value + Adasha_Utils.random(far.scatter, farMethod) : far.value
         });
       }
     }
     /**
-     * Check if a named effect is already on the stack.
-     * @param {string} name - The name of the effect to check for.
-     * @return {boolean} True if the effect exists at least once.
+     * Check if a named style is already on the stack.
+     * @param {string} name - The name of the style to check for.
+     * @return {boolean} True if the style exists at least once.
      */
 
   }, {
-    key: "hasEffect",
-    value: function hasEffect(name) {
-      return this.effects.find(function (eff) {
+    key: "hasStyle",
+    value: function hasStyle(name) {
+      return this.styles.find(function (eff) {
         return eff["type"] === name;
       }) !== undefined;
     }
     /**
-     * Remove all instances of an effect from the stack.
-     * @param {string} name - The name of the effect to remove.
+     * Remove all instances of a style from the stack.
+     * @param {string} name - The name of the style to remove.
      */
 
   }, {
-    key: "removeEffect",
-    value: function removeEffect(name) {
-      if (this.hasEffect(name)) {
-        for (var i = 0; i < _classPrivateFieldGet(this, _effects).length; i++) {
-          var eff = _classPrivateFieldGet(this, _effects)[i];
+    key: "removeStyle",
+    value: function removeStyle(name) {
+      if (this.hasStyle(name)) {
+        for (var i = 0; i < _classPrivateFieldGet(this, _styles).length; i++) {
+          var eff = _classPrivateFieldGet(this, _styles)[i];
 
           if (eff["type"] === name) {
-            _classPrivateFieldGet(this, _effects).splice(i, 1);
+            _classPrivateFieldGet(this, _styles).splice(i, 1);
           }
         }
       }
@@ -1023,8 +1036,8 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
     /**
      * @typedef {Object} NodeData
      * @property {Element} node - A reference to the node.
-     * @property {Array<Object>} effects - An array of applied effects containing near and far values for each.
-     * @property {number} effects[].near - Did this work?.
+     * @property {Array<Object>} styles - An array of applied styles containing near and far values for each.
+     * @property {number} styles[].near - Did this work?.
      */
 
     /**
@@ -1156,17 +1169,17 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
         _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, n, "lastDelta", d);
 
-        if (this.effects.length > 0) {
+        if (this.styles.length > 0) {
           var styles = {};
 
-          for (var f = 0; f < this.effects.length; f++) {
-            var effect = this.effects[f],
-                nodeVals = this.getNodeIndexData(n, "effects")[f];
+          for (var f = 0; f < this.styles.length; f++) {
+            var style = this.styles[f],
+                nodeVals = this.getNodeIndexData(n, "styles")[f];
             var near = nodeVals.near,
                 far = nodeVals.far,
-                rule = effect.rules.rule,
-                func = effect.rules.func,
-                unit = effect.rules.unit || "",
+                rule = style.rules.rule,
+                func = style.rules.func,
+                unit = style.rules.unit || "",
                 val = Adasha_Utils.delta(d, near, far);
 
             if (!func) {
@@ -1251,9 +1264,9 @@ function _refresh2() {
   this.dispatchEvent(new Event("redraw"));
 }
 
-var Adasha_Utils = function Adasha_Utils() {
+var Adasha_Utils = /*#__PURE__*/_createClass(function Adasha_Utils() {
   _classCallCheck(this, Adasha_Utils);
-};
+});
 
 _defineProperty(Adasha_Utils, "constrain", function (num, min, max) {
   if (typeof num !== "number") {

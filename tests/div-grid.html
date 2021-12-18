@@ -188,36 +188,36 @@
         //fader1.target = document.querySelector('#alttarget');
         //fader1.target = null;
         //fader1.mode = 'cheesecake';
-        fader1.addEffect('opacity', [100, 0, 0, 0, 30], {runoff: 0});
-        // fader1.addEffect('scale',   [1, 0]);
-        // fader1.addEffect({rule:"transform", func:"scale"}, [1, 0.5]);
-        // fader1.addEffect('rotateX',    [0, 180]);
-        // fader1.addEffect('rotateY',    [0, {value: 0, scatter: 360}]);
-        // fader1.addEffect('rotateZ',    [0, {value: 0, scatter: 360}]);
-        // fader1.addEffect('translateX', [0, {value: 0, scatter: 200}]);
-        // fader1.addEffect('translateY', [0, {value: 0, scatter: 200}]);
-        // fader1.addEffect('translateZ', [0, {value: 50, scatter: 200}]);
+        fader1.addStyle('opacity', [100, 0, 0, 0, 30], {runoff: 0});
+        // fader1.addStyle('scale',   [1, 0]);
+        // fader1.addStyle({rule:"transform", func:"scale"}, [1, 0.5]);
+        // fader1.addStyle('rotateX',    [0, 180]);
+        // fader1.addStyle('rotateY',    [0, {value: 0, scatter: 360}]);
+        // fader1.addStyle('rotateZ',    [0, {value: 0, scatter: 360}]);
+        // fader1.addStyle('translateX', [0, {value: 0, scatter: 200}]);
+        // fader1.addStyle('translateY', [0, {value: 0, scatter: 200}]);
+        // fader1.addStyle('translateZ', [0, {value: 50, scatter: 200}]);
         
-        // fader1.addEffect({rule: "border-width", unit:"px"}, [1, 10]);
-        // fader1.addEffect({rule: 'padding', unit: 'px'}, [{value: 20, scatter: 30}, {value: 100, scatter: 50}]);
-        // fader1.addEffect('opacity', [100, 50]);
-        // fader2.addEffect('scale',   [2, 0]);
-        // fader1.addEffect('blur',    [0, 100, 5], {threshold: 300});
+        // fader1.addStyle({rule: "border-width", unit:"px"}, [1, 10]);
+        // fader1.addStyle({rule: 'padding', unit: 'px'}, [{value: 20, scatter: 30}, {value: 100, scatter: 50}]);
+        // fader1.addStyle('opacity', [100, 50]);
+        // fader2.addStyle('scale',   [2, 0]);
+        // fader1.addStyle('blur',    [0, 100, 5], {threshold: 300});
 
-        //fader2.addEffect('scale', [0, 2]);
-        //fader2.addEffect('hueRotate', [0, 180]);
+        //fader2.addStyle('scale', [0, 2]);
+        //fader2.addStyle('hueRotate', [0, 180]);
 
         // individual scale functions risking overwriting
-        //fader1.addEffect('scaleX custom', 1, 0, {rule: 'transform', func: 'scaleX'});
-        //fader2.addEffect('scaleY custom', 1, 0, {rule: 'transform', func: 'scaleY'});
+        //fader1.addStyle('scaleX custom', 1, 0, {rule: 'transform', func: 'scaleX'});
+        //fader2.addStyle('scaleY custom', 1, 0, {rule: 'transform', func: 'scaleY'});
 
         // experimental transform functions as separate rules
-        //fader1.addEffect(null, 1, 0, {rule: 'scaleX'});
-        //fader2.addEffect(null, 1, 0, {rule: 'scaleY'});
+        //fader1.addStyle(null, 1, 0, {rule: 'scaleX'});
+        //fader2.addStyle(null, 1, 0, {rule: 'scaleY'});
 
 
-        //fader1.removeEffect('opacity');
-        //console.log(fader1.hasEffect('opacity'));
+        //fader1.removeStyle('opacity');
+        //console.log(fader1.hasStyle('opacity'));
 
 
         // let counter = 0;

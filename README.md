@@ -2,7 +2,7 @@
 
 v3.0.0-a4
 
-Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Very customisable, definitely overdeveloped. A fun pet project originally from the Flash days, remade in JS as a practice project. Version 3 has had an API makeover and is a little more flexible. More importantly, it can be a LOT more flexible in the future, and shouldn't see any more drastic changes to the syntax. 
+Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Very customisable, definitely overdeveloped. A fun pet project originally from the Flash days, remade in JS as a practice project. Version 3 has had an API makeover and is a little more flexible. More importantly, it can be a LOT more flexible in the future, and shouldn't see any more drastic changes to the syntax (he says naively). 
 
 [View live demos](http://lab.adasha.com/components/proximity-effect)
 
@@ -101,12 +101,12 @@ myEffect.runoff = 250;
 myEffect.invert = true;
 ```
 
-### Add effects
+### Add style rules
 
-Finally, add animation properties to the ProximityEffect instance as you see fit. The `addEffect()` method is used for this:
+Finally, add style rules to the ProximityEffect instance as you see fit. The `addStyle()` method is used for this:
 
 ```javascript
-ProximityEffect.addEffect (property, keyframes, [params]);
+ProximityEffect.addStyle (property, keyframes, [params]);
 ```
 
 Here's how the arguments break down:
@@ -122,23 +122,23 @@ ProximityEffect comes pre-defined with [most permitted functions](https://github
 For example:
 
 ```javascript
-myEffect.addEffect('opacity', [100, 50]);
-myEffect.addEffect('scale',   [  1,  2]);
-myEffect.addEffect('blur',    [  0, 10]);
+myEffect.addStyle('opacity', [100, 50]);
+myEffect.addStyle('scale',   [  1,  2]);
+myEffect.addStyle('blur',    [  0, 10]);
 ```
 
 Here are some example of defining custom properties:
 
 ```javascript
-myEffect.addEffect({rule: 'left', unit: 'em'}, [100, 50]);
-myEffect.addEffect({rule: 'transform', func: 'perspective', unit: 'px'},  [100, 50]);
+myEffect.addStyle({rule: 'left', unit: 'em'}, [100, 50]);
+myEffect.addStyle({rule: 'transform', func: 'perspective', unit: 'px'},  [100, 50]);
 ```
 
 The `values` array can also contain objects with a `value` key and other optional properties, including a `scatter` value:
 
 ```javascript
-myEffect.addEffect('translateX', [0, {value: 50, scatter: 15}]);
-myEffect.addEffect({rule: 'padding', unit: 'px'}, [{value: 20, scatter: 30}, {value: 100, scatter: 50}]);
+myEffect.addStyle('translateX', [0, {value: 50, scatter: 15}]);
+myEffect.addStyle({rule: 'padding', unit: 'px'}, [{value: 20, scatter: 30}, {value: 100, scatter: 50}]);
 ```
 
 ## API
