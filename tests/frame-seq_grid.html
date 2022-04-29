@@ -1,0 +1,227 @@
+
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>MouseFader.js test page</title>
+    <style>
+
+        html, body { height: 100%; }
+
+        body {background-color: rgb(167, 167, 167);}
+
+        #parentelement
+        {
+            display: flex;
+            position: relative;;
+            flex-wrap: wrap;
+            flex: 1 1 auto;
+            align-content: center;
+            justify-content: center;
+			transform: translateZ(0);
+            perspective: 500px;
+            -webkit-backface-visibility: visible;
+            -moz-backface-visibility: visible;
+            backface-visibility: visible;
+            -webkit-transform-style: preserve-3d;
+            -moz-transform-style: preserve-3d;
+            transform-style: preserve-3d;
+            -webkit-perspective: 200px;
+            -moz-perspective: 200px;
+            perspective: 200px;
+
+            width: 640px;
+            height: 480px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        *.childelement
+        {
+            width: 30px;
+            height: 30px;
+            position: absolute;
+            transform-style: preserve-3d;
+            border-style: solid;
+            border-color: black;
+            border-width: 0px;
+            box-sizing: border-box;
+        }
+
+        *.childelement > *
+        {
+            display: flex;
+            justify-content: center;
+            align-content: center;
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            background-size: cover;
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+
+        *.childelement > *:first-child
+        {
+            background-color: rgb(103, 48, 231);
+        }
+        *.childelement > *:last-child
+        {
+            background-color: #f60;
+            transform: rotateX(180deg);
+        }
+
+        *.childelement > * > *
+        {
+            align-self: center;
+            text-decoration: underline;
+        }
+
+        #alttarget
+        {
+            width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            background: #559;
+            position: absolute;
+            margin-top: -10px;
+            margin-left: -10px;
+            pointer-events: none;
+            /* display: none; */
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <section id="testarea">
+        <div id="parentelement">
+            <div class="childelement">
+                <div><span>A</span></div>
+                <div><span>B</span></div>
+            </div>
+        </div>
+        <div id="alttarget">&nbsp;</div>
+    </section>
+
+
+    <script src="../dist/ProximityEffect.js"></script>
+    <script>
+
+        let t = document.querySelector('#parentelement'),
+            n = t.removeChild(t.querySelector('*.childelement'));
+
+        let pos = 30,
+            rows = 20,
+            cols = 20;
+
+        for(let i=0; i<cols; i++)
+        {
+            for(let j=0; j<rows; j++)
+            {
+                let e = t.appendChild(n.cloneNode(true));
+                e.style.left = i*pos+'px';
+                e.style.top  = j*pos+'px';
+            }
+        }
+
+
+        let params1 = {
+                threshold: 100,
+                runoff:    100,
+                //direction: 'horizontal',
+                offsetX:     0,
+                offsetY:     0,
+    			jitter:      0,
+    			jitterX:     0,
+                jitterY:     0,
+                jitterMethod: 'gaussian',
+                attack:      1,
+                decay:       1,
+                reverse: false,
+                invert:  false,
+                FPS: 0.0000
+            };
+        let params2 = {
+                threshold:  50,
+                runoff:     50,
+                //direction: 'vertical',
+                offsetX:     0,
+                offsetY:     0,
+    			jitter:    0,
+                attack:      1,
+                decay:       1,
+                reverse: false,
+                invert:  false,
+
+                accuracy: 2
+            };
+
+        let fader1 = new ProximityEffect(document.querySelectorAll('*.childelement'), params1);
+        // let fader2 = new ProximityEffect(document.querySelectorAll('*.childelement'), params2);
+
+
+        //fader1.target = document.querySelector('#alttarget');
+        //fader1.target = null;
+        //fader1.mode = 'cheesecake';
+        fader1.addStyle('opacity', [100, 0, 0, 0, 30], {runoff: 0});
+        // fader1.addStyle('scale',   [1, 0]);
+        // fader1.addStyle({rule:"transform", func:"scale"}, [1, 0.5]);
+        // fader1.addStyle('rotateX',    [0, 180]);
+        // fader1.addStyle('rotateY',    [0, {value: 0, scatter: 360}]);
+        // fader1.addStyle('rotateZ',    [0, {value: 0, scatter: 360}]);
+        // fader1.addStyle('translateX', [0, {value: 0, scatter: 200}]);
+        // fader1.addStyle('translateY', [0, {value: 0, scatter: 200}]);
+        // fader1.addStyle('translateZ', [0, {value: 50, scatter: 200}]);
+        
+        // fader1.addStyle({rule: "border-width", unit:"px"}, [1, 10]);
+        // fader1.addStyle({rule: 'padding', unit: 'px'}, [{value: 20, scatter: 30}, {value: 100, scatter: 50}]);
+        // fader1.addStyle('opacity', [100, 50]);
+        // fader2.addStyle('scale',   [2, 0]);
+        // fader1.addStyle('blur',    [0, 100, 5], {threshold: 300});
+
+        //fader2.addStyle('scale', [0, 2]);
+        //fader2.addStyle('hueRotate', [0, 180]);
+
+        // individual scale functions risking overwriting
+        //fader1.addStyle('scaleX custom', 1, 0, {rule: 'transform', func: 'scaleX'});
+        //fader2.addStyle('scaleY custom', 1, 0, {rule: 'transform', func: 'scaleY'});
+
+        // experimental transform functions as separate rules
+        //fader1.addStyle(null, 1, 0, {rule: 'scaleX'});
+        //fader2.addStyle(null, 1, 0, {rule: 'scaleY'});
+
+
+        //fader1.removeStyle('opacity');
+        //console.log(fader1.hasStyle('opacity'));
+
+
+        // let counter = 0;
+        // window.setInterval(() => {
+        //     fader1.offsetX = fader2.offsetX = Math.cos(counter++*0.05)*100;
+        //     fader1.offsetY = fader2.offsetY = Math.sin(counter++*0.05)*100;
+        // }, 16);
+
+
+        // window.setInterval(() => {
+        //     var alttarget = document.querySelector('#alttarget');
+        //     alttarget.style.left = fader1.pointer.x+'px';
+        //     alttarget.style.top  = fader1.pointer.y+'px';
+        // }, 16);
+
+        //fader1.FPS = 15;
+        fader1.setCoords(300, 100);
+        fader1.clearCoords();
+
+    </script>
+</body>
+</html>

@@ -634,7 +634,7 @@ class ProximityEffect extends EventTarget
      * @param {number} [params.attack] - , overriding the global value.
      * @param {number} [params.decay] - , overriding the global value.
      */
-    addStyle(property, keyframes, styleParams)
+    addStyle(property, keyframes, params)
     {
         let cssParams;
 
@@ -694,12 +694,14 @@ class ProximityEffect extends EventTarget
 
 
         this.#styles = this.#styles || [];
-        this.#styles.push({
+
+        let styleObj = {
             rules:  cssParams,
             near:   near,
             far:    far,
-            params: styleParams
-        });
+            params: params
+        };
+        this.#styles.push(styleObj);
 
 
         for (let i=0; i<this.#nodeData.length; i++)
@@ -747,6 +749,54 @@ class ProximityEffect extends EventTarget
             }
         }
     }
+
+
+
+
+    /**
+     * 
+     * @param {String} prop - The property name - should return a number.
+     * @param {Object} params - 
+     * @param {number} params.min - 
+     * @param {number} params.max - 
+     * @param {Function} params.callback - 
+     * @returns 
+     */
+    addProperty(name, params)
+    {
+        this.#properties = this.#properties || [];
+
+        let propertyObj = {
+            name: name,
+            params: params
+        };
+        this.#properties.push(propertyObj);
+    }
+
+    /**
+     * 
+     * @param {*} n 
+     * @returns 
+     */
+    hasProperty()
+    {
+
+    }
+
+
+
+    /**
+     * 
+     * @param {*} n 
+     * @returns 
+     */
+    removeProperty()
+    {
+
+    }
+
+
+
 
 
 

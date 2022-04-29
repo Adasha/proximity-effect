@@ -99,7 +99,7 @@ var _refresh = /*#__PURE__*/new WeakSet();
 
 /**
  * Class representing a ProximityEffect.
- * @version 3.0.0-alpha4
+ * @version 4.0.0-alpha1
  * @author Adam Shailer <adasha76@outlook.com>
  * @class
  * @extends EventTarget
@@ -845,7 +845,7 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
   }, {
     key: "addStyle",
-    value: function addStyle(property, keyframes, styleParams) {
+    value: function addStyle(property, keyframes, params) {
       var cssParams; // if specifying a preset style
 
       if (typeof property === "string") {
@@ -888,12 +888,14 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
 
       _classPrivateFieldSet(this, _styles, _classPrivateFieldGet(this, _styles) || []);
 
-      _classPrivateFieldGet(this, _styles).push({
+      var styleObj = {
         rules: cssParams,
         near: near,
         far: far,
-        params: styleParams
-      });
+        params: params
+      };
+
+      _classPrivateFieldGet(this, _styles).push(styleObj);
 
       for (var i = 0; i < _classPrivateFieldGet(this, _nodeData).length; i++) {
         var styles = this.getNodeIndexData(i, "styles") || _classPrivateMethodGet(this, _setNodeIndexData, _setNodeIndexData2).call(this, i, "styles", [])["styles"];
@@ -937,6 +939,46 @@ var ProximityEffect = /*#__PURE__*/function (_EventTarget) {
         }
       }
     }
+    /**
+     * 
+     * @param {String} prop - The property name - should return a number.
+     * @param {Object} params - 
+     * @param {number} params.min - 
+     * @param {number} params.max - 
+     * @param {Function} params.callback - 
+     * @returns 
+     */
+
+  }, {
+    key: "addProperty",
+    value: function addProperty(name, params) {
+      _classPrivateFieldSet(this, _properties, _classPrivateFieldGet(this, _properties) || []);
+
+      var propertyObj = {
+        name: name,
+        params: params
+      };
+
+      _classPrivateFieldGet(this, _properties).push(propertyObj);
+    }
+    /**
+     * 
+     * @param {*} n 
+     * @returns 
+     */
+
+  }, {
+    key: "hasProperty",
+    value: function hasProperty() {}
+    /**
+     * 
+     * @param {*} n 
+     * @returns 
+     */
+
+  }, {
+    key: "removeProperty",
+    value: function removeProperty() {}
     /**
      * Get the distance to the current target from the given node, in pixels.
      * @param {Element} n - The node to check.
