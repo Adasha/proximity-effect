@@ -1,0 +1,212 @@
+﻿<!doctype html>
+<html><!-- InstanceBegin template="/Templates/Lab - Default.dwt" codeOutsideHTMLIsLocked="false" -->
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, user-scalable=no">
+	
+	
+	<!-- InstanceBeginEditable name="doctitle" -->
+    <title>adasha |||||| lab : proximity-effect</title>
+    <!-- InstanceEndEditable -->
+	
+	
+	<link href="https://fonts.googleapis.com/css?family=Share+Tech+Mono" rel="stylesheet">
+	<link href="../../../assets/css/main.css" rel="stylesheet">
+	
+	<style>
+		#inner-frame > header span
+		{
+			vertical-align: top;
+			font-size: 66%;
+		}
+	</style>
+	
+	
+	<!-- InstanceBeginEditable name="head" -->
+	<link href="../../../assets/libs/prism/prism.css" rel="stylesheet">
+    <style>
+
+        #sampleelement
+        {
+            display: flex;
+            flex-wrap: wrap;
+            flex: 1 1 auto;
+            align-content: center;
+            justify-content: center;
+			transform: translateZ(0);
+            height: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 10px;
+            background: #fff;
+        }
+
+        *.childelement
+        {
+            width: 20px;
+            height: 20px;
+            border-radius: 2px;
+            box-sizing: border-box;
+            margin: 0;
+            background-color: #191;
+        }
+
+
+    </style>
+
+<!-- InstanceEndEditable -->
+	
+	
+	<!-- InstanceParam name="HasTitle" type="boolean" value="true" -->
+</head>
+
+<body>
+    
+    
+<div id="outer-frame">
+    
+    
+    <div id="inner-frame">
+        
+        <header>
+            <!--div id="toggleSidecab">&gt;</div-->
+            <h1><a href="http://lab.adasha.com" title="Back to home page"><img src="../../../assets/img/adashabig.png" alt="adasha" width="238" height="74"></a><span>beta</span></h1>
+            <!-- InstanceBeginEditable name="Breadcrumbs" -->
+        <p class="breadcrumbs">
+            <a href="../../../index.html">Lab</a> : <a href="../index.html">proximity-effect</a>
+        </p>
+        <!-- InstanceEndEditable -->
+        </header>
+        
+        <div id="content">
+            
+            <h1><!-- InstanceBeginEditable name="Article Title" -->ProximityEffect demo 8<!-- InstanceEndEditable --></h1>
+            
+            
+            <!-- InstanceBeginEditable name="Article Content" --><!-- #BeginLibraryItem "/Library/Menu - proximity-effect.lbi" -->
+
+
+            <ul class="nav">
+				<li>grids
+					<ul class="group">
+						<li class="req_mouse"><a href="1.html">1*</a></li>
+						<li class="req_mouse"><a href="2.html">2*</a></li>
+						<li class="req_mouse"><a href="3.html">3*</a></li>
+						<li class="req_mouse"><a href="4.html">4*</a></li>
+					</ul>
+				</li>
+                <li class="group">
+					<a href="../../wrap-chars/index.html">text</a>
+					<ul>
+						<li class="req_mouse"><a href="5.html">5*</a></li>
+						<li class="req_mouse"><a href="6.html">6*</a></li>
+						<li class="req_mouse"><a href="7.html">7*</a></li>
+					</ul>
+				</li>
+            </ul>
+
+<!-- #EndLibraryItem --><p>Scale + brightness + jitter.</p>
+
+            <div id="sampleelement" class="centerpiece">
+
+
+                <div class="childelement">&nbsp;</div>
+
+
+            </div>
+
+
+<pre><code class="language-js">
+var t = document.querySelector('#sampleelement');
+var n = t.removeChild(t.querySelector('*.childelement'));
+
+for(var i=0; i&lt;10; i++)
+{
+	for(var j=0; j&lt;10; j++)
+	{
+		t.appendChild(n.cloneNode());
+	}
+}
+
+var params = {
+    threshold: 60,
+    runoff:    50,
+    invert: true,
+	jitter:   120,
+    attack:     0.9,
+    decay:      0.1,
+    accuracy: 1
+};
+
+var fader = new ProximityEffect(document.querySelectorAll('*.childelement'), params);
+
+fader.addEffect('scale',      0.2, 1);
+fader.addEffect('brightness', 0, 650);
+</code></pre>
+            <!-- InstanceEndEditable -->
+        </div>
+        
+    </div>
+    
+    
+    <div id="sidecab">
+        
+    </div>
+    
+    
+</div>
+
+
+<script src="../../../assets/js/main.js"></script>
+<!-- InstanceBeginEditable name="foot" -->
+<script src="../../../assets/libs/prism/prism.js"></script>
+
+<script src="https://unpkg.com/event-target@latest/min.js"></script>
+<script src="../assets/ProximityEffect.min.js"></script>
+
+<script>
+
+    var t = document.querySelector('#sampleelement');
+    var n = t.removeChild(t.querySelector('*.childelement'));
+
+	for(var i=0; i<30; i++)
+	{
+		for(var j=0; j<30; j++)
+		{
+			t.appendChild(n.cloneNode());
+		}
+	}
+
+    var params = {
+        threshold: 30,
+        runoff:    40,
+        invert: false,
+		jitter:    50,
+        attack:     1,
+        decay:      0.1,
+        accuracy: 1
+    };
+
+	var fader = new ProximityEffect(document.querySelectorAll('*.childelement'), params);
+
+	//fader.addEffect('scale',  0, {value: 1.5, scatter: 0.5});
+	fader.addEffect('skewX',   {value: 0, scatter: 120}, 0);
+	fader.addEffect('skewY',   {value: 0, scatter: 120}, 0);
+	fader.addEffect('scaleX',  {value: 1.33, scatter: 1}, 0);
+	fader.addEffect('scaleY',  {value: 1.33, scatter: 1}, 0);
+	fader.addEffect('opacity', {value: 0.8, scatter: 0.5}, 0);
+	//fader.addEffect('rotateX', {value: 0, scatter: 360}, 0);
+	//fader.addEffect('rotateY', {value: 0, scatter: 360}, 0);
+
+	fader.addEventListener('redraw', () => {
+		fader.threshold = (Math.sin(new Date().getTime()*0.002)+1)*30+15;
+	})
+
+
+
+</script>
+
+<!-- InstanceEndEditable -->
+
+</body>
+<!-- InstanceEnd --></html>

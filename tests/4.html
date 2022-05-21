@@ -1,0 +1,108 @@
+﻿<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, user-scalable=no">
+	
+    <title>adasha |||||| lab : proximity-effect 4</title>
+		
+    <style>
+
+		#outer-frame
+		{
+		}
+
+        #sampleelement
+        {
+            display: flex;
+            flex-wrap: wrap;
+            flex: 1 1 auto;
+            align-content: center;
+            justify-content: center;
+			transform: translateZ(0);
+			transform-style: preserve-3d;
+            height: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 10px;
+            background: #eee;
+			background: radial-gradient(ellipse at center, rgb(234,234,234) 1%,rgb(168,168,168) 100%);
+			perspective: 1000px;
+        }
+
+        *.childelement
+        {
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+            box-sizing: border-box;
+            margin: 5px;
+            background-color: #666;
+            box-shadow: 0 0 50px rgba(0,0,0,1) inset;
+        }
+
+
+    </style>
+
+	
+</head>
+
+<body>
+    
+    <h1>ProximityEffect demo 4</h1>
+        
+        
+    <div id="content">
+
+
+        <div id="sampleelement" class="centerpiece">
+
+
+            <div class="childelement">&nbsp;</div>
+
+
+        </div>
+
+
+
+
+
+    </div>
+            
+
+
+<script src="https://unpkg.com/event-target@latest/min.js"></script>
+<script src="../src/ProximityEffect.js"></script>
+
+<script>
+
+    var t = document.querySelector('#sampleelement');
+    var n = t.removeChild(t.querySelector('*.childelement'));
+
+	for(var i=0; i<10; i++)
+	{
+		for(var j=0; j<10; j++)
+		{
+			t.appendChild(n.cloneNode());
+		}
+	}
+
+    var params = {
+        threshold: 80,
+        runoff:    20,
+        attack:     0.4,
+        decay:      0.4,
+    };
+
+    let el = document.querySelectorAll('*.childelement');
+	let fader = new ProximityEffect(el, params);
+
+	fader.addStyle('translateZ', [0, 1000]);
+    fader.addStyle('blur',       [0,   20]);
+
+</script>
+
+
+</body>
+
+</html>

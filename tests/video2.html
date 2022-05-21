@@ -1,0 +1,185 @@
+﻿<!doctype html>
+<html><!-- InstanceBegin template="/Templates/Lab - Default.dwt" codeOutsideHTMLIsLocked="false" -->
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, user-scalable=no">
+	
+	
+	<!-- InstanceBeginEditable name="doctitle" -->
+    <title>adasha |||||| lab : proximity-effect</title>
+    <!-- InstanceEndEditable -->
+	
+	
+	<link href="https://fonts.googleapis.com/css?family=Share+Tech+Mono" rel="stylesheet">
+	<link href="../../../assets/css/main.css" rel="stylesheet">
+	
+	<style>
+		#inner-frame > header span
+		{
+			vertical-align: top;
+			font-size: 66%;
+		}
+	</style>
+	
+	
+	<!-- InstanceBeginEditable name="head" -->
+
+    <style>
+
+        #sampleelement
+        {
+			position: relative;
+            width:  600px;
+			height: 600px;
+            margin-left:  auto;
+            margin-right: auto;
+            background: #eee;
+
+			perspective: 500px;
+			transform-style: preserve-3d;
+		}
+
+        *.childelement
+        {
+			position: absolute;
+            width:  100px;
+            height: 100px;
+			overflow: hidden;
+            box-sizing: border-box;
+            margin:   2px;
+            background-color: #666;
+        }
+
+		video
+		{
+			position: absolute;
+		}
+
+    </style>
+
+<!-- InstanceEndEditable -->
+	
+	
+	<!-- InstanceParam name="HasTitle" type="boolean" value="true" -->
+</head>
+
+<body>
+    
+    
+<div id="outer-frame">
+    
+    
+    <div id="inner-frame">
+        
+        <header>
+            <!--div id="toggleSidecab">&gt;</div-->
+            <h1><a href="http://lab.adasha.com" title="Back to home page"><img src="../../../assets/img/adashabig.png" alt="adasha" width="238" height="74"></a><span>beta</span></h1>
+            <!-- InstanceBeginEditable name="Breadcrumbs" -->
+        <p class="breadcrumbs">
+            <a href="../../../index.html">Lab</a> : <a href="../index.html">ProximityEffect</a>
+        </p>
+        <!-- InstanceEndEditable -->
+        </header>
+        
+        <div id="content">
+            
+            <h1><!-- InstanceBeginEditable name="Article Title" -->ProximityEffect demo 5b<!-- InstanceEndEditable --></h1>
+            
+            
+            <!-- InstanceBeginEditable name="Article Content" --><!-- #BeginLibraryItem "/Library/Menu - proximity-effect.lbi" -->
+
+
+            <ul class="nav">
+				<li>grids
+					<ul class="group">
+						<li class="req_mouse"><a href="1.html">1*</a></li>
+						<li class="req_mouse"><a href="2.html">2*</a></li>
+						<li class="req_mouse"><a href="3.html">3*</a></li>
+						<li class="req_mouse"><a href="4.html">4*</a></li>
+					</ul>
+				</li>
+                <li class="group">
+					<a href="../../wrap-chars/index.html">text</a>
+					<ul>
+						<li class="req_mouse"><a href="5.html">5*</a></li>
+						<li class="req_mouse"><a href="6.html">6*</a></li>
+						<li class="req_mouse"><a href="7.html">7*</a></li>
+					</ul>
+				</li>
+            </ul>
+
+<!-- #EndLibraryItem --><div id="sampleelement">
+
+
+                <div class="childelement">
+					<video src="../../img/esheep-purplespinner.mp4" width="800" height="600" loop>
+				</div>
+
+
+            </div>
+
+            <!-- InstanceEndEditable -->
+        </div>
+        
+    </div>
+    
+    
+    <div id="sidecab">
+        
+    </div>
+    
+    
+</div>
+
+
+<script src="../../../assets/js/main.js"></script>
+<!-- InstanceBeginEditable name="foot" -->
+
+<script src="../repo/src/ProximityEffect.js"></script>
+<script src="../../frame-seq/repo/src/HTMLFrameSeqElement.js"></script>
+<script>
+
+    var rows = 5,
+		cols = 5,
+    	t = document.querySelector('#sampleelement'),
+    	n = t.removeChild(t.querySelector('*.childelement'));
+
+		for(var i=0; i<cols; i++)
+		{
+			for(var j=0; j<rows; j++)
+			{
+			    var e = t.appendChild(n.cloneNode(true)),
+					v = e.querySelector('video'),
+					x = i*100,
+					y = j*100;
+
+				e.style.left =  (x+ 50)+'px';
+				e.style.top  =  (y+ 50)+'px';
+				v.style.left = -(x+150)+'px';
+				v.style.top  = -(y+ 50)+'px';
+			}
+		}
+
+	var params = {
+        threshold: 10,
+        distance: 800,
+    };
+
+    var fader = new ProximityEffect(document.querySelectorAll('*.childelement'), params);
+
+	fader.addEventListener('redraw', function(evt) {
+		var v;
+		for(var c=0; c<this.nodes.length; c++)
+		{
+			v = this.nodes[c].querySelector('video');
+			v.currentTime = this.distanceFrom(c) * v.duration;
+			//v.play();
+		}
+	});
+
+</script>
+
+<!-- InstanceEndEditable -->
+
+</body>
+<!-- InstanceEnd --></html>

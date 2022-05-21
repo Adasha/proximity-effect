@@ -1,0 +1,131 @@
+﻿<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, user-scalable=no">
+	
+    <title>adasha |||||| lab : proximity-effect 6</title>
+	
+    <style>
+
+        #content
+        {
+        }
+
+        #jabberwocky
+        {
+            font: 160% 'Eater', cursive;
+            width: -webkit-max-content;
+            width: -moz-max-content;
+            width: max-content;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 2em;
+            color: #000;
+            background: #eee;
+            overflow-wrap: break-word;
+            white-space: normal;
+            word-wrap: normal;
+			transform: translateZ(0);
+			-moz-perspective: 200px;
+			-webkit-perspective: 200px;
+			perspective: 200px;
+			/* enable for depth sort but slower */
+			transform-style: preserve-3d;
+        }
+		*.line
+		{
+		}
+        *.line > *
+        {
+			display: inline-block;
+			pointer-events: none;
+        }
+
+        @media (max-width: 720px)
+        {
+            #jabberwocky
+            {
+				padding: 1em;
+				font-size: 140%;
+				width: -webkit-fit-content;
+				width: -moz-fit-content;
+				width: fit-content;
+            }
+        }
+
+
+    </style>
+
+</head>
+
+<body>
+    
+    <h1>ProximityEffect demo 6</h1>
+            
+    <div id="content">
+        
+        
+        <blockquote id="jabberwocky" class="centerpiece">
+            <span class="line">’Twas brillig, and the slithy toves</span><br>
+            <span class="line">Did gyre and gimble in the wabe:</span><br>
+            <span class="line">All mimsy were the borogoves,</span><br>
+            <span class="line">And the mome raths outgrabe.</span>
+        </blockquote>
+
+
+    </div>
+    
+
+<script src="https://unpkg.com/event-target@latest/min.js"></script>
+<script src="assets/WrapChars.min.js"></script>
+<script src="../src/ProximityEffect.js"></script>
+
+<script>
+
+    let poem = document.querySelector('*.centerpiece');
+    WrapChars.wrap(poem);
+
+
+    let params = {
+        threshold:  20,
+        distance:  100,
+		jitter:     50,
+		direction: 'horizontal',
+        attack:      0.3,
+        decay:       0.3,
+		doPresetDistances: false,
+		//invertDistancePreset: true
+    };
+
+    let els = document.querySelectorAll('*.line > *'),
+        proxEffect = new ProximityEffect(els, params);
+
+	proxEffect.addStyle('translateX', [                      0, {value:  0, scatter:  50, scatterMethod: 'normal'}] );
+	proxEffect.addStyle('translateY', [                      0, {value:  0, scatter:  50, scatterMethod: 'normal'}] );
+    proxEffect.addStyle('translateZ', [                      0, {value: 75, scatter:  50, scatterMethod: 'uniform'}]);
+
+    proxEffect.addStyle(   'rotateX', [                      0, {value:  0, scatter: 270, scatterMethod: 'normal'}] );
+	proxEffect.addStyle(   'rotateY', [                      0, {value:  0, scatter: 270, scatterMethod: 'normal'}] );
+	proxEffect.addStyle(   'rotateZ', [{value: 0, scatter: 30}, {value:  0, scatter:  90}                         ] );
+
+	proxEffect.addEventListener('ready', e => {
+
+	});
+
+	// proxEffect.addEventListener('redraw', e => {
+	// 	for(let n=0; n<proxEffect.totalNodes; n++)
+	// 	{
+	// 		let z = proxEffect.getNodeIndexData(n, 'effects')[2].far;
+	// 		let d = proxEffect.distanceFromIndex(n);
+	// 		let f = Math.abs(z)*Math.pow(d, 2)*0.025;
+	// 		proxEffect.nodes[n].style['filter'] = `blur(${f}px) brightness(${50}%)`;
+	// 	}
+	// });
+
+</script>
+
+
+</body>
+
+</html>

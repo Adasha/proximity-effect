@@ -102,7 +102,7 @@ class ProximityEffect extends EventTarget
         if (!nodes) {
             throw new Error(`ProximityEffect: nodes argument is required.`);
         }
-
+        
         // turn off centre calculations during setup to avoid calling repeatedly
         this.preventCenterCalculations = true;
 
@@ -219,6 +219,14 @@ class ProximityEffect extends EventTarget
     }
 
 
+
+    /**
+     * 
+     */
+    get totalNodes()
+    {
+        return this.nodes.length;
+    }
 
 
 

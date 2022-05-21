@@ -1,0 +1,97 @@
+﻿<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, user-scalable=no">
+	
+    <style>
+
+        #jabberwocky
+        {
+            font: 160% 'Eater', cursive;
+            width: -webkit-max-content;
+            width: -moz-max-content;
+            width: max-content;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 2em;
+            color: #000;
+            background: #eee;
+            overflow-wrap: break-word;
+            white-space: normal;
+            word-wrap: normal;
+        }
+
+        *.line > *
+        {
+			display: inline-block;
+        }
+
+        @media (max-width: 720px)
+        {
+            #jabberwocky
+            {
+				padding: 1em;
+				font-size: 140%;
+				width: -webkit-fit-content;
+				width: -moz-fit-content;
+				width: fit-content;
+            }
+        }
+
+
+    </style>
+
+</head>
+
+<body>
+    
+    <h1>ProximityEffect demo 5</h1>
+    
+            
+    <div id="content">
+        
+        <blockquote id="jabberwocky" class="centerpiece">
+            <span class="line">’Twas brillig, and the slithy toves</span><br>
+            <span class="line">Did gyre and gimble in the wabe:</span><br>
+            <span class="line">All mimsy were the borogoves,</span><br>
+            <span class="line">And the mome raths outgrabe.</span>
+        </blockquote>
+
+
+    </div>
+            
+    
+
+<script src="https://unpkg.com/event-target@latest/min.js"></script>
+<script src="assets/WrapChars.min.js"></script>
+<script src="../src/ProximityEffect.js"></script>
+
+<script>
+
+	let poem = document.querySelector('*.centerpiece');
+	WrapChars.wrap(poem);
+
+
+    let params = {
+        threshold: 40,
+        distance:  20,
+		jitter:    30,
+        attack:     0.6,
+        decay:      0.6
+    };
+
+	let els = document.querySelectorAll('*.line > *'),
+        proxEffect = new ProximityEffect(els, params);
+    
+    proxEffect.addStyle('opacity', [100, 50]);
+    proxEffect.addStyle('scale',   [  1,  1.33]);
+    proxEffect.addStyle('blur',    [  0,  5]);
+
+
+</script>
+
+
+</body>
+
+</html>

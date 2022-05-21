@@ -1,0 +1,146 @@
+﻿<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, user-scalable=no">
+	
+	
+    <title>adasha |||||| lab : proximity-effect 3</title>
+	
+		
+    <style>
+
+        #parentelement
+        {
+
+            align-content: center;
+            justify-content: center;
+            height: 640px;
+            margin-left: auto;
+            margin-right: auto;
+            position: relative;
+
+			-webkit-perspective: 500px;
+			-moz-perspective: 500px;
+			perspective: 500px;
+
+			-webkit-transform-style: preserve-3d;
+			-moz-transform-style: preserve-3d;
+			transform-style: preserve-3d;
+        }
+
+        *.childelement
+        {
+            width: 64px;
+            height: 64px;
+            position: absolute;
+			pointer-events: none;
+
+			-webkit-transform-style: preserve-3d;
+			-moz-transform-style: preserve-3d;
+			transform-style: preserve-3d;
+        }
+
+        *.childelement > *
+        {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            top: 0;
+            background-size: 640px;
+
+            -webkit-backface-visibility: hidden;
+            -moz-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+
+        *.childelement > *:first-child
+        {
+            background-image: url('assets/sunset1.jpg');
+        }
+        *.childelement > *:last-child
+        {
+			background-image: url('assets/sunset2.jpg');
+			transform: rotateY(180deg);
+        }
+
+
+    </style>
+
+	
+</head>
+
+<body>
+    
+    <h1>ProximityEffect demo 3</h1>
+            
+    <div id="content">
+        
+
+        <div id="parentelement" class="centerpiece">
+
+
+            <div class="childelement">
+                <div></div>
+                <div></div>
+            </div>
+
+
+        </div>
+
+
+    </div>
+        
+<script src="https://unpkg.com/event-target@latest/min.js"></script>
+<script src="../src/ProximityEffect.js"></script>
+
+<script>
+
+function init() {
+	let cols = 10,
+		rows = 10,
+		tileSize = 64,
+    	t = document.querySelector('#parentelement'),
+    	n = t.removeChild(t.querySelector('*.childelement'));
+
+    for(let i=0; i<cols; i++)
+    {
+        for(let j=0; j<rows; j++)
+        {
+            let e = t.appendChild(n.cloneNode(true)),
+				x = i*tileSize,
+				y = j*tileSize;
+
+            e.style.left = x+'px';
+            e.style.top  = y+'px';
+			e.children[0].style.backgroundPositionX = e.children[1].style.backgroundPositionX = -x+'px';
+			e.children[0].style.backgroundPositionY = e.children[1].style.backgroundPositionY = -y+'px';
+
+			e.dataset['offsetx'] = (5-j)*32;
+        }
+    }
+
+    let params = {
+        threshold: 64,
+        runoff:    96,
+		direction: "horizontal",
+        attack:     0.6,
+        decay:      0.6,
+		accuracy:   1
+    };
+
+	let proxEffect = new ProximityEffect(document.querySelectorAll('*.childelement'), params);
+	proxEffect.addStyle('rotateY', [180,  0]);
+	proxEffect.addStyle('translateZ', [40,  0]);
+	proxEffect.addStyle('scale', [1.01,  1]);
+};
+
+init();
+
+</script>
+
+
+</body>
+
+</html>

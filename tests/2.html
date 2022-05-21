@@ -1,0 +1,109 @@
+﻿<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, user-scalable=no">
+	
+	
+    <title>adasha |||||| lab : proximity-effect test 2</title>
+		
+	
+    <style>
+
+        #containingelement
+        {
+			transform-style: preserve-3d;
+			perspective: 500px;
+			transform: rotateX(0deg);
+
+            display: flex;
+            flex-wrap: wrap;
+            flex: 1 1 auto;
+            align-content: center;
+            justify-content: center;
+            height: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 10px;
+            background: #eee;
+
+		}
+
+        *.childelement
+        {
+            width: 100px;
+            height: 100px;
+            box-sizing: border-box;
+            margin: 2px;
+            background-color: #900;
+        }
+
+
+    </style>
+
+	
+	
+</head>
+
+<body>
+    
+    
+    <h1>ProximityEffect demo 2</h1>
+        
+        
+    <div id="content">
+        
+        
+
+        <div id="containingelement" class="centerpiece">
+
+
+            <div class="childelement">&nbsp;</div>
+
+
+        </div>
+
+
+    </div>
+        
+<script src="https://unpkg.com/event-target@latest/min.js"></script>
+<script src="../src/ProximityEffect.js"></script>
+
+<script>
+
+    var t = document.querySelector('#containingelement');
+    var n = t.removeChild(t.querySelector('*.childelement'));
+    var fader;
+
+    var params = {
+        threshold: 60,
+        distance:  60,
+        attack: 0.6,
+        decay:  0.6,
+    };
+
+    for(var i=0; i<5; i++)
+    {
+        for(var j=0; j<5; j++)
+        {
+            t.appendChild(n.cloneNode());
+        }
+    }
+
+    fader = new ProximityEffect(document.querySelectorAll('*.childelement'), params);
+
+    fader.addStyle('translateZ', [{value: 200, scatter: 50}, {value: 0}]);
+    fader.addStyle('blur',       [ 10,   0]);
+    fader.addStyle('saturate',   [100,   0]);
+    fader.addStyle('brightness', [100, 250]);
+
+	 //fix for DOM readiness
+	if(document.readyState==='completed') fader.setCenterPoints();
+	else window.addEventListener('load', () => fader.setCenterPoints());
+
+</script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,179 @@
+﻿<!doctype html>
+<html><!-- InstanceBegin template="/Templates/Lab - Default.dwt" codeOutsideHTMLIsLocked="false" -->
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, user-scalable=no">
+	
+	
+	<!-- InstanceBeginEditable name="doctitle" -->
+    <title>adasha |||||| lab : proximity-effect</title>
+    <!-- InstanceEndEditable -->
+	
+	
+	<link href="https://fonts.googleapis.com/css?family=Share+Tech+Mono" rel="stylesheet">
+	<link href="../../../assets/css/main.css" rel="stylesheet">
+	
+	<style>
+		#inner-frame > header span
+		{
+			vertical-align: top;
+			font-size: 66%;
+		}
+	</style>
+	
+	
+	<!-- InstanceBeginEditable name="head" -->
+	<link href="../../../assets/libs/prism/prism.css" rel="stylesheet">
+    <style>
+
+        #scene
+        {
+
+			width: 100%;
+            height: 640px;
+
+			perspective: 800px;
+        }
+
+		*.cube
+		{
+			top: 50%;
+			left: 50%;
+			transform-style: preserve-3d;
+		}
+
+
+		*.face
+		{
+			width: 100px;
+			height: 100px;
+			margin: -50px;
+			position: absolute;
+			background-color: #666;
+		}
+
+		*.left   { transform: rotateY( 90deg) translateZ(50px); background-color: #f00; }
+		*.right  { transform: rotateY(-90deg) translateZ(50px); background-color: #0ff; }
+		*.top    { transform: rotateX( 90deg) translateZ(50px); background-color: #0f0; }
+		*.bottom { transform: rotateX(-90deg) translateZ(50px); background-color: #f0f; }
+		*.front  { transform: rotateX(  0deg) translateZ(50px); background-color: #00f; }
+		*.back   { transform: rotateY(180deg) translateZ(50px); background-color: #ff0; }
+
+    </style>
+
+<!-- InstanceEndEditable -->
+	
+	
+	<!-- InstanceParam name="HasTitle" type="boolean" value="true" -->
+</head>
+
+<body>
+    
+    
+<div id="outer-frame">
+    
+    
+    <div id="inner-frame">
+        
+        <header>
+            <!--div id="toggleSidecab">&gt;</div-->
+            <h1><a href="http://lab.adasha.com" title="Back to home page"><img src="../../../assets/img/adashabig.png" alt="adasha" width="238" height="74"></a><span>beta</span></h1>
+            <!-- InstanceBeginEditable name="Breadcrumbs" -->
+        <p class="breadcrumbs">
+            <a href="../../../index.html">Lab</a> : <a href="../index.html">proximity-effect</a>
+        </p>
+        <!-- InstanceEndEditable -->
+        </header>
+        
+        <div id="content">
+            
+            <h1><!-- InstanceBeginEditable name="Article Title" -->ProximityEffect demo 7<!-- InstanceEndEditable --></h1>
+            
+            
+            <!-- InstanceBeginEditable name="Article Content" --><!-- #BeginLibraryItem "/Library/Menu - proximity-effect.lbi" -->
+
+
+            <ul class="nav">
+				<li>grids
+					<ul class="group">
+						<li class="req_mouse"><a href="1.html">1*</a></li>
+						<li class="req_mouse"><a href="2.html">2*</a></li>
+						<li class="req_mouse"><a href="3.html">3*</a></li>
+						<li class="req_mouse"><a href="4.html">4*</a></li>
+					</ul>
+				</li>
+                <li class="group">
+					<a href="../../wrap-chars/index.html">text</a>
+					<ul>
+						<li class="req_mouse"><a href="5.html">5*</a></li>
+						<li class="req_mouse"><a href="6.html">6*</a></li>
+						<li class="req_mouse"><a href="7.html">7*</a></li>
+					</ul>
+				</li>
+            </ul>
+
+<!-- #EndLibraryItem --><p>Spinning cubes.</p>
+
+            <div id="scene">
+
+
+                <div class="cube">
+                    <div class="face left"></div>
+					<div class="face right"></div>
+					<div class="face top"></div>
+					<div class="face bottom"></div>
+					<div class="face front"></div>
+					<div class="face back"></div>
+                </div>
+
+
+            </div>
+
+
+<pre><code class="language-js">
+</code></pre>
+            <!-- InstanceEndEditable -->
+        </div>
+        
+    </div>
+    
+    
+    <div id="sidecab">
+        
+    </div>
+    
+    
+</div>
+
+
+<script src="../../../assets/js/main.js"></script>
+<!-- InstanceBeginEditable name="foot" -->
+<script src="../../../assets/libs/prism/prism.js"></script>
+
+<script src="https://unpkg.com/event-target@latest/min.js"></script>
+<script src="../assets/ProximityEffect.min.js"></script>
+
+<script>
+
+function init() {
+
+    let params = {
+        threshold: 100,
+        runoff:      0,
+        attack:      0.6,
+        decay:       0.6,
+		accuracy:    1
+    };
+
+	let fader = new ProximityEffect(document.querySelectorAll('*.cube'), params);
+	fader.addEffect('rotateZ', 90, 0);
+};
+
+init();
+
+</script>
+
+<!-- InstanceEndEditable -->
+
+</body>
+<!-- InstanceEnd --></html>
