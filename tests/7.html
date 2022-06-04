@@ -1,29 +1,12 @@
 ﻿<!doctype html>
-<html><!-- InstanceBegin template="/Templates/Lab - Default.dwt" codeOutsideHTMLIsLocked="false" -->
+<html>
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, user-scalable=no">
 	
-	
-	<!-- InstanceBeginEditable name="doctitle" -->
     <title>adasha |||||| lab : proximity-effect</title>
-    <!-- InstanceEndEditable -->
+		
 	
-	
-	<link href="https://fonts.googleapis.com/css?family=Share+Tech+Mono" rel="stylesheet">
-	<link href="../../../assets/css/main.css" rel="stylesheet">
-	
-	<style>
-		#inner-frame > header span
-		{
-			vertical-align: top;
-			font-size: 66%;
-		}
-	</style>
-	
-	
-	<!-- InstanceBeginEditable name="head" -->
-	<link href="../../../assets/libs/prism/prism.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Eater" rel="stylesheet">
     <style>
 
@@ -46,165 +29,42 @@
 			/* enable for depth sort but slower */
 			transform-style: preserve-3d;
         }
-		*.line
-		{
-		}
         *.line > *
         {
 			display: inline-block;
 			pointer-events: none;
         }
 
-        @media (max-width: 720px)
-        {
-            #jabberwocky
-            {
-				padding: 1em;
-				font-size: 140%;
-				width: -webkit-fit-content;
-				width: -moz-fit-content;
-				width: fit-content;
-            }
-        }
 
 
     </style>
 
-<!-- InstanceEndEditable -->
-	
-	
-	<!-- InstanceParam name="HasTitle" type="boolean" value="true" -->
 </head>
 
 <body>
     
+<h1>ProximityEffect demo 6</h1>
     
-<div id="outer-frame">
-    
-    
-    <div id="inner-frame">
         
-        <header>
-            <!--div id="toggleSidecab">&gt;</div-->
-            <h1><a href="http://lab.adasha.com" title="Back to home page"><img src="../../../assets/img/adashabig.png" alt="adasha" width="238" height="74"></a><span>beta</span></h1>
-            <!-- InstanceBeginEditable name="Breadcrumbs" -->
-        <p class="breadcrumbs">
-            <a href="../../../index.html">Lab</a> : <a href="../index.html">proximity-effect</a>
-        </p>
-        <!-- InstanceEndEditable -->
-        </header>
-        
-        <div id="content">
-            
-            <h1><!-- InstanceBeginEditable name="Article Title" -->ProximityEffect demo 6<!-- InstanceEndEditable --></h1>
-            
-            
-            <!-- InstanceBeginEditable name="Article Content" --><!-- #BeginLibraryItem "/Library/Menu - proximity-effect.lbi" -->
+<div id="content">
+	
 
-
-            <ul class="nav">
-				<li>grids
-					<ul class="group">
-						<li class="req_mouse"><a href="1.html">1*</a></li>
-						<li class="req_mouse"><a href="2.html">2*</a></li>
-						<li class="req_mouse"><a href="3.html">3*</a></li>
-						<li class="req_mouse"><a href="4.html">4*</a></li>
-					</ul>
-				</li>
-                <li class="group">
-					<a href="../../wrap-chars/index.html">text</a>
-					<ul>
-						<li class="req_mouse"><a href="5.html">5*</a></li>
-						<li class="req_mouse"><a href="6.html">6*</a></li>
-						<li class="req_mouse"><a href="7.html">7*</a></li>
-					</ul>
-				</li>
-            </ul>
-
-<!-- #EndLibraryItem -->
-
-			<blockquote id="jabberwocky" class="centerpiece">
-                <span class="line">’Twas brillig, and the slithy toves</span><br>
-                <span class="line">Did gyre and gimble in the wabe:</span><br>
-                <span class="line">All mimsy were the borogoves,</span><br>
-                <span class="line">And the mome raths outgrabe.</span>
-            </blockquote>
-
-			<p><a href="https://github.com/Adasha/proximity-effect" target="_blank">View/download project on GitHub.</a></p>
-
-			<p><a href="../../wrap-chars/index.html">wrap-chars page.</a></p>
-
-
-<pre><code class="language-js">
-// split the words into separate elements using wrap-chars
-let poem = document.querySelector('*.centerpiece');
-WrapChars.wrap(poem, {
-	split: 'word'
-});
-
-</code></pre>
-
-<pre><code class="language-js">
-// effect config
-let params = {
-    threshold: 20,
-    distance: 100,
-	jitter:    50,
-	direction: 'vertical',
-    attack:     0.7,
-    decay:      0.2,
-};
-
-</code></pre>
-
-<pre><code class="language-js">
-// add effects
-proxEffect.addEffect('translateX',                       0, {value:  0, scatter:  50, scatterMethod: 'normal'});
-proxEffect.addEffect('translateY',                       0, {value:  0, scatter:  50, scatterMethod: 'normal'});
-proxEffect.addEffect('translateZ',                       0, {value: 25, scatter: 150, scatterMethod: 'uniform'});
-proxEffect.addEffect(   'rotateX',                       0, {value:  0, scatter: 270, scatterMethod: 'normal'});
-proxEffect.addEffect(   'rotateY',                       0, {value:  0, scatter: 270, scatterMethod: 'normal'});
-proxEffect.addEffect(   'rotateZ', {value: 0, scatter: 10}, {value:  0, scatter:  90});
-
-</code></pre>
-
-<pre><code class="language-js">
-// get data through effect API to add depth blur
-proxEffect.addEventListener('redraw', e =&gt; {
-	for(let n=0; n&lt;proxEffect.nodes.length; n++)
-	{
-		let z = proxEffect.getNodeIndexData(n, 'effects')[2].far;
-		let d = proxEffect.distanceFromIndex(n);
-		let f = Math.abs(z)*Math.pow(d, 2)*0.025;
-		proxEffect.nodes[n].style['filter'] = `blur(${f}px) brightness(${50}%)`;
-	}
-});
-
-</code></pre>
-
-            <!-- InstanceEndEditable -->
-        </div>
-        
-    </div>
-    
-    
-    <div id="sidecab">
-        
-    </div>
+	<blockquote id="jabberwocky" class="centerpiece">
+		<span class="line">’Twas brillig, and the slithy toves</span><br>
+		<span class="line">Did gyre and gimble in the wabe:</span><br>
+		<span class="line">All mimsy were the borogoves,</span><br>
+		<span class="line">And the mome raths outgrabe.</span>
+	</blockquote>
     
     
 </div>
 
-
-<script src="../../../assets/js/main.js"></script>
-<!-- InstanceBeginEditable name="foot" -->
 <script src="https://unpkg.com/event-target@latest/min.js"></script>
-<script src="../../wrap-chars/assets/WrapChars.min.js"></script>
-<!-- <script src="https://unpkg.com/wrap-chars"></script> -->
-<script src="../assets/ProximityEffect.js"></script>
+<script src="assets/WrapChars.min.js"></script>
 
 
-<script>
+<script type="module">
+    import ProximityEffect from '../src/ProximityEffect.js';
 
     let poem = document.querySelector('*.centerpiece');
         WrapChars.wrap(poem, {
@@ -226,12 +86,12 @@ proxEffect.addEventListener('redraw', e =&gt; {
 
     let proxEffect = new ProximityEffect(els, params);
 
-	proxEffect.addEffect('translateX',                       [0, {value:  0, scatter:  50, scatterMethod: 'normal'}]);
-	proxEffect.addEffect('translateY',                       [0, {value:  0, scatter:  50, scatterMethod: 'normal'}]);
-	proxEffect.addEffect('translateZ',                       [0, {value: 25, scatter: 150, scatterMethod: 'uniform'}]);
-	proxEffect.addEffect(   'rotateX',                       [0, {value:  0, scatter: 270, scatterMethod: 'normal'}]);
-	proxEffect.addEffect(   'rotateY',                       [0, {value:  0, scatter: 270, scatterMethod: 'normal'}]);
-	proxEffect.addEffect(   'rotateZ', [{value: 0, scatter: 10}, {value:  0, scatter:  90}]);
+	proxEffect.addStyle('translateX',                       [0, {value:  0, scatter:  50, scatterMethod: 'normal'}]);
+	proxEffect.addStyle('translateY',                       [0, {value:  0, scatter:  50, scatterMethod: 'normal'}]);
+	proxEffect.addStyle('translateZ',                       [0, {value: 25, scatter: 150, scatterMethod: 'uniform'}]);
+	proxEffect.addStyle(   'rotateX',                       [0, {value:  0, scatter: 270, scatterMethod: 'normal'}]);
+	proxEffect.addStyle(   'rotateY',                       [0, {value:  0, scatter: 270, scatterMethod: 'normal'}]);
+	proxEffect.addStyle(   'rotateZ', [{value: 0, scatter: 10}, {value:  0, scatter:  90}]);
 
 	proxEffect.addEventListener('ready', e => {
 
@@ -240,7 +100,7 @@ proxEffect.addEventListener('redraw', e =&gt; {
 	proxEffect.addEventListener('redraw', e => {
 		for(let n=0; n<proxEffect.nodes.length; n++)
 		{
-			let z = proxEffect.getNodeIndexData(n, 'effects')[2].far;
+			let z = proxEffect.getNodeIndexData(n, 'styles')[2].far;
 			let d = proxEffect.distanceFromIndex(n);
 			let f = Math.abs(z)*Math.pow(d, 2)*0.025;
 			proxEffect.nodes[n].style['filter'] = `blur(${f}px) brightness(${50}%)`;
@@ -249,8 +109,6 @@ proxEffect.addEventListener('redraw', e =&gt; {
 
 </script>
 
-<script src="../../../assets/libs/prism/prism.js"></script>
-<!-- InstanceEndEditable -->
 
 </body>
-<!-- InstanceEnd --></html>
+</html>

@@ -67,9 +67,9 @@
     </div>
         
 <script src="https://unpkg.com/event-target@latest/min.js"></script>
-<script src="../src/ProximityEffect.js"></script>
 
-<script>
+<script type="module">
+    import ProximityEffect from '../src/ProximityEffect.js';
 
     var t = document.querySelector('#containingelement');
     var n = t.removeChild(t.querySelector('*.childelement'));

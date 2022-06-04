@@ -7,11 +7,6 @@
     <title>adasha |||||| lab : proximity-effect 6</title>
 	
     <style>
-
-        #content
-        {
-        }
-
         #jabberwocky
         {
             font: 160% 'Eater', cursive;
@@ -26,35 +21,21 @@
             overflow-wrap: break-word;
             white-space: normal;
             word-wrap: normal;
-			transform: translateZ(0);
-			-moz-perspective: 200px;
-			-webkit-perspective: 200px;
-			perspective: 200px;
-			/* enable for depth sort but slower */
-			transform-style: preserve-3d;
         }
-		*.line
-		{
-		}
-        *.line > *
+        *.line
         {
-			display: inline-block;
+            perspective: 200px;
+            display: inline-block;
+			/* enable for depth sort but slower: 
+			transform-style: preserve-3d;*/
+        }
+        *.line > span
+        {
 			pointer-events: none;
+            display: inline-block;
+            -moz-display: inline flow-root;
+            -webkit-display: inline flow-root;
         }
-
-        @media (max-width: 720px)
-        {
-            #jabberwocky
-            {
-				padding: 1em;
-				font-size: 140%;
-				width: -webkit-fit-content;
-				width: -moz-fit-content;
-				width: fit-content;
-            }
-        }
-
-
     </style>
 
 </head>
@@ -77,13 +58,14 @@
     </div>
     
 
-<script src="https://unpkg.com/event-target@latest/min.js"></script>
+<!-- <script src="https://unpkg.com/event-target@latest/min.js"></script> -->
 <script src="assets/WrapChars.min.js"></script>
-<script src="../src/ProximityEffect.js"></script>
+<!-- <script src="../src/ProximityEffect.js" type="module"></script> -->
 
-<script>
+<script type="module">
+    import ProximityEffect from '../src/ProximityEffect.js';
 
-    let poem = document.querySelector('*.centerpiece');
+    let poem = document.getElementById('jabberwocky');
     WrapChars.wrap(poem);
 
 
@@ -94,7 +76,7 @@
 		direction: 'horizontal',
         attack:      0.3,
         decay:       0.3,
-		doPresetDistances: false,
+		// doPresetDistances: false,
 		//invertDistancePreset: true
     };
 
@@ -109,19 +91,19 @@
 	proxEffect.addStyle(   'rotateY', [                      0, {value:  0, scatter: 270, scatterMethod: 'normal'}] );
 	proxEffect.addStyle(   'rotateZ', [{value: 0, scatter: 30}, {value:  0, scatter:  90}                         ] );
 
-	proxEffect.addEventListener('ready', e => {
+	// proxEffect.addEventListener('ready', e => {
 
-	});
-
-	// proxEffect.addEventListener('redraw', e => {
-	// 	for(let n=0; n<proxEffect.totalNodes; n++)
-	// 	{
-	// 		let z = proxEffect.getNodeIndexData(n, 'effects')[2].far;
-	// 		let d = proxEffect.distanceFromIndex(n);
-	// 		let f = Math.abs(z)*Math.pow(d, 2)*0.025;
-	// 		proxEffect.nodes[n].style['filter'] = `blur(${f}px) brightness(${50}%)`;
-	// 	}
 	// });
+
+	proxEffect.addEventListener('redraw', e => {
+		for(let n=0; n<proxEffect.totalNodes; n++)
+		{
+			let z = proxEffect.getNodeIndexData(n, 'styles')[2].far;
+			let d = proxEffect.distanceFromIndex(n);
+			let f = Math.abs(z)*Math.pow(d, 2)*0.025;
+			proxEffect.nodes[n].style['filter'] = `blur(${f}px) brightness(${50}%)`;
+		}
+	});
 
 </script>
 

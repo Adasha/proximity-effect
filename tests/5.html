@@ -65,9 +65,9 @@
 
 <script src="https://unpkg.com/event-target@latest/min.js"></script>
 <script src="assets/WrapChars.min.js"></script>
-<script src="../src/ProximityEffect.js"></script>
 
-<script>
+<script type="module">
+    import ProximityEffect from '../src/ProximityEffect.js';
 
 	let poem = document.querySelector('*.centerpiece');
 	WrapChars.wrap(poem);

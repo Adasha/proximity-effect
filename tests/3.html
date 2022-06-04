@@ -93,50 +93,50 @@
     </div>
         
 <script src="https://unpkg.com/event-target@latest/min.js"></script>
-<script src="../src/ProximityEffect.js"></script>
 
-<script>
+<script type="module">
+    import ProximityEffect from '../src/ProximityEffect.js';
 
-function init() {
-	let cols = 10,
-		rows = 10,
-		tileSize = 64,
-    	t = document.querySelector('#parentelement'),
-    	n = t.removeChild(t.querySelector('*.childelement'));
+    function init() {
+        let cols = 10,
+            rows = 10,
+            tileSize = 64,
+            t = document.querySelector('#parentelement'),
+            n = t.removeChild(t.querySelector('*.childelement'));
 
-    for(let i=0; i<cols; i++)
-    {
-        for(let j=0; j<rows; j++)
+        for(let i=0; i<cols; i++)
         {
-            let e = t.appendChild(n.cloneNode(true)),
-				x = i*tileSize,
-				y = j*tileSize;
+            for(let j=0; j<rows; j++)
+            {
+                let e = t.appendChild(n.cloneNode(true)),
+                    x = i*tileSize,
+                    y = j*tileSize;
 
-            e.style.left = x+'px';
-            e.style.top  = y+'px';
-			e.children[0].style.backgroundPositionX = e.children[1].style.backgroundPositionX = -x+'px';
-			e.children[0].style.backgroundPositionY = e.children[1].style.backgroundPositionY = -y+'px';
+                e.style.left = x+'px';
+                e.style.top  = y+'px';
+                e.children[0].style.backgroundPositionX = e.children[1].style.backgroundPositionX = -x+'px';
+                e.children[0].style.backgroundPositionY = e.children[1].style.backgroundPositionY = -y+'px';
 
-			e.dataset['offsetx'] = (5-j)*32;
+                e.dataset['offsetx'] = (5-j)*32;
+            }
         }
-    }
 
-    let params = {
-        threshold: 64,
-        runoff:    96,
-		direction: "horizontal",
-        attack:     0.6,
-        decay:      0.6,
-		accuracy:   1
+        let params = {
+            threshold: 64,
+            runoff:    96,
+            direction: "horizontal",
+            attack:     0.6,
+            decay:      0.6,
+            accuracy:   1
+        };
+
+        let proxEffect = new ProximityEffect(document.querySelectorAll('*.childelement'), params);
+        proxEffect.addStyle('rotateY', [180,  0]);
+        proxEffect.addStyle('translateZ', [40,  0]);
+        proxEffect.addStyle('scale', [1.01,  1]);
     };
 
-	let proxEffect = new ProximityEffect(document.querySelectorAll('*.childelement'), params);
-	proxEffect.addStyle('rotateY', [180,  0]);
-	proxEffect.addStyle('translateZ', [40,  0]);
-	proxEffect.addStyle('scale', [1.01,  1]);
-};
-
-init();
+    init();
 
 </script>
 

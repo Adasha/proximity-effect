@@ -1,4 +1,6 @@
-﻿/*
+﻿import * as AdashaUtils from './AdashaUtils.mjs';
+
+/*
  * ProximityEffect class by Adasha
  * Licensed under MPL-2.0
  * Repository: https://github.com/Adasha/proximity-effect
@@ -17,7 +19,7 @@
  * @fires ProximityEffect#redraw
  * @fires ProximityEffect#reflow
  */
-class ProximityEffect extends EventTarget
+export default class ProximityEffect extends EventTarget
 {
 
     #VALID_DIRECTIONS       = new Set(["both", "horizontal", "vertical"]);
@@ -258,7 +260,7 @@ class ProximityEffect extends EventTarget
      */
     set threshold(value)
     {
-    	this.#globalParams.threshold = Adasha_Utils.constrain(value, 0);
+    	this.#globalParams.threshold = AdashaUtils.constrain(value, 0);
     }
 
 
@@ -280,7 +282,7 @@ class ProximityEffect extends EventTarget
      */
     set runoff(value)
     {
-    	this.#globalParams.runoff = Adasha_Utils.constrain(value, 0);
+    	this.#globalParams.runoff = AdashaUtils.constrain(value, 0);
         this.#globalParams.invRunoff = 1/this.#globalParams.runoff;
     }
 
@@ -338,7 +340,7 @@ class ProximityEffect extends EventTarget
      */
     set attack(value)
     {
-    	this.#globalParams.attack = Adasha_Utils.constrain(value, 0, 1);
+    	this.#globalParams.attack = AdashaUtils.constrain(value, 0, 1);
     }
 
 
@@ -359,7 +361,7 @@ class ProximityEffect extends EventTarget
      */
     set decay(value)
     {
-    	this.#globalParams.decay = Adasha_Utils.constrain(value, 0, 1);
+    	this.#globalParams.decay = AdashaUtils.constrain(value, 0, 1);
     }
 
 
@@ -450,7 +452,7 @@ class ProximityEffect extends EventTarget
      */
     set jitter(num)
     {
-        this.#globalParams.jitter = Adasha_Utils.constrain(num, 0);
+        this.#globalParams.jitter = AdashaUtils.constrain(num, 0);
         this.#calculateJitters();
   	}
 
@@ -460,7 +462,7 @@ class ProximityEffect extends EventTarget
      */
     set jitterX(num)
     {
-        this.#globalParams.jitterX = Adasha_Utils.constrain(num, 0);
+        this.#globalParams.jitterX = AdashaUtils.constrain(num, 0);
         this.#calculateJitters();
   	}
 
@@ -470,7 +472,7 @@ class ProximityEffect extends EventTarget
      */
     set jitterY(num)
     {
-        this.#globalParams.jitterY = Adasha_Utils.constrain(num, 0);
+        this.#globalParams.jitterY = AdashaUtils.constrain(num, 0);
         this.#calculateJitters();
   	}
 
@@ -555,7 +557,7 @@ class ProximityEffect extends EventTarget
 
         if (typeof num==='number' && num>0)
         {
-            this.#globalParams.FPS = Adasha_Utils.constrain(num, 0);
+            this.#globalParams.FPS = AdashaUtils.constrain(num, 0);
             this.#runFrames();
         }
         else
@@ -584,7 +586,7 @@ class ProximityEffect extends EventTarget
      */
     set accuracy(num)
     {
-        this.#globalParams.accuracy = Math.floor(Adasha_Utils.constrain(num, 0));
+        this.#globalParams.accuracy = Math.floor(AdashaUtils.constrain(num, 0));
     }
 
 
@@ -658,7 +660,7 @@ class ProximityEffect extends EventTarget
                 throw new Error(`ProximityEffect: Couldn't find preset '${property}'`);
             }
         }
-        else if(Adasha_Utils.isObject(property))
+        else if(AdashaUtils.isObject(property))
         {
             if(typeof property.rule==="string")
             {
@@ -682,7 +684,7 @@ class ProximityEffect extends EventTarget
             let val = keyframes[v];
             if (typeof val==="number")
             {
-                keyframes[v] = Adasha_Utils.valToObj(Adasha_Utils.constrain(val, cssParams.min, cssParams.max));
+                keyframes[v] = AdashaUtils.valToObj(AdashaUtils.constrain(val, cssParams.min, cssParams.max));
                 switch(v)
                 {
                     case 0 :
@@ -719,8 +721,8 @@ class ProximityEffect extends EventTarget
                  farMethod =  far.scatterMethod ?  far.scatterMethod : this.#DEFAULT_SCATTER_METHOD;
 
             styles.push({
-                near: near.scatter ? near.value+Adasha_Utils.random(near.scatter, nearMethod) : near.value,
-                far:   far.scatter ?  far.value+Adasha_Utils.random( far.scatter,  farMethod) :  far.value
+                near: near.scatter ? near.value+AdashaUtils.random(near.scatter, nearMethod) : near.value,
+                far:   far.scatter ?  far.value+AdashaUtils.random( far.scatter,  farMethod) :  far.value
             });
         }
     }
@@ -1014,8 +1016,8 @@ class ProximityEffect extends EventTarget
         let method = this.jitterMethod ? this.jitterMethod : this.#DEFAULT_JITTER_METHOD;
         for (let i=0; i<this.nodes.length; i++) {
             this.#setNodeIndexData(i, 'jitter', {
-                x: Adasha_Utils.random(this.jitter + this.jitterX, method),
-                y: Adasha_Utils.random(this.jitter + this.jitterY, method)
+                x: AdashaUtils.random(this.jitter + this.jitterX, method),
+                y: AdashaUtils.random(this.jitter + this.jitterY, method)
             });
         }
         if (!this.preventCenterCalculations) {
@@ -1130,7 +1132,7 @@ class ProximityEffect extends EventTarget
             // calculate distance
             if (this.direction==="both")
             {
-                dd = Adasha_Utils.pythagoras(dx, dy);
+                dd = AdashaUtils.pythagoras(dx, dy);
             }
             else
             {
@@ -1138,7 +1140,7 @@ class ProximityEffect extends EventTarget
             }
 
             // normalise to boundaries
-    		td = Adasha_Utils.constrain((dd-this.threshold) * this.#globalParams.invRunoff, 0, 1);
+    		td = AdashaUtils.constrain((dd-this.threshold) * this.#globalParams.invRunoff, 0, 1);
             if (this.invert)
             {
                 td = 1 - td;
@@ -1147,10 +1149,10 @@ class ProximityEffect extends EventTarget
             this.#setNodeIndexData(n, "distance", td);
 
             // apply easing
-            d = last+(td-last)*(Adasha_Utils.XOR(td>last, this.invert) ? this.decay : this.attack);
+            d = last+(td-last)*(AdashaUtils.XOR(td>last, this.invert) ? this.decay : this.attack);
 
             // round value to reduce jitter
-            d = Adasha_Utils.roundTo(d, this.accuracy);
+            d = AdashaUtils.roundTo(d, this.accuracy);
 
             this.#setNodeIndexData(n, "lastDelta", d);
 
@@ -1169,7 +1171,7 @@ class ProximityEffect extends EventTarget
                         rule     = style.rules.rule,
                         func     = style.rules.func,
                         unit     = style.rules.unit || "",
-                        val      = Adasha_Utils.delta(d, near, far);
+                        val      = AdashaUtils.delta(d, near, far);
 
 
                     if (!func)
@@ -1206,114 +1208,5 @@ class ProximityEffect extends EventTarget
     } // update end
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
- * Utilities Class
- */
-
-class Adasha_Utils
-{
-
-
-
-    static constrain = (num, min, max) => {
-        if (typeof num!=="number") {
-            return NaN;
-        }
-        if (min!==undefined && min!==null && typeof min==="number") {
-            num = Math.max(num, min);
-        }
-        if (max!==undefined && max!==null && typeof max==="number") {
-            num = Math.min(num, max);
-        }
-        return num;
-    };
-    
-
-    static roundTo = (num, dp=0) => {
-        let mult = Math.pow(dp+1,10);
-        return Math.round(num*mult)/mult;
-    };
-    
-
-    static delta = (num, a, b) => (b - a) * Adasha_Utils.constrain(num, 0, 1) + a;
-    
-
-    static map = (num, inMin, inMax, outMin, outMax) =>
-            (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-    
-
-    static random = (v=2, m="uniform") => {
-        switch (m) {
-    
-            // intentional fall-throughs
-            case "gaussian" :
-            case "normal" :
-                let t = 0,
-                    c = 6;
-                for (let i=0; i<c; i++) {
-                    t += (Math.random()-0.5)*v;
-                }
-                return t/c;
-                break;
-    
-            case "uniform" :
-            default :
-                return (Math.random()-0.5)*v;
-        }
-    }
-    
-
-    static XOR = (a, b) => (a || b) && !(a && b);
-    
-
-    static pythagoras = (a, b) => Math.sqrt(a*a+b*b);
-
-
-    static isVisibleInViewport = (el) => {
-        let bounds = el.getBoundingClientRect(),
-            view   = document.documentElement;
-        return bounds.right >=0 && bounds.left<=view.clientWidth &&
-               bounds.bottom>=0 && bounds.top <=view.clientHeight;
-    };
-    
-
-    //static startTimer = (delay) =>
-    
-
-    static valToObj = (val, key="value") => {
-        let obj = {};
-        obj[key] = val;
-        return obj;
-    };
-    
-
-    static isObject = obj => obj==Object(obj);
-    
-    
-
-}
-
-
-
-
 
 
