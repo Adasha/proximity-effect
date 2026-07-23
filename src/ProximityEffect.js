@@ -1,4 +1,5 @@
 ﻿import * as AdashaUtils from './AdashaUtils.mjs';
+import Style from './StyleClass.mjs';
 
 /*
  * ProximityEffect class by Adasha
@@ -65,7 +66,7 @@ export default class ProximityEffect extends EventTarget
     #globalParams;
     #pointer = {};
     #coords;
-    #styles;
+    #stylesStack;
     #properties;
     #nodes;
     #nodeData;
@@ -238,7 +239,7 @@ export default class ProximityEffect extends EventTarget
      */
     get styles()
     {
-        return this.#styles;
+        return this.#stylesStack;
     }
 
 
@@ -494,7 +495,7 @@ export default class ProximityEffect extends EventTarget
 
     /**
      * Set the jitter method.
-     * @params {string} method - The random string method to use.
+     * @param {string} method - The random string method to use.
      */
     set jitterMethod(method)
     {
@@ -645,73 +646,15 @@ export default class ProximityEffect extends EventTarget
      * @param {number} [params.decay] - , overriding the global value.
      */
     addStyle(property, keyframes, params)
-    {
-        let cssParams;
+    {        
 
-        // if specifying a preset style
-        if(typeof property==="string")
-        {
-            if (this.#DEFINED_STYLES.hasOwnProperty(property))
-            {
-                cssParams = this.#DEFINED_STYLES[property];
-            }
-            else
-            {
-                throw new Error(`ProximityEffect: Couldn't find preset '${property}'`);
-            }
-        }
-        else if(AdashaUtils.isObject(property))
-        {
-            if(typeof property.rule==="string")
-            {
-                cssParams = property;
-            }
-            else
-            {
-                throw new Error(`ProximityEffect: '${property}' object does not define a style rule.`);
-            }
-        }
-        else
-        {
-            throw new Error(`ProximityEffect: '${property}' is not a valid style rule.`);
-        }
+        this.#stylesStack = this.#stylesStack || [];
 
+        let style = new Style(property, keyframes, params);
+        let near = style.near;
+        let far = style.far;
 
-
-        // convenience function for adding basic near/far values like the old version
-        for(let v=0; v<keyframes.length; v++)
-        {
-            let val = keyframes[v];
-            if (typeof val==="number")
-            {
-                keyframes[v] = AdashaUtils.valToObj(AdashaUtils.constrain(val, cssParams.min, cssParams.max));
-                switch(v)
-                {
-                    case 0 :
-                        keyframes[v].distance = 0;
-                        break;
-                    case keyframes.length-1 :
-                        keyframes[v].distance = 1;
-                        break;
-                }
-            }
-        }
-
-        let near = keyframes[0];
-        let far  = keyframes[keyframes.length-1];
-
-        
-
-
-        this.#styles = this.#styles || [];
-
-        let styleObj = {
-            rules:  cssParams,
-            near:   near,
-            far:    far,
-            params: params
-        };
-        this.#styles.push(styleObj);
+        this.#stylesStack.push(style);
 
 
         for (let i=0; i<this.#nodeData.length; i++)
@@ -734,9 +677,9 @@ export default class ProximityEffect extends EventTarget
      * @param {string} name - The name of the style to check for.
      * @return {boolean} True if the style exists at least once.
      */
-    hasStyle(name)
+    hasStyleProp(prop)
     {
-        return this.styles.find(eff => eff["type"]===name)!==undefined;
+        return this.styles.find(s => s["func"]===prop)!==undefined;
     }
 
 
@@ -745,16 +688,16 @@ export default class ProximityEffect extends EventTarget
      * Remove all instances of a style from the stack.
      * @param {string} name - The name of the style to remove.
      */
-    removeStyle(name)
+    removeStyleProp(rule)
     {
-        if (this.hasStyle(name))
+        if (this.hasStyleProp(rule))
         {
-            for (let i=0; i<this.#styles.length; i++)
+            for (let i=0; i<this.#stylesStack.length; i++)
             {
-                let eff = this.#styles[i];
-                if (eff["type"]===name)
+                let eff = this.#stylesStack[i];
+                if (eff["type"]===rule)
                 {
-                    this.#styles.splice(i, 1);
+                    this.#stylesStack.splice(i, 1);
                 }
             }
         }
