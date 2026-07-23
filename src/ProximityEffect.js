@@ -1075,7 +1075,7 @@ export default class ProximityEffect extends EventTarget
             // calculate distance
             if (this.direction==="both")
             {
-                dd = AdashaUtils.pythagoras(dx, dy);
+                dd = Math.hypot(dx, dy);
             }
             else
             {
@@ -1092,7 +1092,7 @@ export default class ProximityEffect extends EventTarget
             this.#setNodeIndexData(n, "distance", td);
 
             // apply easing
-            d = last+(td-last)*(AdashaUtils.XOR(td>last, this.invert) ? this.decay : this.attack);
+            d = last+(td-last)*(AdashaUtils.xor(td>last, this.invert) ? this.decay : this.attack);
 
             // round value to reduce jitter
             d = AdashaUtils.roundTo(d, this.accuracy);
@@ -1114,7 +1114,7 @@ export default class ProximityEffect extends EventTarget
                         rule     = style.rules.rule,
                         func     = style.rules.func,
                         unit     = style.rules.unit || "",
-                        val      = AdashaUtils.delta(d, near, far);
+                        val      = AdashaUtils.lerp(d, near, far);
 
 
                     if (!func)
