@@ -1,9 +1,9 @@
 ﻿<!doctype html>
-<html>
+<html lang="en-GB">
 <head>
 
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, user-scalable=no">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
 	
     <title>adasha |||||| lab : proximity-effect test 1</title>
@@ -93,7 +93,8 @@
         invert: true
     };
 
-	var proxEffect = new ProximityEffect(document.querySelectorAll('*.childelement'), params);
+    var elements = document.querySelectorAll('*.childelement');
+	var proxEffect = new ProximityEffect(elements, params);
 
 	proxEffect.addStyle('scale',      [0.2, 1]);
     proxEffect.addStyle('brightness', [0, 650]);

@@ -57,21 +57,21 @@
 	},
 	"license": "MPL-2.0",
 	"dependencies": {
-		"@babel/polyfill": "^7.11.5",
+		"@babel/polyfill": "^7.12.1",
 		"event-target": "^1.2.3"
 	},
 	"devDependencies": {
-		"@babel/cli": "^7.18.6",
-		"@babel/core": "^7.18.6",
-		"@babel/preset-env": "^7.18.6",
+		"@babel/cli": "^8.0.4",
+		"@babel/core": "^8.0.1",
+		"@babel/preset-env": "^8.0.2",
 		"babel-eslint": "^10.1.0",
-		"eslint": "^7.32.0",
+		"eslint": "^10.7.0",
 		"gulp": "^5.0.1",
 		"gulp-babel": "^8.1.0",
 		"gulp-gzip": "^1.4.2",
-		"gulp-rename": "^2.0.0",
+		"gulp-rename": "^2.1.0",
 		"gulp-uglify": "^3.0.2",
-		"jsdoc": "^4.0.2"
+		"jsdoc": "^4.0.5"
 	},
 	"scripts": {
 		"build": "gulp babel && gulp minify",
