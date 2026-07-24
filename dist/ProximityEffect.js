@@ -1003,7 +1003,7 @@ var ProximityEffect = exports["default"] = /*#__PURE__*/function (_EventTarget) 
 
         // calculate distance
         if (this.direction === "both") {
-          dd = AdashaUtils.pythagoras(dx, dy);
+          dd = Math.hypot(dx, dy);
         } else {
           dd = Math.abs(this.direction === "horizontal" ? dx : dy);
         }
@@ -1016,7 +1016,7 @@ var ProximityEffect = exports["default"] = /*#__PURE__*/function (_EventTarget) 
         _assertClassBrand(_ProximityEffect_brand, this, _setNodeIndexData).call(this, n, "distance", td);
 
         // apply easing
-        d = last + (td - last) * (AdashaUtils.XOR(td > last, this.invert) ? this.decay : this.attack);
+        d = last + (td - last) * (AdashaUtils.xor(td > last, this.invert) ? this.decay : this.attack);
 
         // round value to reduce jitter
         d = AdashaUtils.roundTo(d, this.accuracy);
@@ -1031,7 +1031,7 @@ var ProximityEffect = exports["default"] = /*#__PURE__*/function (_EventTarget) 
               rule = style.rules.rule,
               func = style.rules.func,
               unit = style.rules.unit || "",
-              val = AdashaUtils.delta(d, near, far);
+              val = AdashaUtils.lerp(d, near, far);
             if (!func) {
               _node2.style[rule] = "".concat(val).concat(unit);
             } else {
