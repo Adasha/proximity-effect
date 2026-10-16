@@ -10,7 +10,7 @@ Each session below is meant to run as its own conversation. To start one, say "R
 - [x] 1. Tooling foundation
 - [x] 2. Utilities and Style class
 - [x] 3. Core correctness and lifecycle
-- [ ] 4. Hardening
+- [x] 4. Hardening
 - [ ] 5. Performance
 - [ ] 6. Accessibility
 - [ ] 7. Public API, events and types
@@ -155,7 +155,16 @@ Same treatment as wrap-chars: validate everything up front, fail loudly with typ
 - Resolve the `z-index` side effect: make it opt-in and documented.
 - A short `SECURITY.md`, an update to the existing CodeQL workflow if needed, and a note in the changelog about anything that was previously exploitable (probably little, but confirm instead of assuming).
 
-**Handoff:** _(fill in)_
+**Handoff (2026-10-16):**
+- Done: new `src/validate.mjs` (`finite`, `boolean`, `randomMethod`, `RANDOM_METHODS`). Rule everywhere: wrong type → `TypeError`; NaN, Infinity or an unknown name → `RangeError`; in-range clamping is kept (negative `threshold` → 0, `attack` > 1 → 1, `accuracy` capped at 20). Every setter validates before writing. `invert`, `zIndex`, `primeDistances` must be real booleans. `FPS`: `null`/`undefined`/`false`/0 mean off; anything else must be a positive finite number. `setCoords` NaN is now `RangeError` (was `TypeError`).
+- `Style`: custom `rule` must be camelCase or kebab-case and not a reserved `CSSStyleDeclaration`/`Object.prototype` member (`cssText`, `setProperty` etc.); `func` must be a plain function name and not `url`/`image-set`/`attr`/`var`/etc.; `unit` from a fixed CSS unit list (case-insensitive). `min`/`max`/`default`, keyframe `value`/`scatter`/`scatterMethod`/`distance` and per-style params are all validated. Only own properties are read; keyframe objects always carry every key, so a polluted `Object.prototype` can't leak in (tested). `near`/`far` return copies. Unknown per-style params are dropped (they're still unused by `update()`; Session 7 decides).
+- `addStyle()` computes all per-node values before touching the stack. `getNodeIndexData`/`hasNodeIndexData` validate the index; node data reads are own-property only. Bad `data-offsetx/y` count as 0.
+- z-index is now opt-in (`zIndex: true`); turning it off restores the original value.
+- Security: confirmed against the published 2.1.19 (fetched from npm) that a custom effect's `rule`/`unit` went into `node.style[rule]` unchecked, so `rule: "cssText"` plus a crafted `unit` could set arbitrary inline CSS (including `url()` requests). No script execution. Only reachable with untrusted config. Recorded under **Security** in the CHANGELOG. `SECURITY.md` added. CodeQL workflow rewritten: pinned `checkout` v7.0.1 and `codeql-action` v4.39.0 SHAs, `javascript-typescript`, `security-and-quality` queries, no autobuild, runs on master, 4.0 and all PRs.
+- **The user needs to:** turn on GitHub private vulnerability reporting (repo Settings → Security), since `SECURITY.md` links to it and it is currently off. Email is offered as a fallback. Confirm the "< 4.0 not supported" line in `SECURITY.md` is the intended policy.
+- Tests: 90 pass on Node 24 (new "Style hardening", "hardening" and "zIndex" blocks). Lint, build and `npm pack --dry-run` clean.
+- For Session 9 (migration guide): 2.1.x's `opacity` preset was the CSS `opacity` property (0–1); 4.0's is the `filter: opacity()` function (0–100%). Also document the z-index change and the stricter validation.
+- For later: `addProperty`/`hasProperty`/`removeProperty` stubs are still unvalidated (Session 7 decides their fate). Custom properties (`--foo`) aren't supported, since writes use `style[rule]` rather than `setProperty`; could be added in 4.1.
 
 ## Session 5: Performance
 

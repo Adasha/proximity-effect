@@ -1,5 +1,6 @@
 ﻿import * as AdashaUtils from './AdashaUtils.mjs';
 import Style from './StyleClass.mjs';
+import * as Validate from './validate.mjs';
 
 /*
  * ProximityEffect class by Adasha
@@ -26,9 +27,9 @@ export default class ProximityEffect extends EventTarget
 {
 
     #VALID_DIRECTIONS       = new Set(["both", "horizontal", "vertical"]);
-    #VALID_RANDOM_METHODS   = new Set(["uniform", "normal", "gaussian"]);
     #DEFAULT_DIRECTION      = "both";
     #DEFAULT_ACCURACY       =   5;
+    #MAX_ACCURACY           =  20;
     #DEFAULT_RUNOFF         = 100;
     #DEFAULT_SCATTER_METHOD = "uniform";
     #DEFAULT_JITTER_METHOD  = "uniform";
@@ -82,6 +83,9 @@ export default class ProximityEffect extends EventTarget
      * @param {number|Falsy} [params.FPS] - The frame rate of the effect, either the number specified or with the screen refresh.
      * @param {Element} [params.target] - The effect tracker target.
      * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
+     * @param {boolean} [params.zIndex=false] - Set each node's z-index from its distance, so the nearest nodes sit on top.
+     * @throws {TypeError} If an argument or parameter is the wrong type.
+     * @throws {RangeError} If a parameter value is not allowed (NaN, Infinity, an unknown name).
      */
     constructor(nodes, params = {})
     {
@@ -107,7 +111,7 @@ export default class ProximityEffect extends EventTarget
         // read own properties only; the caller's object is never stored or changed
         const param = (key, fallback) => Object.hasOwn(params, key) && params[key]!=null ? params[key] : fallback;
 
-        this.#globalParams.primeDistances = !!param("primeDistances", false);
+        this.#globalParams.primeDistances = Validate.boolean(param("primeDistances", false), "primeDistances");
 
         // set global parameter values (nodes come last, so their data is built once)
         this.threshold    = param("threshold", 0);
@@ -116,6 +120,7 @@ export default class ProximityEffect extends EventTarget
         this.decay        = param("decay", 1);
         this.accuracy     = param("accuracy", this.#DEFAULT_ACCURACY);
         this.invert       = param("invert", false);
+        this.zIndex       = param("zIndex", false);
         this.offsetX      = param("offsetX", 0);
         this.offsetY      = param("offsetY", 0);
         this.jitterMethod = param("jitterMethod", this.#DEFAULT_JITTER_METHOD);
@@ -261,7 +266,7 @@ export default class ProximityEffect extends EventTarget
      */
     set threshold(value)
     {
-    	this.#globalParams.threshold = AdashaUtils.constrain(value, 0);
+    	this.#globalParams.threshold = Math.max(Validate.finite(value, "threshold"), 0);
     }
 
 
@@ -283,7 +288,7 @@ export default class ProximityEffect extends EventTarget
      */
     set runoff(value)
     {
-    	this.#globalParams.runoff = AdashaUtils.constrain(value, 0);
+    	this.#globalParams.runoff = Math.max(Validate.finite(value, "runoff"), 0);
     }
 
 
@@ -318,7 +323,38 @@ export default class ProximityEffect extends EventTarget
      */
     set invert(flag)
     {
-        this.#globalParams.invert = !!flag;
+        this.#globalParams.invert = Validate.boolean(flag, "invert");
+    }
+
+
+
+
+
+    /**
+     * Get whether the effect sets each node's z-index.
+     * @return {boolean} The zIndex value.
+     */
+    get zIndex()
+    {
+        return this.#globalParams.zIndex;
+    }
+
+    /**
+     * Set whether the effect sets each node's z-index from its distance, so the
+     * nearest nodes sit on top. Turning it off gives the nodes their original z-index back.
+     * @param {boolean} flag - The new zIndex value.
+     */
+    set zIndex(flag)
+    {
+        const was = this.#globalParams.zIndex;
+        this.#globalParams.zIndex = Validate.boolean(flag, "zIndex");
+        if (was && !flag)
+        {
+            for (const data of this.#nodeData)
+            {
+                this.#restoreProperty(data, "zIndex");
+            }
+        }
     }
 
 
@@ -340,7 +376,7 @@ export default class ProximityEffect extends EventTarget
      */
     set attack(value)
     {
-    	this.#globalParams.attack = AdashaUtils.constrain(value, 0, 1);
+    	this.#globalParams.attack = AdashaUtils.constrain(Validate.finite(value, "attack"), 0, 1);
     }
 
 
@@ -361,7 +397,7 @@ export default class ProximityEffect extends EventTarget
      */
     set decay(value)
     {
-    	this.#globalParams.decay = AdashaUtils.constrain(value, 0, 1);
+    	this.#globalParams.decay = AdashaUtils.constrain(Validate.finite(value, "decay"), 0, 1);
     }
 
 
@@ -394,7 +430,7 @@ export default class ProximityEffect extends EventTarget
      */
     set offsetX(value)
     {
-        this.#globalParams.offsetX = value;
+        this.#globalParams.offsetX = Validate.finite(value, "offsetX");
         if (this.#ready)
         {
             this.setCenterPoints();
@@ -407,7 +443,7 @@ export default class ProximityEffect extends EventTarget
      */
     set offsetY(value)
     {
-        this.#globalParams.offsetY = value;
+        this.#globalParams.offsetY = Validate.finite(value, "offsetY");
         if (this.#ready)
         {
             this.setCenterPoints();
@@ -453,7 +489,7 @@ export default class ProximityEffect extends EventTarget
      */
     set jitter(num)
     {
-        this.#globalParams.jitter = AdashaUtils.constrain(num, 0);
+        this.#globalParams.jitter = Math.max(Validate.finite(num, "jitter"), 0);
         this.#calculateJitters();
   	}
 
@@ -463,7 +499,7 @@ export default class ProximityEffect extends EventTarget
      */
     set jitterX(num)
     {
-        this.#globalParams.jitterX = AdashaUtils.constrain(num, 0);
+        this.#globalParams.jitterX = Math.max(Validate.finite(num, "jitterX"), 0);
         this.#calculateJitters();
   	}
 
@@ -473,7 +509,7 @@ export default class ProximityEffect extends EventTarget
      */
     set jitterY(num)
     {
-        this.#globalParams.jitterY = AdashaUtils.constrain(num, 0);
+        this.#globalParams.jitterY = Math.max(Validate.finite(num, "jitterY"), 0);
         this.#calculateJitters();
   	}
 
@@ -494,11 +530,7 @@ export default class ProximityEffect extends EventTarget
      */
     set jitterMethod(method)
     {
-        if (!this.#VALID_RANDOM_METHODS.has(method))
-        {
-            throw new RangeError(`ProximityEffect: '${method}' is not a valid jitter method. Use "uniform" or "normal".`);
-        }
-        this.#globalParams.jitterMethod = method;
+        this.#globalParams.jitterMethod = Validate.randomMethod(method, "jitter method");
         this.#calculateJitters();
     }
 
@@ -527,7 +559,7 @@ export default class ProximityEffect extends EventTarget
         }
         else
         {
-            throw new RangeError(`ProximityEffect: '${str}' is not a valid direction.`);
+            throw new RangeError(`ProximityEffect: '${String(str)}' is not a valid direction. Use "both", "horizontal" or "vertical".`);
         }
     }
 
@@ -546,11 +578,18 @@ export default class ProximityEffect extends EventTarget
 
     /**
      * Set the frame rate limit.
-     * @param {number|Falsy} num - A positive frame rate, or falsy to follow the screen refresh.
+     * @param {number|Falsy} num - A positive frame rate, or falsy (null, undefined, false or 0) to follow the screen refresh.
+     * @throws {TypeError} If the value is truthy but not a number.
+     * @throws {RangeError} If the value is negative, NaN or infinite.
      */
     set FPS(num)
     {
-        this.#globalParams.FPS = typeof num==="number" && Number.isFinite(num) && num>0 ? num : null;
+        const off = num==null || num===false || num===0;
+        if (!off && Validate.finite(num, "FPS")<0)
+        {
+            throw new RangeError(`ProximityEffect: FPS must be positive (received ${num}).`);
+        }
+        this.#globalParams.FPS = off ? null : num;
         this.#lastFrameTime = undefined;
     }
 
@@ -573,7 +612,7 @@ export default class ProximityEffect extends EventTarget
      */
     set accuracy(num)
     {
-        this.#globalParams.accuracy = Math.floor(AdashaUtils.constrain(num, 0));
+        this.#globalParams.accuracy = Math.floor(AdashaUtils.constrain(Validate.finite(num, "accuracy"), 0, this.#MAX_ACCURACY));
     }
 
 
@@ -643,13 +682,12 @@ export default class ProximityEffect extends EventTarget
      */
     addStyle(property, keyframes, params)
     {
-        const style = new Style(property, keyframes, params);
+        // work everything out before changing anything, so a failure leaves the stack as it was
+        const style  = new Style(property, keyframes, params),
+              values = this.#nodeData.map(() => this.#scatterValues(style));
 
         this.#stylesStack.push(style);
-        for (const data of this.#nodeData)
-        {
-            data.styles.push(this.#scatterValues(style));
-        }
+        this.#nodeData.forEach((data, i) => data.styles.push(values[i]));
     }
 
 
@@ -691,7 +729,7 @@ export default class ProximityEffect extends EventTarget
             }
         }
 
-        if (this.#stylesStack.length===0 && rules.size>0)
+        if (this.zIndex && this.#stylesStack.length===0 && rules.size>0)
         {
             rules.add("zIndex");
         }
@@ -810,11 +848,7 @@ export default class ProximityEffect extends EventTarget
      */
     setCoords(x, y)
     {
-        if (!Number.isFinite(x) || !Number.isFinite(y))
-        {
-            throw new TypeError(`ProximityEffect: coordinates must be finite numbers (received ${x}, ${y}).`);
-        }
-        this.#coords = { x, y };
+        this.#coords = { x: Validate.finite(x, "x coordinate"), y: Validate.finite(y, "y coordinate") };
     }
 
 
@@ -932,21 +966,22 @@ export default class ProximityEffect extends EventTarget
         {
             throw new RangeError("ProximityEffect: that node is not controlled by this instance.");
         }
-        const data = this.#nodeData[index];
-        return prop ? data[prop] : data;
+        return this.#readNodeData(this.#nodeData[index], prop);
     }
 
 
 
     /**
-     * Return the given property of the given node index's effect data.
+     * Return the given node index's effect data, or a specific property of that data.
      * @param {number} i - The node index to return data for.
-     * @param {string} prop - The data property to return.
-     * @return {mixed} The property value.
+     * @param {string} [prop] - The data property to return, leave out to return the entire object.
+     * @return {mixed|NodeData} The chosen property value, or an object containing the node's data.
+     * @throws {TypeError} If the index is not a number.
+     * @throws {RangeError} If the index is not a whole number within the node list.
      */
     getNodeIndexData(i, prop)
     {
-        return this.#nodeData[i][prop];
+        return this.#readNodeData(this.#nodeData[this.#checkIndex(i)], prop);
     }
 
 
@@ -957,10 +992,12 @@ export default class ProximityEffect extends EventTarget
      * @param {number} i - The node index to return data for.
      * @param {string} prop - The data property to return.
      * @return {boolean} True if the property exists, false otherwise.
+     * @throws {TypeError} If the index is not a number.
+     * @throws {RangeError} If the index is not a whole number within the node list.
      */
     hasNodeIndexData(i, prop)
     {
-        return Object.hasOwn(this.#nodeData[i], prop);
+        return Object.hasOwn(this.#nodeData[this.#checkIndex(i)], prop);
     }
 
 
@@ -1118,6 +1155,30 @@ export default class ProximityEffect extends EventTarget
 
 
 
+    #checkIndex(i)
+    {
+        Validate.finite(i, "node index");
+        if (!Number.isInteger(i) || i<0 || i>=this.#nodeData.length)
+        {
+            throw new RangeError(`ProximityEffect: node index ${i} is out of range (0 to ${this.#nodeData.length-1}).`);
+        }
+        return i;
+    }
+
+
+
+    // own properties only, so a name like "constructor" doesn't reach the prototype
+    #readNodeData(data, prop)
+    {
+        if (prop===undefined)
+        {
+            return data;
+        }
+        return Object.hasOwn(data, prop) ? data[prop] : undefined;
+    }
+
+
+
     #styleMatches(style, name)
     {
         return style.name===name || style.func===name;
@@ -1131,6 +1192,15 @@ export default class ProximityEffect extends EventTarget
         this.#scratchStyle ??= document.createElement("div").style;
         this.#scratchStyle.cssText = data.style;
         data.node.style[rule] = this.#scratchStyle[rule];
+    }
+
+
+
+    // a data-offsetx/data-offsety attribute as a number; anything unusable counts as 0
+    #dataOffset(attr)
+    {
+        const n = Number(attr);
+        return Number.isFinite(n) ? n : 0;
     }
 
 
@@ -1224,8 +1294,8 @@ export default class ProximityEffect extends EventTarget
 
             if (point)
             {
-                const dx = point.x - (center.x - (Number(node.dataset.offsetx) || 0)),
-                      dy = point.y - (center.y - (Number(node.dataset.offsety) || 0));
+                const dx = point.x - (center.x - this.#dataOffset(node.dataset.offsetx)),
+                      dy = point.y - (center.y - this.#dataOffset(node.dataset.offsety));
 
                 // calculate distance
                 const dd = this.direction==="both"
@@ -1285,8 +1355,11 @@ export default class ProximityEffect extends EventTarget
                     node.style[rule] = funcs[rule].join(" ");
                 }
 
-                const ix = Math.floor(d*1000);
-                node.style.zIndex = this.invert ? ix : 1000-ix;
+                if (this.zIndex)
+                {
+                    const ix = Math.floor(d*1000);
+                    node.style.zIndex = this.invert ? ix : 1000-ix;
+                }
             }
         }
     } // update end

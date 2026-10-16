@@ -115,8 +115,113 @@ describe("Style", () =>
         expect(() => new Style("blur", "01")).toThrow(TypeError);
     });
 
-    it("preserves NaN keyframe values rather than hiding them", () =>
+    it("rejects NaN and infinite keyframe values", () =>
     {
-        expect(new Style("translateX", [NaN, 1]).near.value).toBeNaN();
+        expect(() => new Style("translateX", [NaN, 1])).toThrow(RangeError);
+        expect(() => new Style("translateX", [0, { value: Infinity }])).toThrow(RangeError);
+    });
+});
+
+
+describe("Style hardening", () =>
+{
+    it("accepts camelCase, kebab-case and vendor-prefixed property names", () =>
+    {
+        expect(new Style({ rule: "letterSpacing", unit: "px" }, [0, 1]).rule).toBe("letterSpacing");
+        expect(new Style({ rule: "letter-spacing", unit: "px" }, [0, 1]).rule).toBe("letter-spacing");
+        expect(new Style({ rule: "-webkit-filter", func: "blur", unit: "px" }, [0, 1]).rule).toBe("-webkit-filter");
+        expect(new Style({ rule: "webkitFilter", func: "blur", unit: "px" }, [0, 1]).rule).toBe("webkitFilter");
+    });
+
+    it("rejects rules that aren't CSS property names", () =>
+    {
+        for (const rule of ["cssText", "setProperty", "parentRule", "length", "constructor", "__proto__",
+            "color; background: red", "background:url(x)", "", "1px", "--custom", "Transform"])
+        {
+            expect(() => new Style({ rule }, [0, 1]), rule).toThrow(RangeError);
+        }
+    });
+
+    it("rejects funcs that aren't plain CSS function names, or that load resources", () =>
+    {
+        for (const func of ["url", "URL", "image-set", "attr", "var", "expression", "translate(1px)", "a b", "", "-x"])
+        {
+            expect(() => new Style({ rule: "transform", func }, [0, 1]), func).toThrow(RangeError);
+        }
+        expect(() => new Style({ rule: "transform", func: 5 }, [0, 1])).toThrow(TypeError);
+        expect(new Style({ rule: "filter", func: "hue-rotate", unit: "deg" }, [0, 1]).func).toBe("hue-rotate");
+    });
+
+    it("only accepts known CSS units", () =>
+    {
+        for (const unit of ["px", "%", "deg", "rem", "vmin", "Q", "ms", "PX"])
+        {
+            expect(() => new Style({ rule: "letterSpacing", unit }, [0, 1]), unit).not.toThrow();
+        }
+        for (const unit of ["px; color: red", "px)", "furlongs", " px"])
+        {
+            expect(() => new Style({ rule: "letterSpacing", unit }, [0, 1]), unit).toThrow(RangeError);
+        }
+        expect(() => new Style({ rule: "letterSpacing", unit: 5 }, [0, 1])).toThrow(TypeError);
+        expect(new Style({ rule: "letterSpacing", unit: "" }, [0, 1]).unit).toBeUndefined();
+    });
+
+    it("validates min, max and default", () =>
+    {
+        expect(() => new Style({ rule: "opacity", min: "0" }, [0, 1])).toThrow(TypeError);
+        expect(() => new Style({ rule: "opacity", max: NaN }, [0, 1])).toThrow(RangeError);
+        expect(() => new Style({ rule: "opacity", default: Infinity }, [0, 1])).toThrow(RangeError);
+        expect(() => new Style({ rule: "opacity", min: 1, max: 0 }, [0, 1])).toThrow(RangeError);
+    });
+
+    it("ignores inherited properties on style objects and keyframes", () =>
+    {
+        expect(() => new Style(Object.create({ rule: "opacity" }), [0, 1])).toThrow(TypeError);
+        expect(() => new Style("blur", [0, Object.create({ value: 5 })])).toThrow(TypeError);
+    });
+
+    it("is not affected by a polluted Object.prototype", () =>
+    {
+        Object.prototype.scatter = 1000;
+        Object.prototype.unit = "; color: red";
+        try
+        {
+            const s = new Style({ rule: "letterSpacing" }, [0, { value: 5 }]);
+            expect(s.unit).toBeUndefined();
+            expect(s.near.scatter).toBeUndefined();
+            expect(s.far.scatter).toBeUndefined();
+        }
+        finally
+        {
+            delete Object.prototype.scatter;
+            delete Object.prototype.unit;
+        }
+    });
+
+    it("validates keyframe scatter, scatterMethod and distance", () =>
+    {
+        expect(() => new Style("blur", [0, { value: 1, scatter: "2" }])).toThrow(TypeError);
+        expect(() => new Style("blur", [0, { value: 1, scatter: -2 }])).toThrow(RangeError);
+        expect(() => new Style("blur", [0, { value: 1, scatter: 2, scatterMethod: "bogus" }])).toThrow(RangeError);
+        expect(() => new Style("blur", [0, { value: 1, distance: 2 }])).toThrow(RangeError);
+        expect(new Style("blur", [0, { value: 1, scatter: 2, scatterMethod: "gaussian" }]).far.scatterMethod).toBe("gaussian");
+    });
+
+    it("validates per-style params and keeps only known ones", () =>
+    {
+        const s = new Style("blur", [0, 1], { id: "a", attack: 2, threshold: -5, invert: true, extra: 1 });
+        expect(s.params).toEqual({ id: "a", attack: 1, threshold: 0, invert: true });
+        expect(() => new Style("blur", [0, 1], { id: 5 })).toThrow(TypeError);
+        expect(() => new Style("blur", [0, 1], { runoff: "5" })).toThrow(TypeError);
+        expect(() => new Style("blur", [0, 1], { decay: NaN })).toThrow(RangeError);
+        expect(() => new Style("blur", [0, 1], { invert: "yes" })).toThrow(TypeError);
+        expect(() => new Style("blur", [0, 1], 5)).toThrow(TypeError);
+    });
+
+    it("returns copies of its keyframes", () =>
+    {
+        const s = new Style("translateX", [0, 10]);
+        s.far.value = 99;
+        expect(s.far.value).toBe(10);
     });
 });

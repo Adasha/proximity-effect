@@ -348,7 +348,8 @@ describe("target and coords", () =>
         const el = makeNode(0, 0);
         const pe = create(el);
         expect(() => pe.setCoords("1", 2)).toThrow(TypeError);
-        expect(() => pe.setCoords(NaN, 2)).toThrow(TypeError);
+        expect(() => pe.setCoords(NaN, 2)).toThrow(RangeError);
+        expect(() => pe.setCoords(1, Infinity)).toThrow(RangeError);
         expect(pe.getCoords()).toBeNull();
         pe.setCoords(30, 40);
         expect(pe.getCoords()).toEqual({ x: 30, y: 40 });
@@ -511,13 +512,176 @@ describe("lifecycle", () =>
         expect(redraw).toHaveBeenCalledTimes(5);
     });
 
-    it("rejects invalid FPS values by following the screen refresh", () =>
+    it("follows the screen refresh for falsy FPS values and rejects invalid ones", () =>
     {
-        const pe = create(makeNode(0, 0));
-        for (const value of [0, -5, NaN, Infinity, "30"])
+        const pe = create(makeNode(0, 0), { FPS: 30 });
+        for (const value of [0, null, undefined, false])
         {
+            pe.FPS = 30;
             pe.FPS = value;
             expect(pe.FPS).toBeNull();
         }
+        pe.FPS = 30;
+        expect(() => { pe.FPS = "30"; }).toThrow(TypeError);
+        for (const value of [-5, NaN, Infinity])
+        {
+            expect(() => { pe.FPS = value; }).toThrow(RangeError);
+        }
+        expect(pe.FPS).toBe(30);
+    });
+});
+
+
+
+describe("hardening", () =>
+{
+    const NUMERIC = ["threshold", "runoff", "attack", "decay", "accuracy", "offsetX", "offsetY", "jitter", "jitterX", "jitterY"];
+
+    it("rejects non-numbers and non-finite numbers in every numeric setter, leaving the value unchanged", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        for (const key of NUMERIC)
+        {
+            const before = pe[key];
+            expect(() => { pe[key] = "5"; }, key).toThrow(TypeError);
+            expect(() => { pe[key] = null; }, key).toThrow(TypeError);
+            expect(() => { pe[key] = NaN; }, key).toThrow(RangeError);
+            expect(() => { pe[key] = Infinity; }, key).toThrow(RangeError);
+            expect(() => { pe[key] = -Infinity; }, key).toThrow(RangeError);
+            expect(pe[key], key).toBe(before);
+        }
+    });
+
+    it("rejects invalid numeric params at construction", () =>
+    {
+        for (const key of NUMERIC)
+        {
+            expect(() => new ProximityEffect(makeNode(0, 0), { [key]: "5" }), key).toThrow(TypeError);
+            expect(() => new ProximityEffect(makeNode(0, 0), { [key]: NaN }), key).toThrow(RangeError);
+        }
+    });
+
+    it("clamps numbers that are out of range", () =>
+    {
+        const pe = create(makeNode(0, 0), { threshold: -5, runoff: -1, attack: 2, decay: -1, accuracy: 1000, jitter: -3 });
+        expect(pe.threshold).toBe(0);
+        expect(pe.runoff).toBe(0);
+        expect(pe.attack).toBe(1);
+        expect(pe.decay).toBe(0);
+        expect(pe.accuracy).toBe(20);
+        expect(pe.jitter).toBe(0);
+    });
+
+    it("requires real booleans for invert, zIndex and primeDistances", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        expect(() => { pe.invert = "false"; }).toThrow(TypeError);
+        expect(() => { pe.zIndex = 1; }).toThrow(TypeError);
+        expect(pe.invert).toBe(false);
+        expect(() => new ProximityEffect(makeNode(0, 0), { primeDistances: "yes" })).toThrow(TypeError);
+        expect(() => new ProximityEffect(makeNode(0, 0), { invert: 0 })).toThrow(TypeError);
+    });
+
+    it("leaves the style stack unchanged when addStyle fails", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el);
+        pe.addStyle("translateX", [0, 10]);
+        expect(() => pe.addStyle({ rule: "cssText", unit: "px" }, [0, 1])).toThrow(RangeError);
+        expect(() => pe.addStyle("blur", [0, { value: 1, scatter: 1, scatterMethod: "bogus" }])).toThrow(RangeError);
+        expect(pe.styles).toHaveLength(1);
+        expect(pe.getNodeIndexData(0, "styles")).toHaveLength(1);
+        await settle();
+        step();
+        expect(el.style.transform).toBe("translateX(10px)");
+    });
+
+    it("writes kebab-case custom properties", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el);
+        pe.addStyle({ rule: "letter-spacing", unit: "px" }, [0, 4]);
+        await settle();
+        step();
+        expect(el.style.letterSpacing).toBe("4px");
+    });
+
+    it("validates node indexes and reads only own data properties", () =>
+    {
+        const pe = create([makeNode(0, 0), makeNode(10, 0)]);
+        expect(() => pe.getNodeIndexData("0", "distance")).toThrow(TypeError);
+        for (const i of [-1, 2, 0.5, NaN])
+        {
+            expect(() => pe.getNodeIndexData(i, "distance"), String(i)).toThrow(RangeError);
+            expect(() => pe.hasNodeIndexData(i, "distance"), String(i)).toThrow(RangeError);
+        }
+        expect(() => pe.distanceFromIndex(5)).toThrow(RangeError);
+        expect(pe.getNodeIndexData(1, "constructor")).toBeUndefined();
+        expect(pe.getNodeData(pe.nodes[0], "__proto__")).toBeUndefined();
+        expect(pe.getNodeIndexData(0).node).toBe(pe.nodes[0]);
+    });
+
+    it("ignores unusable data-offsetx and data-offsety values", async () =>
+    {
+        const el = makeNode(0, 0);
+        el.dataset.offsetx = "Infinity";
+        el.dataset.offsety = "abc";
+        const pe = create(el, { threshold: 0, runoff: 100 });
+        await settle();
+        pe.setCoords(50, 0);
+        step();
+        expect(pe.distanceFrom(el)).toBe(0.5);
+    });
+});
+
+
+
+describe("zIndex", () =>
+{
+    it("leaves z-index alone by default", async () =>
+    {
+        const el = makeNode(0, 0);
+        el.style.zIndex = "7";
+        const pe = create(el);
+        pe.addStyle("translateX", [0, 10]);
+        await settle();
+        pe.setCoords(0, 0);
+        step();
+        expect(pe.zIndex).toBe(false);
+        expect(el.style.zIndex).toBe("7");
+    });
+
+    it("sets z-index from distance when enabled, and restores it when turned off", async () =>
+    {
+        const near = makeNode(0, 0);
+        const far  = makeNode(200, 0);
+        far.style.zIndex = "7";
+        const pe = create([near, far], { zIndex: true, runoff: 100 });
+        pe.addStyle("translateX", [0, 10]);
+        await settle();
+        pe.setCoords(0, 0);
+        step();
+        expect(near.style.zIndex).toBe("1000");
+        expect(far.style.zIndex).toBe("0");
+
+        pe.zIndex = false;
+        expect(near.style.zIndex).toBe("");
+        expect(far.style.zIndex).toBe("7");
+        step();
+        expect(far.style.zIndex).toBe("7");
+    });
+
+    it("restores z-index when the last style is removed", async () =>
+    {
+        const el = makeNode(0, 0);
+        el.style.zIndex = "3";
+        const pe = create(el, { zIndex: true });
+        pe.addStyle("translateX", [0, 10]);
+        await settle();
+        pe.setCoords(0, 0);
+        step();
+        expect(el.style.zIndex).toBe("1000");
+        pe.removeStyleProp("translateX");
+        expect(el.style.zIndex).toBe("3");
     });
 });
