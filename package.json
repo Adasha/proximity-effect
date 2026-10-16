@@ -1,84 +1,86 @@
 {
-	"name": "proximity-effect",
-	"version": "v4.0.0-alpha1",
-	"description": "Mass animate CSS properties based on proximity of mouse or arbitrary target.",
-	"author": {
-		"name": "Adam Shailer",
-		"email": "adasha76@outlook.com",
-		"url": "http://adasha.com"
-	},
-	"browser": "./dist/ProximityEffect.js",
-	"unpkg": "./dist/ProximityEffect.min.js",
-	"directories": {
-		"test": "tests"
-	},
-	"keywords": [
-		"mouse",
-		"movement",
-		"track",
-		"tracker",
-		"tracking",
-		"distance",
-		"range",
-		"proximity",
-		"nearness",
-		"closeness",
-		"position",
-		"approach",
-		"interpolate",
-		"interpolation",
-		"visual",
-		"eye-candy",
-		"effect",
-		"filter",
-		"overlay",
-		"fader",
-		"CSS",
-		"style",
-		"stylesheet",
-		"animate",
-		"animation",
-		"tween",
-		"tweening",
-		"blend",
-		"transform",
-		"transition",
-		"element",
-		"front-end"
-	],
-	"homepage": "http://lab.adasha.com/components/proximity-effect",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/Adasha/proximity-effect"
-	},
-	"bugs": {
-		"url": "https://github.com/Adasha/proximity-effect/issues",
-		"email": "adasha76@outlook.com"
-	},
-	"license": "MPL-2.0",
-	"dependencies": {
-		"@babel/polyfill": "^7.12.1",
-		"event-target": "^1.2.3"
-	},
-	"devDependencies": {
-		"@babel/cli": "^8.0.4",
-		"@babel/core": "^8.0.1",
-		"@babel/preset-env": "^8.0.2",
-		"babel-eslint": "^10.1.0",
-		"eslint": "^10.7.0",
-		"gulp": "^5.0.1",
-		"gulp-babel": "^8.1.0",
-		"gulp-gzip": "^1.4.2",
-		"gulp-rename": "^2.1.0",
-		"gulp-uglify": "^3.0.2",
-		"jsdoc": "^4.0.5"
-	},
-	"scripts": {
-		"build": "gulp babel && gulp minify",
-		"build:docs": "jsdoc ./src/ProximityEffect.js -d ./docs -P ./package.json -R ./README.md",
-		"test": "echo \"Error: no test specified\" && exit 1"
-	},
-	"allowScripts": {
-		"core-js@2.6.12": true
-	}
+  "name": "proximity-effect",
+  "version": "v4.0.0-alpha1",
+  "type": "module",
+  "description": "Mass animate CSS properties based on proximity of mouse or arbitrary target.",
+  "author": {
+    "name": "Adam Shailer",
+    "email": "adasha76@outlook.com",
+    "url": "http://adasha.com"
+  },
+  "exports": {
+    ".": "./dist/proximity-effect.mjs",
+    "./package.json": "./package.json"
+  },
+  "module": "./dist/proximity-effect.mjs",
+  "unpkg": "./dist/proximity-effect.min.js",
+  "jsdelivr": "./dist/proximity-effect.min.js",
+  "files": [
+    "dist",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "keywords": [
+    "mouse",
+    "movement",
+    "track",
+    "tracker",
+    "tracking",
+    "distance",
+    "range",
+    "proximity",
+    "nearness",
+    "closeness",
+    "position",
+    "approach",
+    "interpolate",
+    "interpolation",
+    "visual",
+    "eye-candy",
+    "effect",
+    "filter",
+    "overlay",
+    "fader",
+    "CSS",
+    "style",
+    "stylesheet",
+    "animate",
+    "animation",
+    "tween",
+    "tweening",
+    "blend",
+    "transform",
+    "transition",
+    "element",
+    "front-end"
+  ],
+  "homepage": "http://lab.adasha.com/components/proximity-effect",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Adasha/proximity-effect"
+  },
+  "bugs": {
+    "url": "https://github.com/Adasha/proximity-effect/issues",
+    "email": "adasha76@outlook.com"
+  },
+  "license": "MPL-2.0",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.8.0",
+    "globals": "^17.13.0",
+    "jsdom": "^30.1.1",
+    "vitest": "^5.0.3"
+  },
+  "scripts": {
+    "build": "node scripts/build.js",
+    "lint": "eslint .",
+    "prepack": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "allowScripts": {
+    "esbuild": false
+  }
 }

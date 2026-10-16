@@ -83,7 +83,7 @@ export default class Style extends Object
 		// if specifying a preset style
 		if(typeof property==="string")
 		{
-			if (this.#DEFINED_STYLES.hasOwnProperty(property))
+			if (Object.hasOwn(this.#DEFINED_STYLES, property))
 			{
 				cssParams = this.#DEFINED_STYLES[property];
 			}

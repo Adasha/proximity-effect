@@ -7,7 +7,7 @@ Each session below is meant to run as its own conversation. To start one, say "R
 ## Progress
 
 - [ ] 0. Decisions and baseline
-- [ ] 1. Tooling foundation
+- [x] 1. Tooling foundation
 - [ ] 2. Utilities and Style class
 - [ ] 3. Core correctness and lifecycle
 - [ ] 4. Hardening
@@ -100,7 +100,14 @@ No behaviour changes in this session.
 
 **Done when:** `npm run lint`, `npm test`, `npm run build` all pass on a clean checkout and in CI.
 
-**Handoff:** _(fill in)_
+**Handoff (2026-10-16):**
+- Done: `"type": "module"`, esbuild via `scripts/build.js` (outputs `dist/proximity-effect.mjs` and `dist/proximity-effect.min.js` plus source map), `exports`/`files`/`sideEffects`/`unpkg`/`jsdelivr` set. Removed Gulp, Babel, uglify, `@babel/polyfill`, `event-target`, `babel-eslint`, JSDoc, and the `core-js` allow-script. `npm audit` reports 0 vulnerabilities.
+- ESLint flat config (recommended rules only; no style rules, so the mixed tabs/spaces were left alone). `.gitattributes` already had `* text=auto`. Only mechanical fix in `src`: `hasOwnProperty` became `Object.hasOwn`. Ten warnings remain in `src` on purpose: they mark the audit bugs (`valid-typeof`, undefined `node`, setter return, unused vars/members). **Session 2/3 must fix them and promote those rules back to errors in `eslint.config.js`.**
+- Vitest 5 + jsdom with `tests/smoke.test.js` and `tests/dist.test.js` (builds and loads the dist files). Needs **Node 24** (`.nvmrc`); it fails on Node 22.12 (undici). No `engines` field added yet; Session 8.
+- CI: `.github/workflows/ci.yml` (lint, test, build, `npm pack --dry-run`) on push to master/4.0 and PRs. Actions are pinned to the same SHAs as wrap-chars. CodeQL workflow untouched (still `@v1`/`v2` actions, master only; update in Session 4). Not yet run on GitHub since nothing is pushed.
+- Repo hygiene: removed `old/`, generated `docs/`, and the committed `dist/` (now gitignored, built on `prepack`). `old/` and `docs/` remain in history. Hot-linking `dist/ProximityEffect*.js` from raw GitHub will break; npm/unpkg users are covered by the new `unpkg` field. Recheck in Session 8.
+- `CHANGELOG.md` started. `tests/1.html` now imports `../src/ProximityEffect.js`; dead `event-target` script tags removed from the demos. Other demos (`div-grid.html`, `frame-seq_grid.html`, `video*.html`, `6.html`) were not checked for working imports.
+- `package.json` version is still `v4.0.0-alpha1` (with the `v`); fix in Session 8.
 
 ## Session 2: Utilities and Style class
 

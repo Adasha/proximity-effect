@@ -117,11 +117,11 @@ export default class ProximityEffect extends EventTarget
 
 
         // set global parameter values
-        this.threshold = this.#globalParams.hasOwnProperty("threshold") ? this.#globalParams.threshold : 0;
-        this.runoff    = this.#globalParams.hasOwnProperty("runoff")    ? this.#globalParams.runoff    : this.#DEFAULT_RUNOFF;
-        this.attack    = this.#globalParams.hasOwnProperty("attack")    ? this.#globalParams.attack    : 1;
-        this.decay     = this.#globalParams.hasOwnProperty("decay")     ? this.#globalParams.decay     : 1;
-        this.accuracy  = this.#globalParams.hasOwnProperty("accuracy")  ? this.#globalParams.accuracy  : this.#DEFAULT_ACCURACY;
+        this.threshold = Object.hasOwn(this.#globalParams, "threshold") ? this.#globalParams.threshold : 0;
+        this.runoff    = Object.hasOwn(this.#globalParams, "runoff")    ? this.#globalParams.runoff    : this.#DEFAULT_RUNOFF;
+        this.attack    = Object.hasOwn(this.#globalParams, "attack")    ? this.#globalParams.attack    : 1;
+        this.decay     = Object.hasOwn(this.#globalParams, "decay")     ? this.#globalParams.decay     : 1;
+        this.accuracy  = Object.hasOwn(this.#globalParams, "accuracy")  ? this.#globalParams.accuracy  : this.#DEFAULT_ACCURACY;
         //this.reverse   = this.#globalParams.reverse   || false;
         this.invert    = this.#globalParams.invert    || false;
         this.offsetX   = this.#globalParams.offsetX   || 0;
@@ -905,7 +905,7 @@ export default class ProximityEffect extends EventTarget
      */
     hasNodeIndexData(i, prop)
     {
-        return this.#nodeData[i].hasOwnProperty(prop);
+        return Object.hasOwn(this.#nodeData[i], prop);
     }
 
 

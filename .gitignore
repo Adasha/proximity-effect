@@ -46,3 +46,9 @@ jspm_packages/
 
 # Dreamweaver publishing notes
 **/_notes/
+
+# Build output
+dist/
+
+# Claude Code
+.claude/
