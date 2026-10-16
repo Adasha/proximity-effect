@@ -93,8 +93,9 @@
         invert: true
     };
 
-    var elements = document.querySelectorAll('*.childelement');
+    let elements = document.querySelectorAll('*.childelement');
 	var proxEffect = new ProximityEffect(elements, params);
+    console.log(elements);
 
 	proxEffect.addStyle('scale',      [0.2, 1]);
     proxEffect.addStyle('brightness', [0, 650]);

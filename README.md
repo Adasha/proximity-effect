@@ -2,7 +2,7 @@
 
 v4.0.0-a4
 
-Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Very customisable, definitely overdeveloped. A fun pet project originally from the Flash days, remade in JS as a practice project.
+Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Very customisable, definitely overdeveloped. A fun pet project originally from the Flash days, remade in JS for practice.
 
 [View live demos](http://lab.adasha.com/components/proximity-effect)
 

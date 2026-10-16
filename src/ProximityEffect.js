@@ -3,7 +3,7 @@ import Style from './StyleClass.mjs';
 
 /*
  * ProximityEffect class by Adasha
- * Mass animate CSS properties based on mouse or other target's position.
+ * Mass animate CSS properties based on mouse or arbitrary target's position.
  * 
  * Licensed under MPL-2.0
  * Repository: https://github.com/Adasha/proximity-effect
