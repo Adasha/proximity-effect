@@ -81,7 +81,9 @@ Small, and best done first so later sessions don't re-litigate.
 - `AdashaUtils` stays a private copy in this repo, with no shared-package dependency.
 - Ship as 4.0.0.
 
-Remaining for Session 0: commit or discard the three uncommitted edits, and capture the demo baseline.
+Baseline (2026-10-16, commit `df25917` plus the plan commit): the tree is clean on branch `4.0`, with nothing pushed since `939d1ee`. `npm run build` works on Node 22.12 (it only changes one line of `dist/ProximityEffect.js`; the committed `dist` is otherwise current). `npm run lint` fails because ESLint 10 can't read `.eslintrc.json`, and `npm test` is a stub. Both are Session 1 work.
+
+Remaining for Session 0: capture the demo baseline (open each `tests/*.html` in a browser and note which work). This needs a human, or a browser tool, so it can be skipped if you'd rather judge regressions by eye.
 
 **Handoff:** _(fill in)_
 
