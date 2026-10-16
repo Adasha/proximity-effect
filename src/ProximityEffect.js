@@ -29,40 +29,8 @@ export default class ProximityEffect extends EventTarget
     #DEFAULT_DIRECTION      = "both";
     #DEFAULT_ACCURACY       =   5;
     #DEFAULT_RUNOFF         = 100;
-    #VALID_RANDOM_METHODS   = new Set(["normal", "uniform"]);
     #DEFAULT_SCATTER_METHOD = "uniform";
     #DEFAULT_JITTER_METHOD  = "uniform";
-
-
-    #DEFINED_STYLES          = {
-        translateX:      {                  default:       0, rule: "transform",       func: "translateX",  unit: "px"},
-        translateY:      {                  default:       0, rule: "transform",       func: "translateY",  unit: "px"},
-        translateZ:      {                  default:       0, rule: "transform",       func: "translateZ",  unit: "px"},
-        rotate:          {                  default:       0, rule: "transform",       func: "rotate",      unit: "deg"},
-        rotateX:         {                  default:       0, rule: "transform",       func: "rotateX",     unit: "deg"},
-        rotateY:         {                  default:       0, rule: "transform",       func: "rotateY",     unit: "deg"},
-        rotateZ:         {                  default:       0, rule: "transform",       func: "rotateZ",     unit: "deg"},
-        scale:           {                  default:       1, rule: "transform",       func: "scale"},
-        scaleX:          {                  default:       1, rule: "transform",       func: "scaleX"},
-        scaleY:          {                  default:       1, rule: "transform",       func: "scaleY"},
-        scaleZ:          {                  default:       1, rule: "transform",       func: "scaleZ"},
-        skewX:           {                  default:       0, rule: "transform",       func: "skewX",       unit: "deg"},
-        skewY:           {                  default:       0, rule: "transform",       func: "skewY",       unit: "deg"},
-        
-        blur:            {min: 0,           default:       0, rule: "filter",          func: "blur",        unit: "px"},
-        brightness:      {min: 0,           default:     100, rule: "filter",          func: "brightness",  unit: "%"},
-        contrast:        {min: 0,           default:     100, rule: "filter",          func: "contrast",    unit: "%"},
-        grayscale:       {min: 0, max: 100, default:       0, rule: "filter",          func: "grayscale",   unit: "%"},
-        hueRotate:       {                  default:       0, rule: "filter",          func: "hue-rotate",  unit: "deg"},
-        invert:          {min: 0, max: 100, default:       0, rule: "filter",          func: "invert",      unit: "%"},
-        opacity:         {min: 0, max: 100, default:     100, rule: "filter",          func: "opacity",     unit: "%"},
-        saturate:        {min: 0, max: 100, default:     100, rule: "filter",          func: "saturate",    unit: "%"},
-        sepia:           {min: 0, max: 100, default:       0, rule: "filter",          func: "sepia",       unit: "%"},
-
-        color:           {min: 0, max: 255, default: [0,0,0], rule: "color",           func: "rgb",                      args: 3},
-        backgroundColor: {min: 0, max: 255, default: [0,0,0], rule: "backgroundColor", func: "rgb",                      args: 3},
-        scale3D:         {                  default: [1,1,1], rule: "transform",       func: "scale3D",                  args: 3}
-    };
 
 
     #globalParams;
@@ -1113,9 +1081,9 @@ export default class ProximityEffect extends EventTarget
 
                     let near     = nodeVals.near,
                         far      = nodeVals.far,
-                        rule     = style.rules.rule,
-                        func     = style.rules.func,
-                        unit     = style.rules.unit || "",
+                        rule     = style.rule,
+                        func     = style.func,
+                        unit     = style.unit || "",
                         val      = AdashaUtils.lerp(d, near, far);
 
 

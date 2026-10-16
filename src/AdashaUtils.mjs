@@ -15,16 +15,17 @@
  * @param {Number} num The value to constrain.
  * @param {Number} min The minimum boundary.
  * @param {Number} max The maximum boundary.
- * @returns {Number} The constrained value.
+ * @returns {Number} The constrained value (NaN stays NaN).
+ * @throws {TypeError} If `num` is not a number.
  */
 export const constrain = (num, min, max) => {
 	if (typeof num!=="number") {
-		return NaN;
+		throw new TypeError(`constrain: expected a number but received ${typeof num}.`);
 	}
-	if (min!==undefined && min!==null && typeof min==="number") {
+	if (typeof min==="number") {
 		num = Math.max(num, min);
 	}
-	if (max!==undefined && max!==null && typeof max==="number") {
+	if (typeof max==="number") {
 		num = Math.min(num, max);
 	}
 	return num;
@@ -58,29 +59,15 @@ export const lerp = (num, a, b) => (b - a) * constrain(num, 0, 1) + a;
 
 
 /**
- * Map an input value on one scale to an output value of a different scale.
- * @param {Number} num The input value.
- * @param {Number} inMin The lower input scale threshold.
- * @param {Number} inMax The upper input scale threshold.
- * @param {Number} outMin The lower output scale threshold.
- * @param {Number} outMax The upper output scale threshold.
- * @returns {Number} A value mapped to the output scale.
- */
-export const map = (num, inMin, inMax, outMin, outMax) =>
-	inMin !== inMax ? (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin : NaN;
-
-
-
-/**
  * Generate a random number +/- v/2
  * @param {Number} v Scaling value of the random number (default=2).
- * @param {String} m Type of randomness, either "normal/gaussian" or "uniform" (default).
+ * @param {String} m Type of randomness, either "uniform" (default) or "normal" ("gaussian" is an alias).
  * @returns {Number} A random number centered around 0.
+ * @throws {RangeError} If the method is not recognised.
  */
 export const random = (v=2, m="uniform") => {
 	switch (m) {
 
-	// intentional fall-throughs
 	case "gaussian" :
 	case "normal" : {
 		let t = 0,
@@ -90,11 +77,12 @@ export const random = (v=2, m="uniform") => {
 		}
 		return t/c;
 	}
-    
-	case "linear" :
+
 	case "uniform" :
-	default :
 		return (Math.random()-0.5)*v;
+
+	default :
+		throw new RangeError(`random: unknown method '${m}'. Use "uniform" or "normal".`);
 	}
 };
 
@@ -106,47 +94,13 @@ export const random = (v=2, m="uniform") => {
  * @param {*} b Input B.
  * @returns {Boolean} The XOR of the two inputs.
  */
-export const xor = (a, b) => (a || b) && !(a && b);
+export const xor = (a, b) => Boolean(a) !== Boolean(b);
 
 
 
 
 
-// DOM HELPERS
-
-
-/**
- * Determine if a DOM element is visible in the browser's viewport.
- * @param {*} el The DOM element to check.
- * @returns {Boolean} Whether the element is visible.
- */
-export const isVisibleInViewport = (el) => {
-	if(!document) {
-		console.log("DOM not found.");
-		return;
-	}
-	if(!el) return undefined;
-	let bounds = el.getBoundingClientRect(),
-		view   = document.documentElement;
-	return bounds.right >=0 && bounds.left<=view.clientWidth &&
-            bounds.bottom>=0 && bounds.top <=view.clientHeight;
-};
-
-
-
-
-
-// GENERIC OBJECT HELPERS 
-
-
-/**
- * Encapsulates a simple value into a key/value Object.
- * @param {*} val The value to encapsulate.
- * @param {String} key The key name to use (defaults to 'value').
- * @returns {Object} The constructed object.
- */
-export const valToObj = (val, key="value") => ({ [key]: val });
-
+// GENERIC OBJECT HELPERS
 
 
 /**

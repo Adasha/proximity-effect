@@ -1,4 +1,5 @@
 import * as AdashaUtils from './AdashaUtils.mjs';
+import { DEFINED_STYLES } from './definedStyles.mjs';
 
 
 /**
@@ -22,74 +23,39 @@ import * as AdashaUtils from './AdashaUtils.mjs';
  * @param {string} [params.id] - A unique string to identify the style rule.
  * @param {number} [params.threshold] - The animation distance threshold for this style, overriding the global value.
  * @param {number} [params.runoff] - The animation runoff distance for this style, overriding the global value.
- * @param {Boolean} [params.invert] - XXXXX, overriding the global value.
- * @param {number} [params.attack] - , overriding the global value.
- * @param {number} [params.decay] - , overriding the global value.
+ * @param {Boolean} [params.invert] - Whether to invert the effect for this style, overriding the global value.
+ * @param {number} [params.attack] - The easing rate towards the near value (0-1) for this style, overriding the global value.
+ * @param {number} [params.decay] - The easing rate towards the far value (0-1) for this style, overriding the global value.
  */
-export default class Style extends Object
+export default class Style
 {
 
 	#rule;
 	#func;
 	#unit;
-	#args;
 	#min;
 	#max;
 	#defaultValue;
+	#near;
+	#far;
 	#params;
-
-
-
-	#DEFINED_STYLES = {
-		translateX:      { rule: "transform",       func: "translateX", unit: "px",                             default:       0 },
-		translateY:      { rule: "transform",       func: "translateY", unit: "px",                             default:       0 },
-		translateZ:      { rule: "transform",       func: "translateZ", unit: "px",                             default:       0 },
-		rotate:          { rule: "transform",       func: "rotate",     unit: "deg",                            default:       0 },
-		rotateX:         { rule: "transform",       func: "rotateX",    unit: "deg",                            default:       0 },
-		rotateY:         { rule: "transform",       func: "rotateY",    unit: "deg",                            default:       0 },
-		rotateZ:         { rule: "transform",       func: "rotateZ",    unit: "deg",                            default:       0 },
-		scale:           { rule: "transform",       func: "scale",                                              default:       1 },
-		scaleX:          { rule: "transform",       func: "scaleX",                                             default:       1 },
-		scaleY:          { rule: "transform",       func: "scaleY",                                             default:       1 },
-		scaleZ:          { rule: "transform",       func: "scaleZ",                                             default:       1 },
-		skewX:           { rule: "transform",       func: "skewX",      unit: "deg",                            default:       0 },
-		skewY:           { rule: "transform",       func: "skewY",      unit: "deg",                            default:       0 },
-		
-		blur:            { rule: "filter",          func: "blur",       unit: "px",           min: 0,           default:       0 },
-		brightness:      { rule: "filter",          func: "brightness", unit: "%",            min: 0,           default:     100 },
-		contrast:        { rule: "filter",          func: "contrast",   unit: "%",            min: 0,           default:     100 },
-		grayscale:       { rule: "filter",          func: "grayscale",  unit: "%",            min: 0, max: 100, default:       0 },
-		hueRotate:       { rule: "filter",          func: "hue-rotate", unit: "deg",                            default:       0 },
-		invert:          { rule: "filter",          func: "invert",     unit: "%",            min: 0, max: 100, default:       0 },
-		opacity:         { rule: "filter",          func: "opacity",    unit: "%",            min: 0, max: 100, default:     100 },
-		saturate:        { rule: "filter",          func: "saturate",   unit: "%",            min: 0, max: 100, default:     100 },
-		sepia:           { rule: "filter",          func: "sepia",      unit: "%",            min: 0, max: 100, default:       0 },
-
-		color:           { rule: "color",           func: "rgb",                     args: 3, min: 0, max: 255, default: [0,0,0] },
-		backgroundColor: { rule: "backgroundColor", func: "rgb",                     args: 3, min: 0, max: 255, default: [0,0,0] },
-		scale3D:         { rule: "transform",       func: "scale3D",                 args: 3,                   default: [1,1,1] }
-	};
-
-
 
 
 
 	constructor(property, keyframes, params)
 	{
-		super();
-
 		let cssParams;
 
 		// if specifying a preset style
 		if(typeof property==="string")
 		{
-			if (Object.hasOwn(this.#DEFINED_STYLES, property))
+			if (Object.hasOwn(DEFINED_STYLES, property))
 			{
-				cssParams = this.#DEFINED_STYLES[property];
+				cssParams = DEFINED_STYLES[property];
 			}
 			else
 			{
-				throw new Error(`ProximityEffect: Couldn't find preset '${property}'`);
+				throw new RangeError(`ProximityEffect: Couldn't find preset '${property}'`);
 			}
 		}
 		else if(AdashaUtils.isObject(property))
@@ -100,197 +66,85 @@ export default class Style extends Object
 			}
 			else
 			{
-				throw new Error(`ProximityEffect: '${property}' object does not define a style rule.`);
+				throw new TypeError("ProximityEffect: style object does not define a style rule.");
 			}
 		}
 		else
 		{
-			throw new Error(`ProximityEffect: '${property}' is not a valid style rule.`);
+			throw new TypeError(`ProximityEffect: '${String(property)}' is not a valid style rule.`);
 		}
 
-
-		
-		// convenience function for adding basic near/far values like the old version
-		for(let v=0; v<keyframes.length; v++)
+		if(!Array.isArray(keyframes) || keyframes.length<2)
 		{
-			let val = keyframes[v];
+			throw new TypeError("ProximityEffect: a style needs an array of at least two keyframes (near and far).");
+		}
+
+		// the caller's array is never touched: build a normalised copy
+		const frames = keyframes.map((val, v) =>
+		{
+			let frame;
 			if (typeof val==="number")
 			{
-				keyframes[v] = AdashaUtils.valToObj(AdashaUtils.constrain(val, cssParams.min, cssParams.max));
-				switch(v)
+				frame = { value: val };
+				if (v===0)
 				{
-					case 0 :
-						keyframes[v].distance = 0;
-						break;
-					case keyframes.length-1 :
-						keyframes[v].distance = 1;
-						break;
+					frame.distance = 0;
+				}
+				else if (v===keyframes.length-1)
+				{
+					frame.distance = 1;
 				}
 			}
-		}
+			else if (AdashaUtils.isObject(val) && typeof val.value==="number")
+			{
+				frame = { ...val };
+			}
+			else
+			{
+				throw new TypeError(`ProximityEffect: keyframe ${v} must be a number or an object with a numeric 'value'.`);
+			}
+			frame.value = AdashaUtils.constrain(frame.value, cssParams.min, cssParams.max);
+			return frame;
+		});
 
-		let near = keyframes[0];
-		let far  = keyframes[keyframes.length-1];
-
-		
-
-		this.rule         = cssParams.rule;
-		this.func         = cssParams.func;
-		this.unit         = cssParams.unit;
-		this.args         = cssParams.args;
-		this.min          = cssParams.min;
-		this.max          = cssParams.max;
-		this.defaultValue = cssParams.default;
-		
-		
-		let styleObj = {
-			rules:  cssParams,
-			near:   near,
-			far:    far,
-			params: params
-		};
-
+		this.#rule         = cssParams.rule;
+		this.#func         = cssParams.func;
+		this.#unit         = cssParams.unit;
+		this.#min          = cssParams.min;
+		this.#max          = cssParams.max;
+		this.#defaultValue = cssParams.default;
+		this.#near         = frames[0];
+		this.#far          = frames[frames.length-1];
+		this.#params       = params ? { ...params } : {};
 	}
 
 
 
+	/** The CSS property this style writes to (e.g. "transform"). */
+	get rule() { return this.#rule; }
 
+	/** The CSS function wrapping the value (e.g. "translateX"), or undefined for a plain property. */
+	get func() { return this.#func; }
 
-	/**
-	 * 
-	 */
-	get rule()
-	{
-		return this.#rule;
-	}
-	/**
-	 * 
-	 */
-	set rule(rule)
-	{
-		this.#rule = rule;
-	}
+	/** The CSS unit appended to the value, if any. */
+	get unit() { return this.#unit; }
 
+	/** The minimum allowed value, if any. */
+	get min() { return this.#min; }
 
+	/** The maximum allowed value, if any. */
+	get max() { return this.#max; }
 
-	/**
-	 * 
-	 */
-	get func()
-	{
-		return this.#func;
-	}
-	/**
-	 * 
-	 */
-	set func(func)
-	{
-		this.#func = func;
-	}
+	/** The resting value of the style. */
+	get defaultValue() { return this.#defaultValue; }
 
+	/** The normalised keyframe at the closest distance. */
+	get near() { return this.#near; }
 
+	/** The normalised keyframe at the furthest distance. */
+	get far() { return this.#far; }
 
-	/**
-	 * 
-	 */
-	get unit()
-	{
-		return this.#unit;
-	}
-	/**
-	 * 
-	 */
-	set unit(unit)
-	{
-		this.#unit = unit;
-	}
+	/** Per-style parameter overrides (a copy). */
+	get params() { return { ...this.#params }; }
 
-
-
-	/**
-	 * 
-	 */
-	get args()
-	{
-		return this.#args;
-	}
-	/**
-	 * 
-	 */
-	set args(args)
-	{
-		this.#args = args;
-	}
-
-
-
-	/**
-	 * 
-	 */
-	get min()
-	{
-		return this.#min;
-	}
-	/**
-	 * 
-	 */
-	set min(min)
-	{
-		this.#min = min;
-	}
-
-
-
-	/**
-	 * 
-	 */
-	get max()
-	{
-		return this.#max;
-	}
-	/**
-	 * 
-	 */
-	set max(max)
-	{
-		this.#max = max;
-	}
-
-
-
-	/**
-	 * 
-	 */
-	get defaultValue()
-	{
-		return this.#defaultValue;
-	}
-	/**
-	 * 
-	 */
-	set defaultValue(defaultValue)
-	{
-		this.#defaultValue = defaultValue;
-	}
-
-
-
-	/**
-	 * 
-	 */
-	get params()
-	{
-		return this.#params;
-	}
-	/**
-	 * 
-	 */
-	set params(params)
-	{
-		this.#params = params;
-	}
-
-
-
- 
 }

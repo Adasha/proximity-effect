@@ -8,7 +8,7 @@ Each session below is meant to run as its own conversation. To start one, say "R
 
 - [ ] 0. Decisions and baseline
 - [x] 1. Tooling foundation
-- [ ] 2. Utilities and Style class
+- [x] 2. Utilities and Style class
 - [ ] 3. Core correctness and lifecycle
 - [ ] 4. Hardening
 - [ ] 5. Performance
@@ -119,7 +119,12 @@ Pure logic with no DOM, so it's the cheapest place to build the test habit.
 - Consolidate the duplicated `#DEFINED_STYLES` table (it exists in both `ProximityEffect.js` and `StyleClass.mjs`) into one module.
 - Decide how the `args: 3` styles (`color`, `backgroundColor`, `scale3D`) behave. The README says they're unsupported, yet they're defined. Either finish or remove them (this overlaps the 4.1 roadmap item).
 
-**Handoff:** _(fill in)_
+**Handoff (2026-10-16):**
+- Done: `AdashaUtils.mjs` trimmed to `constrain`, `roundTo`, `lerp`, `random`, `xor`, `isObject` (removed `map`, `valToObj`, `isVisibleInViewport`). `constrain` now throws `TypeError` on non-numbers (NaN passes through); `random` accepts `"uniform"`, `"normal"` and the alias `"gaussian"` and throws `RangeError` otherwise; `xor` returns booleans.
+- New `src/definedStyles.mjs` is the one frozen preset table. `args: 3` styles (`color`, `backgroundColor`, `scale3D`) were **removed**, to come back with multi-value properties in 4.1. `ProximityEffect.js` no longer has its own copy or `#VALID_RANDOM_METHODS`.
+- `Style` rewritten: it was broken (`near`/`far` never set, `addStyle` could not work). It now validates, copies keyframes and params, clamps object keyframes, and has read-only getters `rule, func, unit, min, max, defaultValue, near, far, params`. The update loop reads `style.rule/func/unit` (was `style.rules.*`). Needs ≥2 keyframes; only first and last are used (middle keyframes are for 4.3).
+- Tests: `tests/utils.test.js`, `tests/style.test.js` (31 tests in total pass on Node 24). `no-unused-private-class-members` promoted to error. Seven warnings remain, all in `ProximityEffect.js` for Session 3: `valid-typeof` (setCoords), `no-undef` (`node` in getNodeData), `no-setter-return`, and the unused `timestamp`/`view`/`bounds` in `update()`.
+- Not done / for later: setters still call `random` with unvalidated `jitterMethod`, so a bad value now throws at calc time; Session 4 should validate in the setter. Custom style `rule`/`func`/`unit` strings are still unvalidated (Session 4). The jitter-method default and README names (`"gaussian"`) still need reconciling in docs.
 
 ## Session 3: Core correctness and lifecycle
 
