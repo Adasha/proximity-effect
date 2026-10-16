@@ -4,7 +4,7 @@ import Style from './StyleClass.mjs';
 /*
  * ProximityEffect class by Adasha
  * Mass animate CSS properties based on mouse or arbitrary target's position.
- * 
+ *
  * Licensed under MPL-2.0
  * Repository: https://github.com/Adasha/proximity-effect
  * Demos: http://lab.adasha.com/proximity-effect
@@ -26,6 +26,7 @@ export default class ProximityEffect extends EventTarget
 {
 
     #VALID_DIRECTIONS       = new Set(["both", "horizontal", "vertical"]);
+    #VALID_RANDOM_METHODS   = new Set(["uniform", "normal", "gaussian"]);
     #DEFAULT_DIRECTION      = "both";
     #DEFAULT_ACCURACY       =   5;
     #DEFAULT_RUNOFF         = 100;
@@ -33,14 +34,28 @@ export default class ProximityEffect extends EventTarget
     #DEFAULT_JITTER_METHOD  = "uniform";
 
 
-    #globalParams;
-    #pointer = {};
-    #coords;
-    #stylesStack;
+    #globalParams = {};
+    #pointer = null;
+    #coords = null;
+    #stylesStack = [];
     #properties;
-    #nodes;
-    #nodeData;
-    #fpsTimerRef;
+    #nodes = [];
+    #nodeData = [];
+
+    // lifecycle
+    #ready = false;
+    #paused = false;
+    #destroyed = false;
+    #abort = new AbortController();
+    #frameId = null;
+    #lastFrameTime;
+    #reflowTimerRef = null;
+    #scratchStyle;
+
+    // stable listener references, so they can all be removed
+    #onPointerMove = (evt) => this.updatePointer(evt);
+    #onReflow      = (evt) => this.reflowEvent(evt);
+    #onFrame       = (timestamp) => this.#frame(timestamp);
 
 
 
@@ -49,10 +64,10 @@ export default class ProximityEffect extends EventTarget
     /**
      * Create a ProximityEffect instance.
      * @constructor
-     * @param {NodeList} nodes - A list of nodes to control.
+     * @param {NodeList|HTMLCollection|Array<Element>|Element} nodes - The nodes to control.
      * @param {Object}  [params={}] - An object containing effect parameters.
      * @param {number}  [params.threshold=0] - The global effect threshold, in pixels.
-     * @param {number}  [params.runoff] - The global effect runoff, in pixels.
+     * @param {number}  [params.runoff=100] - The global effect runoff, in pixels.
      * @param {boolean} [params.invert=false] - Invert distances globally.
      * @param {string}  [params.direction="both"] - The effect direction, one of "both", "horizontal" or "vertical".
      * @param {number}  [params.attack=1] - The global effect attack.
@@ -62,8 +77,8 @@ export default class ProximityEffect extends EventTarget
      * @param {number}  [params.jitter=0] - The effect jitter, in pixels. Affects X and Y.
      * @param {number}  [params.jitterX=0] - The effect jitter for the X axis only, in pixels.
      * @param {number}  [params.jitterY=0] - The effect jitter for the Y axis only, in pixels.
-     * @param {string}  [params.jitterMethod] - The random method for generating jitter values. 
-     * @param {number}  [params.accuracy] - The effect accuracy.
+     * @param {string}  [params.jitterMethod="uniform"] - The random method for generating jitter values, "uniform" or "normal" ("gaussian" is an alias).
+     * @param {number}  [params.accuracy=5] - The effect accuracy, in decimal places.
      * @param {number|Falsy} [params.FPS] - The frame rate of the effect, either the number specified or with the screen refresh.
      * @param {Element} [params.target] - The effect tracker target.
      * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
@@ -72,44 +87,57 @@ export default class ProximityEffect extends EventTarget
     {
         super();
 
-        if (!nodes) {
-            throw new Error(`ProximityEffect: nodes argument is required.`);
+        if (typeof document==="undefined")
+        {
+            throw new Error("ProximityEffect: a browser DOM is required (document is not defined).");
         }
-        
-        // turn off centre calculations during setup to avoid calling repeatedly
-        this.preventCenterCalculations = true;
+        if (!nodes)
+        {
+            throw new TypeError("ProximityEffect: nodes argument is required.");
+        }
+        if (params==null)
+        {
+            params = {};
+        }
+        if (!AdashaUtils.isObject(params))
+        {
+            throw new TypeError("ProximityEffect: params must be an object.");
+        }
 
+        // read own properties only; the caller's object is never stored or changed
+        const param = (key, fallback) => Object.hasOwn(params, key) && params[key]!=null ? params[key] : fallback;
 
-        this.#globalParams = params;
+        this.#globalParams.primeDistances = !!param("primeDistances", false);
+
+        // set global parameter values (nodes come last, so their data is built once)
+        this.threshold    = param("threshold", 0);
+        this.runoff       = param("runoff", this.#DEFAULT_RUNOFF);
+        this.attack       = param("attack", 1);
+        this.decay        = param("decay", 1);
+        this.accuracy     = param("accuracy", this.#DEFAULT_ACCURACY);
+        this.invert       = param("invert", false);
+        this.offsetX      = param("offsetX", 0);
+        this.offsetY      = param("offsetY", 0);
+        this.jitterMethod = param("jitterMethod", this.#DEFAULT_JITTER_METHOD);
+        this.jitter       = param("jitter", 0);
+        this.jitterX      = param("jitterX", 0);
+        this.jitterY      = param("jitterY", 0);
+        this.direction    = param("direction", this.#DEFAULT_DIRECTION);
+        this.FPS          = param("FPS", null);
+        this.target       = param("target", null);
+
         this.nodes = nodes;
 
 
-        // set global parameter values
-        this.threshold = Object.hasOwn(this.#globalParams, "threshold") ? this.#globalParams.threshold : 0;
-        this.runoff    = Object.hasOwn(this.#globalParams, "runoff")    ? this.#globalParams.runoff    : this.#DEFAULT_RUNOFF;
-        this.attack    = Object.hasOwn(this.#globalParams, "attack")    ? this.#globalParams.attack    : 1;
-        this.decay     = Object.hasOwn(this.#globalParams, "decay")     ? this.#globalParams.decay     : 1;
-        this.accuracy  = Object.hasOwn(this.#globalParams, "accuracy")  ? this.#globalParams.accuracy  : this.#DEFAULT_ACCURACY;
-        //this.reverse   = this.#globalParams.reverse   || false;
-        this.invert    = this.#globalParams.invert    || false;
-        this.offsetX   = this.#globalParams.offsetX   || 0;
-        this.offsetY   = this.#globalParams.offsetY   || 0;
-        this.jitter    = this.#globalParams.jitter    || 0;
-        this.jitterX   = this.#globalParams.jitterX   || 0;
-        this.jitterY   = this.#globalParams.jitterY   || 0;
-        this.direction = this.#globalParams.direction || this.#DEFAULT_DIRECTION;
-        //this.FPS       = this.#globalParams.FPS;
-        this.target    = this.#globalParams.target;
-
-
-        // finish setup once the document is ready
-        if (document.readyState==="completed")
+        // finish setup once the document has loaded. Deferred even when it
+        // already has, so listeners added after construction see 'ready'.
+        if (document.readyState==="complete")
         {
-            this.#init();
+            queueMicrotask(() => this.#init());
         }
         else
         {
-            window.addEventListener("load", () => this.#init());
+            window.addEventListener("load", () => this.#init(), { once: true, signal: this.#abort.signal });
         }
     }
 
@@ -127,7 +155,7 @@ export default class ProximityEffect extends EventTarget
 
     /**
      * Get the currently tracked target.
-     * @return {Element|Falsy} The current target.
+     * @return {Element|null} The current target.
      */
     get target()
     {
@@ -140,11 +168,17 @@ export default class ProximityEffect extends EventTarget
      */
     set target(target)
     {
-        if (!target || target.getBoundingClientRect()) {
+        if (!target)
+        {
+            this.#globalParams.target = null;
+        }
+        else if (target instanceof Element)
+        {
             this.#globalParams.target = target;
         }
-        else {
-            throw new Error(`ProximityEffect: ${target} is not a valid target.`);
+        else
+        {
+            throw new TypeError(`ProximityEffect: ${target} is not a valid target.`);
         }
     }
 
@@ -162,30 +196,26 @@ export default class ProximityEffect extends EventTarget
     }
 
     /**
-     * Set the list of nodes to animate.
-     * @param {NodeList<Element>} list - The list of nodes.
+     * Set the nodes to animate. Nodes that are no longer in the list get their original inline style back.
+     * @param {NodeList|HTMLCollection|Array<Element>|Element} list - The nodes.
      */
     set nodes(list)
     {
-        if (!(list instanceof NodeList))
+        const nodes = this.#toElementArray(list);
+        const kept  = new Map(this.#nodeData.map(data => [data.node, data]));
+
+        for (const data of this.#nodeData)
         {
-            throw new Error(`ProximityEffect: ${list} is not a node list.`);
+            if (!nodes.includes(data.node))
+            {
+                data.node.style.cssText = data.style;
+            }
         }
-        if (list.length<1)
-        {
-            throw new Error(`ProximityEffect: No nodes found in ${list}.`);
-        }
 
+        this.#nodes    = nodes;
+        this.#nodeData = nodes.map(node => kept.get(node) ?? this.#createNodeData(node));
 
-        this.#nodes = [].slice.call(list);  // convert to array boilerplate
-        this.#nodeData = this.#nodes.map(i => ({
-            node:      i,
-            style:     i.style.cssText,
-            lastDelta: this.#globalParams.primeDistances ? 1 : null
-        }));
-
-
-        if (this.#globalParams && !this.preventCenterCalculations)
+        if (this.#ready)
         {
             this.setCenterPoints();
         }
@@ -194,7 +224,7 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
-     * 
+     *
      */
     get totalNodes()
     {
@@ -205,11 +235,11 @@ export default class ProximityEffect extends EventTarget
 
     /**
      * Get the list of styles.
-     * @return {Array<Object>} The styles array.
+     * @return {Array<Style>} A copy of the styles array.
      */
     get styles()
     {
-        return this.#stylesStack;
+        return [...this.#stylesStack];
     }
 
 
@@ -248,13 +278,12 @@ export default class ProximityEffect extends EventTarget
     }
 
     /**
-     * Set the effect runoff.
+     * Set the effect runoff. A runoff of 0 gives a hard edge at the threshold.
      * @param {number} value - The new runoff radius, in pixels.
      */
     set runoff(value)
     {
     	this.#globalParams.runoff = AdashaUtils.constrain(value, 0);
-        this.#globalParams.invRunoff = 1/this.#globalParams.runoff;
     }
 
 
@@ -366,7 +395,8 @@ export default class ProximityEffect extends EventTarget
     set offsetX(value)
     {
         this.#globalParams.offsetX = value;
-        if (!this.preventCenterCalculations) {
+        if (this.#ready)
+        {
             this.setCenterPoints();
         }
   	}
@@ -378,7 +408,7 @@ export default class ProximityEffect extends EventTarget
     set offsetY(value)
     {
         this.#globalParams.offsetY = value;
-        if (!this.preventCenterCalculations)
+        if (this.#ready)
         {
             this.setCenterPoints();
         }
@@ -448,10 +478,7 @@ export default class ProximityEffect extends EventTarget
   	}
 
 
-    
 
-    
-    
     /**
      * Get the jitter method.
      * @returns {string} The random jitter method.
@@ -461,21 +488,19 @@ export default class ProximityEffect extends EventTarget
         return this.#globalParams.jitterMethod;
     }
 
-
-
     /**
-     * Set the jitter method.
-     * @param {string} method - The random string method to use.
+     * Set the jitter method, and recalculate the jitter.
+     * @param {string} method - "uniform" or "normal" ("gaussian" is an alias).
      */
     set jitterMethod(method)
     {
+        if (!this.#VALID_RANDOM_METHODS.has(method))
+        {
+            throw new RangeError(`ProximityEffect: '${method}' is not a valid jitter method. Use "uniform" or "normal".`);
+        }
         this.#globalParams.jitterMethod = method;
         this.#calculateJitters();
     }
-
-
-
-
 
 
 
@@ -502,7 +527,7 @@ export default class ProximityEffect extends EventTarget
         }
         else
         {
-            return void console.log(`ProximityEffect: '${str}' is not a valid direction.`);
+            throw new RangeError(`ProximityEffect: '${str}' is not a valid direction.`);
         }
     }
 
@@ -510,33 +535,24 @@ export default class ProximityEffect extends EventTarget
 
 
 
-    // FPS [Number>0]
-
+    /**
+     * Get the frame rate limit.
+     * @return {number|null} The frame rate, or null to follow the screen refresh.
+     */
     get FPS()
     {
     	return this.#globalParams.FPS;
     }
 
+    /**
+     * Set the frame rate limit.
+     * @param {number|Falsy} num - A positive frame rate, or falsy to follow the screen refresh.
+     */
     set FPS(num)
     {
-        if(this.#fpsTimerRef)
-        {
-            window.clearInterval(this.#fpsTimerRef);
-            this.#fpsTimerRef = null;
-        }
-
-
-        if (typeof num==='number' && num>0)
-        {
-            this.#globalParams.FPS = AdashaUtils.constrain(num, 0);
-            this.#runFrames();
-        }
-        else
-        {
-            this.#globalParams.FPS = null;
-        }
+        this.#globalParams.FPS = typeof num==="number" && Number.isFinite(num) && num>0 ? num : null;
+        this.#lastFrameTime = undefined;
     }
-
 
 
 
@@ -566,17 +582,34 @@ export default class ProximityEffect extends EventTarget
 
     /**
      * Get the last known mouse pointer coordinates, relative to the viewport, in pixels.
-     * @return {Object} An object containing x and y properties.
+     * @return {Object|null} An object containing x and y properties, or null before the pointer has moved.
      */
     get pointer()
     {
-        return {
-            x: this.#pointer.x,
-            y: this.#pointer.y
-        }
+        return this.#pointer ? { x: this.#pointer.x, y: this.#pointer.y } : null;
     }
 
 
+
+    /**
+     * Whether the effect is paused.
+     * @return {boolean}
+     */
+    get paused()
+    {
+        return this.#paused;
+    }
+
+
+
+    /**
+     * Whether the instance has been destroyed.
+     * @return {boolean}
+     */
+    get destroyed()
+    {
+        return this.#destroyed;
+    }
 
 
 
@@ -599,91 +632,94 @@ export default class ProximityEffect extends EventTarget
      * @param {number} [property.max] - The maximum style value.
      * @param {number} [property.default] - The default style value.
      * @param {string} [property.unit] - The style rule's CSS unit.
-     * @param {number|Object} near - The style value at the closest distance, either a single number or an object containing more properties.
-     * @param {number} near.value - The style value at closest distance, as an object property.
-     * @param {number} [near.scatter] - The random distribution of the value at the closest distance.
-     * @param {string} [near.scatterMethod] - The random scatter method.
-     * @param {number|Object} far - The style value at the furthest distance, either a single number or an object containing more properties.
-     * @param {number} far.value - The style value at furthest distance, as an object property.
-     * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
-     * @param {string} [far.scatterMethod] - The random scatter method.
+     * @param {Array<number|Object>} keyframes - The style values, from the closest distance to the furthest. Each is a number, or an object with a numeric value and optional scatter and scatterMethod.
      * @param {Object} [params] - An object containing additional effect parameters.
      * @param {string} [params.id] - A unique string to identify the style rule.
      * @param {number} [params.threshold] - The animation distance threshold for this style, overriding the global value.
      * @param {number} [params.runoff] - The animation runoff distance for this style, overriding the global value.
-     * @param {Boolean} [params.invert] - XXXXX, overriding the global value.
-     * @param {number} [params.attack] - , overriding the global value.
-     * @param {number} [params.decay] - , overriding the global value.
+     * @param {Boolean} [params.invert] - Whether to invert the effect for this style, overriding the global value.
+     * @param {number} [params.attack] - The easing rate towards the near value (0-1) for this style, overriding the global value.
+     * @param {number} [params.decay] - The easing rate towards the far value (0-1) for this style, overriding the global value.
      */
     addStyle(property, keyframes, params)
-    {        
-
-        this.#stylesStack = this.#stylesStack || [];
-
-        let style = new Style(property, keyframes, params);
-        let near = style.near;
-        let far = style.far;
+    {
+        const style = new Style(property, keyframes, params);
 
         this.#stylesStack.push(style);
-
-
-        for (let i=0; i<this.#nodeData.length; i++)
+        for (const data of this.#nodeData)
         {
-            let styles = this.getNodeIndexData(i, "styles") || this.#setNodeIndexData(i, "styles", [])["styles"];
-            let nearMethod = near.scatterMethod ? near.scatterMethod : this.#DEFAULT_SCATTER_METHOD,
-                 farMethod =  far.scatterMethod ?  far.scatterMethod : this.#DEFAULT_SCATTER_METHOD;
-
-            styles.push({
-                near: near.scatter ? near.value+AdashaUtils.random(near.scatter, nearMethod) : near.value,
-                far:   far.scatter ?  far.value+AdashaUtils.random( far.scatter,  farMethod) :  far.value
-            });
+            data.styles.push(this.#scatterValues(style));
         }
     }
 
 
 
     /**
-     * Check if a named style is already on the stack.
-     * @param {string} name - The name of the style to check for.
+     * Check if a named style is on the stack.
+     * @param {string} name - The preset name, or a custom style's func (or rule if it has none).
      * @return {boolean} True if the style exists at least once.
      */
-    hasStyleProp(prop)
+    hasStyleProp(name)
     {
-        return this.styles.find(s => s["func"]===prop)!==undefined;
+        return this.#stylesStack.some(style => this.#styleMatches(style, name));
     }
 
 
 
     /**
-     * Remove all instances of a style from the stack.
-     * @param {string} name - The name of the style to remove.
+     * Remove all instances of a style from the stack. CSS properties no longer
+     * animated by any style get the nodes' original inline values back.
+     * @param {string} name - The preset name, or a custom style's func (or rule if it has none).
+     * @return {boolean} True if anything was removed.
      */
-    removeStyleProp(rule)
+    removeStyleProp(name)
     {
-        if (this.hasStyleProp(rule))
+        const rules = new Set();
+
+        // backwards, so splicing doesn't skip entries
+        for (let i=this.#stylesStack.length-1; i>=0; i--)
         {
-            for (let i=0; i<this.#stylesStack.length; i++)
+            const style = this.#stylesStack[i];
+            if (this.#styleMatches(style, name))
             {
-                let eff = this.#stylesStack[i];
-                if (eff["type"]===rule)
+                rules.add(style.rule);
+                this.#stylesStack.splice(i, 1);
+                for (const data of this.#nodeData)
                 {
-                    this.#stylesStack.splice(i, 1);
+                    data.styles.splice(i, 1);
                 }
             }
         }
+
+        if (this.#stylesStack.length===0 && rules.size>0)
+        {
+            rules.add("zIndex");
+        }
+        for (const rule of rules)
+        {
+            if (!this.#stylesStack.some(style => style.rule===rule))
+            {
+                for (const data of this.#nodeData)
+                {
+                    this.#restoreProperty(data, rule);
+                }
+            }
+        }
+
+        return rules.size>0;
     }
 
 
 
 
     /**
-     * 
+     *
      * @param {String} prop - The property name - should return a number.
-     * @param {Object} params - 
-     * @param {number} params.min - 
-     * @param {number} params.max - 
-     * @param {Function} params.callback - 
-     * @returns 
+     * @param {Object} params -
+     * @param {number} params.min -
+     * @param {number} params.max -
+     * @param {Function} params.callback -
+     * @returns
      */
     addProperty(name, params)
     {
@@ -697,9 +733,9 @@ export default class ProximityEffect extends EventTarget
     }
 
     /**
-     * 
-     * @param {*} n 
-     * @returns 
+     *
+     * @param {*} n
+     * @returns
      */
     hasProperty()
     {
@@ -709,9 +745,9 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
-     * 
-     * @param {*} n 
-     * @returns 
+     *
+     * @param {*} n
+     * @returns
      */
     removeProperty()
     {
@@ -722,11 +758,8 @@ export default class ProximityEffect extends EventTarget
 
 
 
-
-
-
     /**
-     * Get the distance to the current target from the given node, in pixels.
+     * Get the normalised distance (0 to 1) to the current target from the given node, as of the last frame.
      * @param {Element} n - The node to check.
      */
     distanceFrom(n)
@@ -737,7 +770,7 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
-     * Get the distance to the current target from the given node index, in pixels.
+     * Get the normalised distance (0 to 1) to the current target from the given node index, as of the last frame.
      * @param {number} i - The node index to check.
      */
     distanceFromIndex(i)
@@ -763,24 +796,25 @@ export default class ProximityEffect extends EventTarget
 
     /**
      * Return an object containing manual coordinates, if specified.
+     * @return {Object|null} An object containing x and y properties, or null.
      */
     getCoords()
     {
-        return this.#coords;
+        return this.#coords ? { ...this.#coords } : null;
     }
 
     /**
-     * Manually specify coordinates
-     * @param {Number} x - 
-     * @param {Number} y - 
+     * Manually specify coordinates, which take priority over the target and pointer.
+     * @param {number} x - The horizontal coordinate, relative to the viewport, in pixels.
+     * @param {number} y - The vertical coordinate, relative to the viewport, in pixels.
      */
     setCoords(x, y)
     {
-        if(!(typeof x==='Number') || !(typeof y==='Number'))
+        if (!Number.isFinite(x) || !Number.isFinite(y))
         {
-            this.#coords = {x:x, y:y};
-            //this.update();
+            throw new TypeError(`ProximityEffect: coordinates must be finite numbers (received ${x}, ${y}).`);
         }
+        this.#coords = { x, y };
     }
 
 
@@ -789,10 +823,7 @@ export default class ProximityEffect extends EventTarget
      */
     clearCoords()
     {
-        if(this.#coords)
-        {
-            this.#coords = null;
-        }
+        this.#coords = null;
     }
 
 
@@ -804,26 +835,72 @@ export default class ProximityEffect extends EventTarget
      */
     setCenterPoints()
     {
-        for (let n=0; n<this.nodes.length; n++)
+        for (const data of this.#nodeData)
         {
-    		let node   = this.nodes[n],
-                cssTxt = node.style.cssText;
+    		const node   = data.node,
+                  cssTxt = node.style.cssText;
 
-            node.style.cssText = this.getNodeIndexData(n, 'style');
+            // measure the node without the effect's styles applied
+            node.style.cssText = data.style;
 
-    		let bounds = node.getBoundingClientRect(),
-                x      = (bounds.left+bounds.right )*0.5 - this.offsetX,
-                y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY,
-                jitter = this.getNodeIndexData(n, 'jitter');
-
-            if (jitter)
-            {
-                x += jitter.x;
-                y += jitter.y;
-            }
+    		const bounds = node.getBoundingClientRect();
 
             node.style.cssText = cssTxt;
-    		this.#setNodeIndexData(n, 'center', {x: x, y: y});
+            data.center = {
+                x: (bounds.left+bounds.right )*0.5 - this.offsetX + data.jitter.x,
+                y: (bounds.top +bounds.bottom)*0.5 - this.offsetY + data.jitter.y
+            };
+        }
+    }
+
+
+
+    /**
+     * Pause the effect. Nodes keep their current styles.
+     */
+    pause()
+    {
+        this.#paused = true;
+        this.#stop();
+    }
+
+
+
+    /**
+     * Resume a paused effect.
+     * @throws {Error} If the instance has been destroyed.
+     */
+    resume()
+    {
+        if (this.#destroyed)
+        {
+            throw new Error("ProximityEffect: cannot resume a destroyed instance.");
+        }
+        this.#paused = false;
+        this.#start();
+    }
+
+
+
+    /**
+     * Stop the effect for good: remove every listener, stop the animation loop
+     * and restore each node's original inline style. Safe to call more than once.
+     */
+    destroy()
+    {
+        if (this.#destroyed)
+        {
+            return;
+        }
+        this.#destroyed = true;
+        this.#abort.abort();
+        this.#stop();
+        clearTimeout(this.#reflowTimerRef);
+        this.#reflowTimerRef = null;
+
+        for (const data of this.#nodeData)
+        {
+            data.node.style.cssText = data.style;
         }
     }
 
@@ -834,28 +911,38 @@ export default class ProximityEffect extends EventTarget
     /**
      * @typedef {Object} NodeData
      * @property {Element} node - A reference to the node.
-     * @property {Array<Object>} styles - An array of applied styles containing near and far values for each.
-     * @property {number} styles[].near - Did this work?.
+     * @property {string} style - The node's original inline style.
+     * @property {Object} center - The node's centre point, including offset and jitter.
+     * @property {Object} jitter - The node's random x and y jitter.
+     * @property {number} distance - The normalised distance to the target as of the last frame.
+     * @property {number} lastDelta - The eased distance as of the last frame.
+     * @property {Array<Object>} styles - The node's near and far values for each style on the stack.
      */
     /**
      * Return an object containing the given node's effect data or a specific property of that data.
      * @param {Element} n - The node to return data for.
      * @param {string} [prop] - The data property to return, leave out to return the entire object.
      * @return {mixed|NodeData} The chosen property value, or an object containing the node's data.
+     * @throws {RangeError} If the node isn't controlled by this instance.
      */
     getNodeData(n, prop)
     {
-        let data = this.#nodeData[this.nodes.findIndex(n => n===node)];
+        const index = this.#nodes.indexOf(n);
+        if (index<0)
+        {
+            throw new RangeError("ProximityEffect: that node is not controlled by this instance.");
+        }
+        const data = this.#nodeData[index];
         return prop ? data[prop] : data;
     }
 
 
 
     /**
-     * Return an object containing the given node index"s effect data.
+     * Return the given property of the given node index's effect data.
      * @param {number} i - The node index to return data for.
      * @param {string} prop - The data property to return.
-     * @return {Object} An object containing the node's data.
+     * @return {mixed} The property value.
      */
     getNodeIndexData(i, prop)
     {
@@ -890,78 +977,181 @@ export default class ProximityEffect extends EventTarget
 
     #init()
     {
-        this.preventCenterCalculations = false;
+        if (this.#ready || this.#destroyed)
+        {
+            return;
+        }
+        this.#ready = true;
         this.setCenterPoints();
 
-        this.update = this.update.bind(this);
+        const options = { signal: this.#abort.signal, passive: true };
+        window.addEventListener("scroll", this.#onReflow, options);
+        window.addEventListener("resize", this.#onReflow, options);
+        document.addEventListener("mousemove", this.#onPointerMove, options);
 
-        window.addEventListener('scroll', this.reflowEvent.bind(this));
-        window.addEventListener('resize', this.reflowEvent.bind(this));
-
-        document.addEventListener('mousemove', this.updatePointer.bind(this));
-
-        document.dispatchEvent(new MouseEvent('mousemove'));
-        this.dispatchEvent(new Event('ready'));
-        this.FPS = this.#globalParams.FPS;
-        window.requestAnimationFrame(this.update);
+        this.dispatchEvent(new Event("ready"));
+        this.#start();
     }
 
 
 
-
-
-    #setNodeIndexData(n, prop, val)
+    #start()
     {
-        if (!this.#nodeData[n])
+        if (this.#ready && !this.#paused && !this.#destroyed && this.#frameId===null)
         {
-            this.#nodeData[n] = {};
+            this.#frameId = requestAnimationFrame(this.#onFrame);
         }
-        this.#nodeData[n][prop] = val;
-        return this.#nodeData[n];
     }
 
 
+
+    #stop()
+    {
+        if (this.#frameId!==null)
+        {
+            cancelAnimationFrame(this.#frameId);
+            this.#frameId = null;
+        }
+    }
+
+
+
+    // the one animation clock; FPS throttles it rather than running a second timer
+    #frame(timestamp)
+    {
+        this.#frameId = null;
+
+        const fps = this.FPS;
+        const due = !fps || this.#lastFrameTime===undefined
+            // 1ms tolerance, so 30fps on a 60Hz screen draws every other frame
+            || timestamp - this.#lastFrameTime >= 1000/fps - 1;
+
+        if (due)
+        {
+            this.#lastFrameTime = timestamp;
+            this.update();
+            this.dispatchEvent(new Event("redraw"));
+        }
+        this.#start();
+    }
+
+
+
+    #toElementArray(list)
+    {
+        let nodes;
+        if (list instanceof Element)
+        {
+            nodes = [list];
+        }
+        else if (list instanceof NodeList || list instanceof HTMLCollection || Array.isArray(list))
+        {
+            nodes = [...new Set(list)];
+        }
+        else
+        {
+            throw new TypeError(`ProximityEffect: ${list} is not an Element, NodeList, HTMLCollection or array of Elements.`);
+        }
+
+        if (nodes.length<1)
+        {
+            throw new RangeError("ProximityEffect: no nodes were given.");
+        }
+        if (!nodes.every(node => node instanceof Element))
+        {
+            throw new TypeError("ProximityEffect: every node must be an Element.");
+        }
+        return nodes;
+    }
+
+
+
+    #createNodeData(node)
+    {
+        return {
+            node:      node,
+            style:     node.style.cssText,
+            lastDelta: this.#globalParams.primeDistances ? 1 : undefined,
+            jitter:    this.#randomJitter(),
+            styles:    this.#stylesStack.map(style => this.#scatterValues(style))
+        };
+    }
+
+
+
+    #scatterValues(style)
+    {
+        const value = (frame) => frame.scatter
+            ? AdashaUtils.constrain(frame.value + AdashaUtils.random(frame.scatter, frame.scatterMethod ?? this.#DEFAULT_SCATTER_METHOD), style.min, style.max)
+            : frame.value;
+
+        return {
+            near: value(style.near),
+            far:  value(style.far)
+        };
+    }
+
+
+
+    #randomJitter()
+    {
+        const method = this.jitterMethod ?? this.#DEFAULT_JITTER_METHOD;
+        return {
+            x: AdashaUtils.random((this.jitter ?? 0) + (this.jitterX ?? 0), method),
+            y: AdashaUtils.random((this.jitter ?? 0) + (this.jitterY ?? 0), method)
+        };
+    }
 
 
 
     #calculateJitters()
     {
-        let method = this.jitterMethod ? this.jitterMethod : this.#DEFAULT_JITTER_METHOD;
-        for (let i=0; i<this.nodes.length; i++) {
-            this.#setNodeIndexData(i, 'jitter', {
-                x: AdashaUtils.random(this.jitter + this.jitterX, method),
-                y: AdashaUtils.random(this.jitter + this.jitterY, method)
-            });
+        for (const data of this.#nodeData)
+        {
+            data.jitter = this.#randomJitter();
         }
-        if (!this.preventCenterCalculations) {
+        if (this.#ready)
+        {
             this.setCenterPoints();
         }
     }
 
 
 
-
-
-    #runFrames()
+    #styleMatches(style, name)
     {
-        let ms = Math.round(1000/this.FPS);
-        this.#fpsTimerRef = window.setInterval(this.update, ms);
+        return style.name===name || style.func===name;
     }
 
 
 
-
-
-    #refresh()
+    // put back a node's original inline value for one CSS property
+    #restoreProperty(data, rule)
     {
-        window.requestAnimationFrame(this.update);
-        this.dispatchEvent(new Event("redraw"));
+        this.#scratchStyle ??= document.createElement("div").style;
+        this.#scratchStyle.cssText = data.style;
+        data.node.style[rule] = this.#scratchStyle[rule];
     }
 
 
 
-
-
+    // the point being tracked: manual coords, then target, then pointer
+    #targetPoint()
+    {
+        if (this.#coords)
+        {
+            return this.#coords;
+        }
+        if (this.target)
+        {
+            const b = this.target.getBoundingClientRect();
+            return {
+                x: (b.left + b.right)*0.5,
+                y: (b.top + b.bottom)*0.5
+            };
+        }
+        return this.#pointer;
+    }
 
 
 
@@ -977,25 +1167,26 @@ export default class ProximityEffect extends EventTarget
 
     updatePointer(evt)
     {
-        this.#pointer.x = evt.clientX;
-        this.#pointer.y = evt.clientY;
+        this.#pointer = { x: evt.clientX, y: evt.clientY };
     }
 
 
 
 
 
-    reflowEvent(evt)
+    reflowEvent()
     {
-        if (evt.currentTarget!==this)
-        {
-            this.dispatchEvent(new Event("reflow"));
-        }
+        this.dispatchEvent(new Event("reflow"));
 
-        // TODO: is this a hack? or the best way to do it?
-        if (!this.preventCenterCalculations)
+        // TODO: is this a hack? or the best way to do it? (replaced in Session 5)
+        if (this.#ready && !this.#destroyed)
         {
-            window.setTimeout(() => this.setCenterPoints(), 1);
+            clearTimeout(this.#reflowTimerRef);
+            this.#reflowTimerRef = setTimeout(() =>
+            {
+                this.#reflowTimerRef = null;
+                this.setCenterPoints();
+            }, 1);
         }
     }
 
@@ -1003,89 +1194,81 @@ export default class ProximityEffect extends EventTarget
 
 
 
-    update(timestamp)
+    /**
+     * Draw one frame: work out each node's distance from the target and write its styles.
+     * Called by the animation loop; calling it directly draws an extra frame.
+     */
+    update()
     {
-        let view = document.documentElement;
-
-        for (let n=0; n<this.nodes.length; n++)
+        if (this.#destroyed)
         {
-            let node    = this.nodes[n],
-                bounds  = node.getBoundingClientRect(),
-                center  = this.getNodeIndexData(n, "center");
+            return;
+        }
 
-            let centerX = center.x - (node.dataset["offsetx"]||0),
-                centerY = center.y - (node.dataset["offsety"]||0);
+        // read everything needed from layout before writing any styles
+        const point  = this.#targetPoint(),
+              styles = this.#stylesStack;
 
-            let tx, ty,
-                   last = this.getNodeIndexData(n, "lastDelta");
+        for (const data of this.#nodeData)
+        {
+            const node   = data.node,
+                  center = data.center;
 
-
-            if(this.#coords)
+            if (!center)
             {
-                let m = this.getCoords();
-                tx = m.x;
-                ty = m.y;
-            }
-            else if (this.target)
-            {
-                let b = this.target.getBoundingClientRect();
-                tx = (b.left + b.right)*0.5;
-                ty = (b.top + b.bottom)*0.5;
-            }
-            else
-            {
-                tx = this.pointer.x;
-                ty = this.pointer.y;
+                continue;
             }
 
-            let dx = tx - centerX,
-                dy = ty - centerY,
-                dd, td, d;
+            // with nothing to track yet, nodes rest as though it were infinitely far away
+            let td = 1;
 
-            // calculate distance
-            if (this.direction==="both")
+            if (point)
             {
-                dd = Math.hypot(dx, dy);
-            }
-            else
-            {
-                dd = Math.abs(this.direction==="horizontal" ? dx : dy);
+                const dx = point.x - (center.x - (Number(node.dataset.offsetx) || 0)),
+                      dy = point.y - (center.y - (Number(node.dataset.offsety) || 0));
+
+                // calculate distance
+                const dd = this.direction==="both"
+                    ? Math.hypot(dx, dy)
+                    : Math.abs(this.direction==="horizontal" ? dx : dy);
+
+                // normalise to boundaries; a runoff of 0 is a hard edge
+                td = this.runoff===0
+                    ? (dd>this.threshold ? 1 : 0)
+                    : AdashaUtils.constrain((dd-this.threshold) / this.runoff, 0, 1);
             }
 
-            // normalise to boundaries
-    		td = AdashaUtils.constrain((dd-this.threshold) * this.#globalParams.invRunoff, 0, 1);
             if (this.invert)
             {
                 td = 1 - td;
             }
 
-            this.#setNodeIndexData(n, "distance", td);
+            data.distance = td;
 
-            // apply easing
-            d = last+(td-last)*(AdashaUtils.xor(td>last, this.invert) ? this.decay : this.attack);
+            // apply easing (the first frame starts where it is, unless primed)
+            const last = data.lastDelta;
+            let d = last===undefined
+                ? td
+                : last+(td-last)*(AdashaUtils.xor(td>last, this.invert) ? this.decay : this.attack);
 
             // round value to reduce jitter
             d = AdashaUtils.roundTo(d, this.accuracy);
 
-            this.#setNodeIndexData(n, "lastDelta", d);
+            data.lastDelta = d;
 
 
-            if (this.styles.length>0)
+            if (styles.length>0)
             {
-                let styles = {};
+                const funcs = {};
 
-                for (let f=0; f<this.styles.length; f++)
+                for (let f=0; f<styles.length; f++)
                 {
-      				let style   = this.styles[f],
-                        nodeVals = this.getNodeIndexData(n, "styles")[f];
-
-                    let near     = nodeVals.near,
-                        far      = nodeVals.far,
-                        rule     = style.rule,
-                        func     = style.func,
-                        unit     = style.unit || "",
-                        val      = AdashaUtils.lerp(d, near, far);
-
+      				const style    = styles[f],
+                          nodeVals = data.styles[f],
+                          rule     = style.rule,
+                          func     = style.func,
+                          unit     = style.unit || "",
+                          val      = AdashaUtils.lerp(d, nodeVals.near, nodeVals.far);
 
                     if (!func)
                     {
@@ -1093,33 +1276,19 @@ export default class ProximityEffect extends EventTarget
                     }
                     else
                     {
-                        if (!styles[rule])
-                        {
-                            styles[rule] = [];
-                        }
-                        styles[rule].push(func+"("+val+unit+")");
+                        (funcs[rule] ??= []).push(`${func}(${val}${unit})`);
                     }
                 }
-                
 
-                for (let rule in styles)
+                for (const rule in funcs)
                 {
-                    node.style[rule] = styles[rule].join(" ");
+                    node.style[rule] = funcs[rule].join(" ");
                 }
 
-                let ix = Math.floor(d*1000);
+                const ix = Math.floor(d*1000);
                 node.style.zIndex = this.invert ? ix : 1000-ix;
             }
         }
-
-        if (!this.FPS && !this.#coords)
-        {
-            this.#refresh();
-        }
-
-
     } // update end
 
 }
-
-

@@ -9,7 +9,7 @@ Each session below is meant to run as its own conversation. To start one, say "R
 - [ ] 0. Decisions and baseline
 - [x] 1. Tooling foundation
 - [x] 2. Utilities and Style class
-- [ ] 3. Core correctness and lifecycle
+- [x] 3. Core correctness and lifecycle
 - [ ] 4. Hardening
 - [ ] 5. Performance
 - [ ] 6. Accessibility
@@ -136,7 +136,14 @@ Fix every item under **Correctness** and the lifecycle bullets above, with a reg
 - Accept a NodeList, an array, or a single Element for `nodes`.
 - Test with jsdom, faking `getBoundingClientRect` and `requestAnimationFrame`.
 
-**Handoff:** _(fill in)_
+**Handoff (2026-10-16):**
+- Done: every Correctness bullet except the ones explicitly owned by later sessions (z-index side effect: Session 4; layout thrash in `setCenterPoints` and per-frame allocation: Session 5). The `params` object is copied (own properties only); nodes data is built in one place (`#createNodeData`), so jitter and style values survive `nodes` being reset. `runoff` 0 is a hard edge; the default stays **100** (the README's "0" is wrong; fix in Session 9). `lastDelta` starts `undefined` (first frame = current distance) or 1 with `primeDistances`.
+- Lifecycle: `destroy()` (AbortController for all listeners, cancels rAF and the reflow timer, restores `cssText`), `pause()`/`resume()`, `paused`/`destroyed` getters. One rAF clock; `FPS` is now a rAF throttle (pulled forward from Session 5 because it was the cleanest fix for the double-drive bug). `ready` fires in a microtask, or on `load` while loading. No synthetic `mousemove`; with nothing to track nodes rest at the far value and `pointer` is `null`.
+- `nodes` accepts NodeList, HTMLCollection, array or Element (deduped); dropped nodes get their `cssText` back. `target` must be an `Element`. `jitterMethod` is validated in its setter (Session 2's note is done). `Style` gained a `name` getter (preset name, else `func ?? rule`) used by `hasStyleProp`/`removeStyleProp`, which also match `func` for compatibility.
+- `update()` is now a plain "draw one frame" (no scheduling, ignores arguments; no-op after destroy). `updatePointer` and `reflowEvent` are still public, wrapped by stable private arrow fields; Session 7 decides whether to make them private.
+- SSR: no DOM access at module scope; constructing without `document` throws. Tested in `tests/ssr.test.js` (node environment).
+- Tests: `tests/proximity-effect.test.js` (36) + `tests/ssr.test.js` (2); 69 total pass on Node 24. ESLint rule overrides removed; all recommended rules are errors and lint is clean.
+- For later: `offsetX`/`offsetY` and keyframe `scatter` are still unvalidated (Session 4). `reflowEvent` still uses the `setTimeout` hack, now debounced and cancellable (Session 5). `setCenterPoints` still writes `cssText` to measure each node (Session 5). `destroy()` restores the `cssText` captured at construction, so inline style changes made by the page afterwards are lost; document it (Session 9) or capture only the properties the effect writes. Demos were not opened in a browser this session.
 
 ## Session 4: Hardening
 

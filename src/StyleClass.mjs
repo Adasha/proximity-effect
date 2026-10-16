@@ -30,6 +30,7 @@ import { DEFINED_STYLES } from './definedStyles.mjs';
 export default class Style
 {
 
+	#name;
 	#rule;
 	#func;
 	#unit;
@@ -107,6 +108,8 @@ export default class Style
 			return frame;
 		});
 
+		// presets are known by their preset name, custom styles by func or rule
+		this.#name         = typeof property==="string" ? property : (cssParams.func ?? cssParams.rule);
 		this.#rule         = cssParams.rule;
 		this.#func         = cssParams.func;
 		this.#unit         = cssParams.unit;
@@ -119,6 +122,9 @@ export default class Style
 	}
 
 
+
+	/** The name used to find this style: the preset name, or a custom style's func (or rule if it has none). */
+	get name() { return this.#name; }
 
 	/** The CSS property this style writes to (e.g. "transform"). */
 	get rule() { return this.#rule; }
