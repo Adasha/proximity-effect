@@ -8,7 +8,7 @@ import * as Validate from './validate.mjs';
  *
  * Licensed under MPL-2.0
  * Repository: https://github.com/Adasha/proximity-effect
- * Demos: http://lab.adasha.com/proximity-effect
+ * Demos: http://lab.adasha.com/components/proximity-effect
  */
 
 
@@ -36,7 +36,7 @@ const NODE_DATA = Object.freeze({
 
 
 /**
- * Class representing a ProximityEffect.
+ * Animates CSS properties of many elements by their distance from the pointer or a target.
  * @version 4.0.0-alpha1
  * @author Adam Shailer <adasha76@outlook.com>
  * @class
@@ -112,17 +112,17 @@ export default class ProximityEffect extends EventTarget
      * @param {number}  [params.runoff=100] - The global effect runoff, in pixels.
      * @param {boolean} [params.invert=false] - Invert distances globally.
      * @param {string}  [params.direction="both"] - The effect direction, one of "both", "horizontal" or "vertical".
-     * @param {number}  [params.attack=1] - The global effect attack.
-     * @param {number}  [params.decay=1] - The global effect decay.
-     * @param {number}  [params.offsetX=0] - The global horizontal offset, in pixels.
-     * @param {number}  [params.offsetY=0] - The global vertical offset, in pixels.
-     * @param {number}  [params.jitter=0] - The effect jitter, in pixels. Affects X and Y.
+     * @param {number}  [params.attack=1] - The easing rate (0 to 1) as the target approaches. 1 is no easing.
+     * @param {number}  [params.decay=1] - The easing rate (0 to 1) as the target moves away. 1 is no easing.
+     * @param {number}  [params.offsetX=0] - The global horizontal offset, in pixels. A positive value moves each node's centre left.
+     * @param {number}  [params.offsetY=0] - The global vertical offset, in pixels. A positive value moves each node's centre up.
+     * @param {number}  [params.jitter=0] - The size of a random offset to each node's centre, in pixels. Affects X and Y.
      * @param {number}  [params.jitterX=0] - The effect jitter for the X axis only, in pixels.
      * @param {number}  [params.jitterY=0] - The effect jitter for the Y axis only, in pixels.
      * @param {string}  [params.jitterMethod="uniform"] - The random method for generating jitter values, "uniform" or "normal" ("gaussian" is an alias).
      * @param {number}  [params.tolerance=0.0001] - How close (0 to 1) eased distances must get to their target before snapping to it.
-     * @param {number|Falsy} [params.FPS] - The frame rate of the effect, either the number specified or with the screen refresh.
-     * @param {Element} [params.target] - The effect tracker target.
+     * @param {number|Falsy} [params.FPS] - A frame rate limit, or falsy to follow the screen refresh.
+     * @param {Element} [params.target] - An element to track instead of the pointer.
      * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
      * @param {boolean} [params.zIndex=false] - Set each node's z-index from its distance, so the nearest nodes sit on top.
      * @param {string}  [params.reducedMotion="rest"] - What to do when the user prefers reduced motion: "rest" (nodes stay at rest and ignore the pointer), "snap" (nodes follow without easing) or "ignore".
@@ -348,8 +348,8 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
-     * Get the effect boundary.
-     * @return {number} The boundary radius, in pixels.
+     * Get the effect boundary: the distance beyond which styles are at their far value.
+     * @return {number} threshold + runoff, in pixels.
      */
     get boundary()
     {
@@ -416,8 +416,8 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
-     * Get the effect attack.
-     * @return {number} The attack value.
+     * Get the easing rate as the target approaches.
+     * @return {number} The attack value, from 0 to 1.
      */
     get attack()
     {
@@ -425,8 +425,9 @@ export default class ProximityEffect extends EventTarget
     }
 
     /**
-     * Set the effect attack.
-     * @param {number} value - The new attack value.
+     * Set the easing rate as the target approaches: 1 follows straight away,
+     * smaller values ease in more slowly, and 0 doesn't move at all.
+     * @param {number} value - The new attack value, from 0 to 1 (clamped).
      */
     set attack(value)
     {
@@ -438,8 +439,8 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
-     * Get the effect decay.
-     * @return {number} The decay value.
+     * Get the easing rate as the target moves away.
+     * @return {number} The decay value, from 0 to 1.
      */
     get decay()
     {
@@ -447,8 +448,9 @@ export default class ProximityEffect extends EventTarget
     }
 
     /**
-     * Set the effect decay.
-     * @param {number} value - The new decay value.
+     * Set the easing rate as the target moves away: 1 follows straight away,
+     * smaller values ease out more slowly, and 0 doesn't move at all.
+     * @param {number} value - The new decay value, from 0 to 1 (clamped).
      */
     set decay(value)
     {
@@ -491,8 +493,8 @@ export default class ProximityEffect extends EventTarget
   	}
 
     /**
-     * Set the global vertical offset, in pixels.
-     * @param {number} value - The new offset value.
+     * Set the global vertical offset.
+     * @param {number} value - The new offset value, in pixels.
      */
     set offsetY(value)
     {
@@ -705,7 +707,7 @@ export default class ProximityEffect extends EventTarget
     /**
      * Whether motion is being reduced right now: the user prefers reduced
      * motion and reducedMotion isn't "ignore".
-     * @return {boolean}
+     * @return {boolean} True if motion is being reduced.
      */
     get motionReduced()
     {
@@ -727,7 +729,7 @@ export default class ProximityEffect extends EventTarget
 
     /**
      * Whether the effect is paused.
-     * @return {boolean}
+     * @return {boolean} True between pause() and resume().
      */
     get paused()
     {
@@ -738,7 +740,7 @@ export default class ProximityEffect extends EventTarget
 
     /**
      * Whether the instance has been destroyed.
-     * @return {boolean}
+     * @return {boolean} True once destroy() has been called.
      */
     get destroyed()
     {
@@ -854,6 +856,8 @@ export default class ProximityEffect extends EventTarget
     /**
      * Get the normalised distance (0 to 1) to the current target from the given node, as of the last frame.
      * @param {Element} n - The node to check.
+     * @return {number|undefined} The distance, or undefined before the first frame.
+     * @throws {RangeError} If the node isn't controlled by this instance.
      */
     distanceFrom(n)
     {
@@ -865,6 +869,9 @@ export default class ProximityEffect extends EventTarget
     /**
      * Get the normalised distance (0 to 1) to the current target from the given node index, as of the last frame.
      * @param {number} i - The node index to check.
+     * @return {number|undefined} The distance, or undefined before the first frame.
+     * @throws {TypeError} If the index is not a number.
+     * @throws {RangeError} If the index is not a whole number within the node list.
      */
     distanceFromIndex(i)
     {

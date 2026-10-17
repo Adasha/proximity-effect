@@ -46,23 +46,23 @@ export interface ProximityEffectParams
     runoff?: number | null;
     /** Swap near and far. Default false. */
     invert?: boolean | null;
-    /** Default "both". */
+    /** Which distance to measure: straight-line ("both"), or along one axis. Default "both". */
     direction?: Direction | null;
     /** Easing rate (0 to 1) as the target approaches. Default 1 (no easing). */
     attack?: number | null;
     /** Easing rate (0 to 1) as the target moves away. Default 1 (no easing). */
     decay?: number | null;
-    /** Default 0. */
+    /** Shifts every node's centre horizontally, in pixels; a positive value moves it left. Adds to each node's data-offsetx. Default 0. */
     offsetX?: number | null;
-    /** Default 0. */
+    /** Shifts every node's centre vertically, in pixels; a positive value moves it up. Adds to each node's data-offsety. Default 0. */
     offsetY?: number | null;
     /** Random offset of each node's centre on both axes, in pixels. Default 0. */
     jitter?: number | null;
-    /** Default 0. */
+    /** Random offset of each node's centre on the x axis only, in pixels. Adds to jitter. Default 0. */
     jitterX?: number | null;
-    /** Default 0. */
+    /** Random offset of each node's centre on the y axis only, in pixels. Adds to jitter. Default 0. */
     jitterY?: number | null;
-    /** Default "uniform". */
+    /** How the jitter is distributed. Default "uniform". */
     jitterMethod?: RandomMethod | null;
     /** How close (0 to 1) easing must get to its target before snapping to it. Default 0.0001. */
     tolerance?: number | null;
@@ -74,7 +74,7 @@ export interface ProximityEffectParams
     primeDistances?: boolean | null;
     /** Set each node's z-index from its distance. Default false. */
     zIndex?: boolean | null;
-    /** Default "rest". */
+    /** What to do when the user prefers reduced motion: stay at rest, follow without easing, or ignore it. Default "rest". */
     reducedMotion?: ReducedMotion | null;
 }
 
