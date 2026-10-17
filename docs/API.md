@@ -145,13 +145,13 @@ myEffect.addStyle({ rule: "letterSpacing", unit: "px" }, [4, 0], { id: "spacing"
 
 The same style can be added more than once. Styles with a CSS function that write to the same property (such as the `transform` and `filter` presets) are combined, in the order they were added. A style without a function writes the whole property, so don't give it a property that another style also writes. Everything is checked before anything changes, so a failed call leaves the instance as it was.
 
-#### `hasStyleProp(name)`
+#### `hasStyle(name)`
 
 Returns `true` if a matching style has been added. `name` can be a preset name (`"hueRotate"`), a custom style's `func` (or its `rule`, if it has no `func`), or the `id` given in its params.
 
-#### `removeStyleProp(name)`
+#### `removeStyle(name)`
 
-Removes every style matching `name` (as for `hasStyleProp()`), and returns `true` if anything was removed. Any CSS property no longer animated by another style gets the nodes' original inline value back.
+Removes every style matching `name` (as for `hasStyle()`), and returns `true` if anything was removed. Any CSS property no longer animated by another style gets the nodes' original inline value back.
 
 ### Tracking methods
 
@@ -282,7 +282,7 @@ More than two keyframes, or a keyframe `distance`, throws a `RangeError` for now
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `id` | String | A name for the style, which `hasStyleProp()` and `removeStyleProp()` accept. |
+| `id` | String | A name for the style, which `hasStyle()` and `removeStyle()` accept. |
 
 Per-style `threshold`, `runoff`, `invert`, `attack` and `decay` are planned for 4.2, and throw a `RangeError` for now, for the same reason. Any other parameter is ignored.
 

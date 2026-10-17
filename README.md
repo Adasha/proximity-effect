@@ -192,7 +192,7 @@ myEffect.addStyle("blur",  [0,  10]);
 | --- | --- | --- |
 | `property` | String or Object | The name of a preset style (see below), or an object describing a [custom style](#custom-styles). |
 | `keyframes` | Array | The style's value nearest the pointer, then furthest from it. Each is a number, or an [object with scatter](#scatter). |
-| `params` | Object | (optional) `id` gives the style a name, which `hasStyleProp()` and `removeStyleProp()` accept. |
+| `params` | Object | (optional) `id` gives the style a name, which `hasStyle()` and `removeStyle()` accept. |
 
 Preset styles:
 
@@ -231,7 +231,7 @@ myEffect.addStyle("rotateZ", [{ value: 0, scatter: 30 }, { value: 0, scatter: 90
 | `destroy()` | Stops the effect for good, and gives the elements back their original inline styles. |
 | `setCoords(x, y)` and `clearCoords()` | Track a fixed point (relative to the viewport) instead of the pointer or target. |
 | `clearTarget()` | Go back to tracking the pointer after setting `target`. |
-| `hasStyleProp(name)` and `removeStyleProp(name)` | Find or remove styles by preset name, `func` or `id`. |
+| `hasStyle(name)` and `removeStyle(name)` | Find or remove styles by preset name, `func` or `id`. |
 | `setCenterPoints()` | Measure the elements again. Only needed if they move in a way the effect can't see, such as a CSS animation. |
 
 The effect also dispatches three events: `ready` once it has set up, `redraw` after each frame it draws, and `reflow` when it finds an element has moved:

@@ -163,7 +163,7 @@ function checkParams(params)
  * @param {Array<number|Object>} keyframes - The near and far style values. Each is a number, or an object with a numeric value and optional scatter and scatterMethod.
  * Keyframes in between, and a keyframe distance, are planned for 4.3; passing them throws a RangeError.
  * @param {Object} [params] - An object containing additional effect parameters.
- * @param {string} [params.id] - A name for the style, which hasStyleProp() and removeStyleProp() accept.
+ * @param {string} [params.id] - A name for the style, which hasStyle() and removeStyle() accept.
  * Per-style threshold, runoff, invert, attack and decay are planned for 4.2; passing them throws a RangeError.
  * @throws {TypeError} If an argument is the wrong type.
  * @throws {RangeError} If a value is not allowed (unknown preset, unsafe rule, func or unit, non-finite number, a feature that isn't supported yet).

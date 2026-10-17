@@ -433,7 +433,7 @@ describe("target and coords", () =>
 
 describe("styles", () =>
 {
-    it("removeStyleProp removes every match and keeps the rest aligned", async () =>
+    it("removeStyle removes every match and keeps the rest aligned", async () =>
     {
         const el = makeNode(0, 0);
         const pe = create(el);
@@ -442,11 +442,11 @@ describe("styles", () =>
         pe.addStyle("translateX", [0, 20]);
         pe.addStyle("rotate", [0, 90]);
 
-        expect(pe.removeStyleProp("translateX")).toBe(true);
-        expect(pe.hasStyleProp("translateX")).toBe(false);
+        expect(pe.removeStyle("translateX")).toBe(true);
+        expect(pe.hasStyle("translateX")).toBe(false);
         expect(pe.styles.map(s => s.name)).toEqual(["scale", "rotate"]);
         expect(pe.getNodeData(el, "styles")).toEqual([{ near: 1, far: 2 }, { near: 0, far: 90 }]);
-        expect(pe.removeStyleProp("translateX")).toBe(false);
+        expect(pe.removeStyle("translateX")).toBe(false);
 
         await settle();
         step();
@@ -457,9 +457,9 @@ describe("styles", () =>
     {
         const pe = create(makeNode(0, 0));
         pe.addStyle("hueRotate", [0, 90]);
-        expect(pe.hasStyleProp("hueRotate")).toBe(true);
-        expect(pe.hasStyleProp("hue-rotate")).toBe(true);
-        expect(pe.removeStyleProp("hueRotate")).toBe(true);
+        expect(pe.hasStyle("hueRotate")).toBe(true);
+        expect(pe.hasStyle("hue-rotate")).toBe(true);
+        expect(pe.removeStyle("hueRotate")).toBe(true);
         expect(pe.styles).toEqual([]);
     });
 
@@ -473,7 +473,7 @@ describe("styles", () =>
         await settle();
         step();
         expect(el.style.transform).toBe("translateX(10px)");
-        pe.removeStyleProp("translateX");
+        pe.removeStyle("translateX");
         expect(el.style.transform).toBe("rotate(5deg)");
         expect(el.style.zIndex).toBe("3");
     });
@@ -751,7 +751,7 @@ describe("zIndex", () =>
         pe.setCoords(0, 0);
         step();
         expect(el.style.zIndex).toBe("1000");
-        pe.removeStyleProp("translateX");
+        pe.removeStyle("translateX");
         expect(el.style.zIndex).toBe("3");
     });
 });
@@ -848,7 +848,7 @@ describe("performance", () =>
         runUntilIdle();
         expect(el.style.transform).toBe("translateX(0px) rotate(0deg)");
 
-        pe.removeStyleProp("translateX");
+        pe.removeStyle("translateX");
         runUntilIdle();
         expect(el.style.transform).toBe("rotate(0deg)");
     });
@@ -1659,7 +1659,7 @@ describe("accessibility", () =>
             movePointer(i*10, 0);
             step();
         }
-        pe.removeStyleProp("opacity");
+        pe.removeStyle("opacity");
         step();
         pe.destroy();
         await settle();

@@ -14,7 +14,7 @@ A big tidy-up: fixed, hardened, made faster and accessible, and documented. The 
 ### Breaking changes
 
 - `addEffect(name, near, far, [params])` is replaced by `addStyle(property, keyframes, [params])`, which takes the near and far values as an array. A custom style is now described by an object passed in place of the name, rather than by a made-up name plus a params object, and the third argument holds per-style parameters such as `id`.
-- `hasEffect()`, `removeEffect()` and `effects` are renamed `hasStyleProp()`, `removeStyleProp()` and `styles`, and the `effects` field of the node data is renamed `styles`.
+- `hasEffect()`, `removeEffect()` and `effects` are renamed `hasStyle()`, `removeStyle()` and `styles`, and the `effects` field of the node data is renamed `styles`.
 - The `opacity` preset is now the `filter: opacity()` function, from 0 to 100 (it was the CSS `opacity` property, from 0 to 1). Use the custom style `{ rule: "opacity" }` for the property.
 - The `doPresetDistances` parameter is renamed `primeDistances`.
 - The `mode` property is removed. The effect always runs on animation frames, as the default `"redraw"` mode did; the `"mousemove"` and `"enterframe"` modes had already stopped working.
@@ -62,7 +62,7 @@ A big tidy-up: fixed, hardened, made faster and accessible, and documented. The 
 - `xor()` returns a real boolean.
 - Instances created after the page had loaded never initialised (`readyState` was compared with `"completed"`).
 - `distanceFrom()` and `getNodeData()` always threw (an undefined variable). They now throw a `RangeError` only for a node the instance doesn't control.
-- `removeStyleProp()` removed nothing (it checked a property that doesn't exist), skipped entries when it did, and left per-node values misaligned. It now removes every match, keeps the rest aligned, restores CSS properties that nothing animates any more, and returns whether anything was removed. `hasStyleProp()` and `removeStyleProp()` accept preset names such as `hueRotate`.
+- `removeStyle()` removed nothing (it checked a property that doesn't exist), skipped entries when it did, and left per-node values misaligned. It now removes every match, keeps the rest aligned, restores CSS properties that nothing animates any more, and returns whether anything was removed. `hasStyle()` and `removeStyle()` accept preset names such as `hueRotate`.
 - Scrolling a container inside a shadow root, or a page container holding a web component whose shadow root holds nodes, didn't remeasure the nodes. Scroll events are now also heard inside each shadow root that holds a node, and containment is checked across shadow boundaries.
 - `setCoords()` stored any value because its type check could never pass. Manual coordinates no longer stop the animation loop.
 - A `runoff` of 0 produced `NaN`; it now gives a hard edge at the threshold.
@@ -111,14 +111,14 @@ Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styl
 - Touch and pen support (see Breaking changes).
 - TypeScript declarations (`dist/proximity-effect.d.ts`, referenced from `package.json`), including typed event listeners for `ready`, `redraw` and `reflow`.
 - A TypeScript declaration for the classic script's global `ProximityEffect`: add `/// <reference types="proximity-effect/global" />` to code that uses the global instead of importing the module.
-- `hasStyleProp()` and `removeStyleProp()` also find a style by the `id` given in its params, and `Style` has an `id` getter.
+- `hasStyle()` and `removeStyle()` also find a style by the `id` given in its params, and `Style` has an `id` getter.
 - Documentation for `totalNodes`, `update()` and the events. Events are plain `Event` objects that don't bubble, can't be cancelled and carry no detail.
 
 ## Upgrading from 2.x
 
 1. Update script URLs or import paths to the new build file names (see [Installation](README.md#installation)). If you load `https://unpkg.com/proximity-effect` without a version, pin it to `proximity-effect@4`. Remove any `event-target` polyfill.
 2. Replace each `addEffect(name, near, far)` with `addStyle(name, [near, far])`. For a custom effect, pass its definition as the first argument instead of a name, and give the name as an `id` if you need it: `addEffect("positionleft", 100, 50, { rule: "left", unit: "em" })` becomes `addStyle({ rule: "left", unit: "em" }, [100, 50], { id: "positionleft" })`.
-3. Rename `hasEffect()`, `removeEffect()` and `effects` to `hasStyleProp()`, `removeStyleProp()` and `styles`, and read node data's `styles` field instead of `effects`.
+3. Rename `hasEffect()`, `removeEffect()` and `effects` to `hasStyle()`, `removeStyle()` and `styles`, and read node data's `styles` field instead of `effects`.
 4. Multiply `opacity` preset values by 100 (`[1, 0.5]` becomes `[100, 50]`), or use `{ rule: "opacity" }` to keep animating the CSS property.
 5. Rename `doPresetDistances` to `primeDistances`, and remove `mode` and `accuracy`.
 6. If you relied on the nearest elements sitting on top, add `zIndex: true`.

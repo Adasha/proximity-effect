@@ -107,8 +107,8 @@ pe.addStyle("blur", [0]);
 pe.addStyle("blur", [0, { value: 1, distance: 1 }]);
 // @ts-expect-error per-style threshold isn't supported yet
 pe.addStyle("blur", [0, 1], { threshold: 10 });
-assert<boolean>(pe.hasStyleProp("hue"));
-assert<boolean>(pe.removeStyleProp("hue"));
+assert<boolean>(pe.hasStyle("hue"));
+assert<boolean>(pe.removeStyle("hue"));
 const style = pe.styles[0];
 assert<string>(style.name);
 assert<string>(style.rule);

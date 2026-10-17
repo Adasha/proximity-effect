@@ -19,7 +19,7 @@ const READ_ONLY = [
 ];
 
 const METHODS = [
-    "addStyle", "hasStyleProp", "removeStyleProp", "distanceFrom", "distanceFromIndex",
+    "addStyle", "hasStyle", "removeStyle", "distanceFrom", "distanceFromIndex",
     "clearTarget", "getCoords", "setCoords", "clearCoords", "setCenterPoints",
     "pause", "resume", "destroy", "getNodeData", "getNodeIndexData", "hasNodeIndexData", "update",
 ];
@@ -218,17 +218,17 @@ describe("copies", () =>
 
 describe("style ids", () =>
 {
-    it("hasStyleProp and removeStyleProp find a style by its id", () =>
+    it("hasStyle and removeStyle find a style by its id", () =>
     {
         const pe = create(makeNode(0, 0));
         pe.addStyle("blur", [0, 1], { id: "soft" });
         pe.addStyle("blur", [0, 5]);
-        expect(pe.hasStyleProp("soft")).toBe(true);
-        expect(pe.removeStyleProp("soft")).toBe(true);
+        expect(pe.hasStyle("soft")).toBe(true);
+        expect(pe.removeStyle("soft")).toBe(true);
         expect(pe.styles).toHaveLength(1);
         expect(pe.styles[0].far.value).toBe(5);
-        expect(pe.hasStyleProp("soft")).toBe(false);
-        expect(pe.removeStyleProp("soft")).toBe(false);
+        expect(pe.hasStyle("soft")).toBe(false);
+        expect(pe.removeStyle("soft")).toBe(false);
     });
 });
 

@@ -771,7 +771,7 @@ export default class ProximityEffect extends EventTarget
      * @param {Array<number|Object>} keyframes - The near and far style values. Each is a number, or an object with a numeric value and optional scatter and scatterMethod.
      * Keyframes in between, and a keyframe distance, are planned for 4.3; passing them throws a RangeError.
      * @param {Object} [params] - An object containing additional effect parameters.
-     * @param {string} [params.id] - A name for the style, which hasStyleProp() and removeStyleProp() accept.
+     * @param {string} [params.id] - A name for the style, which hasStyle() and removeStyle() accept.
      * Per-style threshold, runoff, invert, attack and decay are planned for 4.2; passing them throws a RangeError.
      * @throws {TypeError} If an argument is the wrong type.
      * @throws {RangeError} If a value is not allowed (see Style).
@@ -795,7 +795,7 @@ export default class ProximityEffect extends EventTarget
      * @param {string} name - The preset name, a custom style's func (or rule if it has none), or the id given in the style's params.
      * @return {boolean} True if the style exists at least once.
      */
-    hasStyleProp(name)
+    hasStyle(name)
     {
         return this.#stylesStack.some(style => this.#styleMatches(style, name));
     }
@@ -808,7 +808,7 @@ export default class ProximityEffect extends EventTarget
      * @param {string} name - The preset name, a custom style's func (or rule if it has none), or the id given in the style's params.
      * @return {boolean} True if anything was removed.
      */
-    removeStyleProp(name)
+    removeStyle(name)
     {
         const rules = new Set();
 
