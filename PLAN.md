@@ -14,7 +14,7 @@ Each session below is meant to run as its own conversation. To start one, say "R
 - [x] 5. Performance
 - [x] 6. Accessibility
 - [x] 7. Public API, events and types
-- [ ] 8. Build and packaging
+- [x] 8. Build and packaging
 - [ ] 9. Documentation and demos
 - [ ] 10. Release
 
@@ -244,7 +244,17 @@ Measure first, then change. Build a small benchmark page (for example 1,000 and 
 - Decide on `dist/` committed versus built in CI and on publish. Add provenance to the npm publish workflow if publishing from CI.
 - Confirm the old file names (`dist/ProximityEffect.js`, `.min.js`) still resolve for people who hot-link them, or document the change clearly.
 
-**Handoff:** _(fill in)_
+**Handoff (2026-10-17):**
+- Most of this was already in place from Sessions 1 and 7 (`exports`, `files`, `sideEffects`, `module`, `types`, `unpkg`/`jsdelivr`, ESM and classic builds, source map, `dist.test.js`). Added this session:
+  - `src/ProximityEffect.global.d.ts`, shipped as `dist/proximity-effect.global.d.ts` (the build rewrites its import to the renamed module types) and exported types-only as `proximity-effect/global`. It needs `nodenext`/`bundler` resolution, since `exports` is ignored under the old `node` resolution. `tests/types/global.ts` checks it.
+  - `dist.test.js` now checks: every file `package.json` names exists; the exact `npm pack` file list (9 files); and that `package.json`, the lockfile, the README header, `@version` and both build banners agree on the version. That last check guards Session 10's version bump.
+  - `devEngines` (Node >=24, `onFail: "warn"`) for contributors. No `engines`: it's a browser library, and `engines` would only make npm warn for consumers.
+- Versions already agree (`4.0.0-alpha1` everywhere).
+- Size: classic `proximity-effect.min.js` is 20.7 kB, 7.1 kB gzipped. The 2.1.16 `ProximityEffect.min.js` was 12.1 kB and 3.7 kB gzipped; the growth is validation, lifecycle, accessibility and reduced-motion code. The ESM build is 57 kB unminified (comments kept; consumers' bundlers minify it). `npm pack --dry-run`: 67 kB packed, 9 files.
+- `dist/` stays uncommitted and is built on `prepack`. **Publishing stays manual by the user** (matching wrap-chars), so there's no publish workflow and no provenance. Provenance needs publishing from CI; add an OIDC trusted-publishing workflow later if wanted.
+- Old file names: findings recorded in the CHANGELOG. npm's latest, 2.1.19, shipped **no `dist/` at all**, so the bare unpkg URL (redirecting to `2.1.19/dist/ProximityEffect.min.js`) and the bare jsDelivr URL return 404 today; 4.0 fixes both. jsDelivr shows about 47 hits a month, all for 2.1.19. Version-pinned 2.1.x CDN URLs (e.g. 2.1.16) still work and are unaffected. `master` still has `dist/ProximityEffect*.js` committed from 2022, so GitHub/jsDelivr `gh` hot links on `master` break when 4.0 merges. The CHANGELOG tells those users to pin tag `2.1.14` (checked: returns 200). No alias files were shipped under the old names: unpinned path URLs are already broken, and pinned ones don't need them.
+- Tests: 160 pass on Node 24. Lint, typecheck, build and a11y are clean.
+- For Session 9: the README install section still describes ES5 builds in `dist`; rewrite it with the URLs above, `import type`, and the `proximity-effect/global` reference. For Session 10: the tarball install should include a TypeScript consumer using `proximity-effect/global` (resolved by package name, which the typecheck here doesn't do).
 
 ## Session 9: Documentation and demos
 
