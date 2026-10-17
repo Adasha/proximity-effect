@@ -209,13 +209,19 @@ describe("Style hardening", () =>
 
     it("validates per-style params and keeps only known ones", () =>
     {
-        const s = new Style("blur", [0, 1], { id: "a", attack: 2, threshold: -5, invert: true, extra: 1 });
-        expect(s.params).toEqual({ id: "a", attack: 1, threshold: 0, invert: true });
+        const s = new Style("blur", [0, 1], { id: "a", extra: 1 });
+        expect(s.params).toEqual({ id: "a" });
         expect(() => new Style("blur", [0, 1], { id: 5 })).toThrow(TypeError);
-        expect(() => new Style("blur", [0, 1], { runoff: "5" })).toThrow(TypeError);
-        expect(() => new Style("blur", [0, 1], { decay: NaN })).toThrow(RangeError);
-        expect(() => new Style("blur", [0, 1], { invert: "yes" })).toThrow(TypeError);
         expect(() => new Style("blur", [0, 1], 5)).toThrow(TypeError);
+    });
+
+    it("rejects per-style overrides of the global parameters until they're supported", () =>
+    {
+        for (const key of ["threshold", "runoff", "invert", "attack", "decay"])
+        {
+            expect(() => new Style("blur", [0, 1], { [key]: 1 }), key).toThrow(RangeError);
+        }
+        expect(new Style("blur", [0, 1], { attack: undefined }).params).toEqual({});
     });
 
     it("returns copies of its keyframes", () =>

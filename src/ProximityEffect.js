@@ -707,12 +707,8 @@ export default class ProximityEffect extends EventTarget
      * @param {string} [property.unit] - The style rule's CSS unit.
      * @param {Array<number|Object>} keyframes - The style values, from the closest distance to the furthest. Each is a number, or an object with a numeric value and optional scatter and scatterMethod.
      * @param {Object} [params] - An object containing additional effect parameters.
-     * @param {string} [params.id] - A unique string to identify the style rule.
-     * @param {number} [params.threshold] - The animation distance threshold for this style, overriding the global value.
-     * @param {number} [params.runoff] - The animation runoff distance for this style, overriding the global value.
-     * @param {Boolean} [params.invert] - Whether to invert the effect for this style, overriding the global value.
-     * @param {number} [params.attack] - The easing rate towards the near value (0-1) for this style, overriding the global value.
-     * @param {number} [params.decay] - The easing rate towards the far value (0-1) for this style, overriding the global value.
+     * @param {string} [params.id] - A string to identify the style rule.
+     * Per-style threshold, runoff, invert, attack and decay are planned for 4.2; passing them throws a RangeError.
      */
     addStyle(property, keyframes, params)
     {

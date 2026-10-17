@@ -116,7 +116,7 @@ Here's how the arguments break down:
 | :---: | :---: | :--- |
 | `property` | String or Object | Defines the CSS property that will be modified. This can be a string that is the name of a [pre-defined CSS property](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects), or can be an object defining a property of your own. [details to come] |
 | `keyframes` | Array | An array defining the start and end values of this property when animated. Only the first and last values of the array are read currently; eventually more fine-grained animations will be possible. Values can be either a number specifying the value, or can be an object defining additional parameters. [details to come] |
-| `params` | Object | Currently unused. |
+| `params` | Object | Optional. `id` (String) labels the style. Per-style `threshold`, `runoff`, `invert`, `attack` and `decay` are planned for 4.2 and throw an error for now. |
 
 ProximityEffect comes pre-defined with [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules. It currently only supports custom properties with single numerical values in them, so rgb() and the like can't be used yet.
 

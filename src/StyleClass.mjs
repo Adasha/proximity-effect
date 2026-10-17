@@ -46,13 +46,12 @@ const CSS_UNITS = new Set([
 ]);
 
 const STYLE_PARAMS = {
-	id:        (v, name) => { if (typeof v!=="string") { throw new TypeError(`ProximityEffect: ${name} must be a string.`); } return v; },
-	threshold: (v, name) => Math.max(Validate.finite(v, name), 0),
-	runoff:    (v, name) => Math.max(Validate.finite(v, name), 0),
-	invert:    (v, name) => Validate.boolean(v, name),
-	attack:    (v, name) => AdashaUtils.constrain(Validate.finite(v, name), 0, 1),
-	decay:     (v, name) => AdashaUtils.constrain(Validate.finite(v, name), 0, 1),
+	id: (v, name) => { if (typeof v!=="string") { throw new TypeError(`ProximityEffect: ${name} must be a string.`); } return v; },
 };
+
+// Per-style overrides of the global parameters, planned for 4.2. Rejected
+// until then, so adding them won't change what existing calls do.
+const FUTURE_PARAMS = ["threshold", "runoff", "invert", "attack", "decay"];
 
 
 // read an own property only, so values can't come from a (polluted) prototype
@@ -130,6 +129,14 @@ function checkParams(params)
 		throw new TypeError("ProximityEffect: style params must be an object.");
 	}
 
+	for (const key of FUTURE_PARAMS)
+	{
+		if (own(params, key)!==undefined)
+		{
+			throw new RangeError(`ProximityEffect: per-style ${key} is not supported yet; set it on the instance instead.`);
+		}
+	}
+
 	const checked = {};
 	for (const key in STYLE_PARAMS)
 	{
@@ -155,14 +162,10 @@ function checkParams(params)
  * @param {string} [property.unit] - The style rule's CSS unit, from a fixed list of CSS units.
  * @param {Array<number|Object>} keyframes - The style values, from the closest distance to the furthest. Each is a number, or an object with a numeric value and optional scatter and scatterMethod.
  * @param {Object} [params] - An object containing additional effect parameters.
- * @param {string} [params.id] - A unique string to identify the style rule.
- * @param {number} [params.threshold] - The animation distance threshold for this style, overriding the global value.
- * @param {number} [params.runoff] - The animation runoff distance for this style, overriding the global value.
- * @param {Boolean} [params.invert] - Whether to invert the effect for this style, overriding the global value.
- * @param {number} [params.attack] - The easing rate towards the near value (0-1) for this style, overriding the global value.
- * @param {number} [params.decay] - The easing rate towards the far value (0-1) for this style, overriding the global value.
+ * @param {string} [params.id] - A string to identify the style rule.
+ * Per-style threshold, runoff, invert, attack and decay are planned for 4.2; passing them throws a RangeError.
  * @throws {TypeError} If an argument is the wrong type.
- * @throws {RangeError} If a value is not allowed (unknown preset, unsafe rule, func or unit, non-finite number).
+ * @throws {RangeError} If a value is not allowed (unknown preset, unsafe rule, func or unit, non-finite number, a per-style parameter that isn't supported yet).
  */
 export default class Style
 {

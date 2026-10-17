@@ -29,7 +29,8 @@ All notable changes to this project are documented here. The format is based on 
 - `invert`, `zIndex` and `primeDistances` must be booleans; anything else throws a `TypeError`.
 - `FPS` accepts a positive number, or `null`, `undefined`, `false` or 0 to follow the screen refresh. A negative, `NaN` or infinite value throws a `RangeError`, and a non-number throws a `TypeError`, instead of quietly turning the limit off.
 - `setCoords()` throws a `RangeError` (was `TypeError`) for `NaN` or infinite coordinates.
-- `addStyle()` rejects `NaN` and infinite keyframe values, negative `scatter`, an unknown `scatterMethod`, a keyframe `distance` outside 0 to 1, `min` greater than `max`, and per-style params of the wrong type. Unknown per-style params are dropped.
+- `addStyle()` rejects `NaN` and infinite keyframe values, negative `scatter`, an unknown `scatterMethod`, a keyframe `distance` outside 0 to 1, `min` greater than `max`, and an `id` that isn't a string. Unknown per-style params are dropped.
+- Per-style `threshold`, `runoff`, `invert`, `attack` and `decay` throw a `RangeError`. They were documented as overriding the global values but were never used; support is planned for 4.2.
 - `getNodeIndexData()`, `hasNodeIndexData()` and `distanceFromIndex()` throw a `RangeError` for an index outside the node list. `getNodeData()` and `getNodeIndexData()` return `undefined` for inherited property names such as `constructor`.
 - The undocumented public `preventCenterCalculations` property is removed.
 - The animation loop stops when nothing is moving, so `redraw` is only dispatched for frames that are drawn. It wakes on pointer movement, scrolling, resizing and any setting or method that changes the output. With a `target` element set, it checks the target's position every frame, since the target can move without an event, but only draws when it has moved. Coordinates set with `setCoords()` take over from the target, so it isn't checked at all.

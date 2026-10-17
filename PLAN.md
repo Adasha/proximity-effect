@@ -210,7 +210,7 @@ Measure first, then change. Build a small benchmark page (for example 1,000 and 
 - Ship TypeScript declarations (`.d.ts`, written by hand or generated from JSDoc with `tsc --allowJs --declaration`) and test them with a small `tsd` or `tsc` check.
 - Pin the API in tests, so changes later are deliberate.
 - Decide how the 4.1 to 4.3 roadmap features will fit (multi-value properties, per-property parameters, multi-point animations), so 4.0 doesn't paint them into a corner. Record the decision only; don't build them.
-- Per-style params (review finding): `addStyle`/`Style` JSDoc says `threshold`, `runoff`, `invert`, `attack` and `decay` override the globals, but nothing reads `style.params` (not even `id`); the README says they're unused. Implementing them is deferred to 4.2. Still to decide here what 4.0 does with them: reject with a `RangeError` (makes 4.2 purely additive; suggested), accept with a warning, or just fix the JSDoc. Accepting them silently means 4.2 would change the behaviour of existing calls.
+- Per-style params (review finding): nothing ever read them, despite the JSDoc. Decided: `threshold`, `runoff`, `invert`, `attack` and `decay` now throw a `RangeError` in `Style`, so 4.2 can add them without changing existing calls. `id` is still accepted and stored but unused; decide here whether `removeStyleProp` should match it.
 
 **Handoff:** _(fill in)_
 
