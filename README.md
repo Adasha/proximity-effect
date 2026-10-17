@@ -2,145 +2,242 @@
 
 v4.0.0-alpha1
 
+## Contents
+
+- [About](#about)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Use](#use)
+- [Accessibility](#accessibility)
+- [Performance](#performance)
+- [Browser support](#browser-support)
+- [Known issues](#known-issues)
+- [Development](#development)
+- [Roadmap](#roadmap)
+- [Version history](#version-history)
+- [Licence](#licence)
+- [AI usage disclosure](#ai-usage-disclosure)
+
+## About
+
 Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Very customisable, definitely overdeveloped. A fun pet project originally from the Flash days, remade in JS for practice.
 
-[View live demos](http://lab.adasha.com/components/proximity-effect)
+Give it a set of elements and some styles, and each element moves between a "near" and a "far" value of each style as the pointer (or a touch, a pen, or another element) gets closer. Transforms and filters come built in, and you can animate any other CSS property that takes a single number. No dependencies, and around 7KB gzipped.
 
-## Roadmap
+Version 4 is a big tidy-up: lots of fixes, checks on everything you pass in, an animation loop that sleeps when nothing is moving, touch and pen support, reduced motion support, TypeScript declarations, and proper documentation. It has some breaking changes from 2.x - see the [changelog](CHANGELOG.md#upgrading-from-2x).
 
-- (for 4.0) Fix up code. Stable API. Better documentation.
-- (for 4.1) Multiple-value CSS properties.
-- (for 4.2) Per-property parameters.
-- (for 4.3) Multi-point animations.
+[View live demos](http://lab.adasha.com/components/proximity-effect), or open the ones in [`demos/`](demos/).
 
 ## Installation
 
+### npm/bundlers
+
+Install from npm:
+
+```sh
+npm install proximity-effect
+```
+
+Then import it as an ES module:
+
+```javascript
+import ProximityEffect from "proximity-effect";
+```
+
+### Browser module
+
+You can import the module straight from UNPKG without installing anything:
+
+```html
+<script type="module">
+    import ProximityEffect from "https://unpkg.com/proximity-effect@4/dist/proximity-effect.mjs";
+</script>
+```
+
 ### Vanilla
 
-Latest ES6+ version is in `src`, ES5/minified versions are in `dist`. Download your version of choice and embed in your HTML:
-```html
-<script src="ProximityEffect.min.js"></script>
-```
-
-### CDN
+Embed the classic script build from UNPKG, which adds a global `ProximityEffect` class:
 
 ```html
-<script src="https://unpkg.com/proximity-effect"></script>
+<script src="https://unpkg.com/proximity-effect@4"></script>
 ```
+
+`https://cdn.jsdelivr.net/npm/proximity-effect@4` works too. Or download [`proximity-effect.min.js`](https://unpkg.com/proximity-effect@4/dist/proximity-effect.min.js) and host it yourself.
+
+The build files were renamed in 4.0. If you link to `dist/ProximityEffect.min.js` on GitHub, see the [changelog](CHANGELOG.md#breaking-changes) for how to keep it working.
+
+### TypeScript
+
+Type declarations are included, so importing the module is typed straight away. If you use the global from the classic script instead, add a reference to its declaration:
+
+```typescript
+/// <reference types="proximity-effect/global" />
+```
+
+This needs `"moduleResolution"` set to `"nodenext"` or `"bundler"` in your `tsconfig.json`.
+
+## Quick start
+
+Save this as an HTML file and open it in a browser:
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ProximityEffect quick start</title>
+<style>
+    #dots { display: flex; flex-wrap: wrap; gap: 10px; max-width: 600px; margin: 50px auto; }
+    #dots div { width: 50px; height: 50px; border-radius: 50%; background: #333; }
+</style>
+</head>
+<body>
+<div id="dots"></div>
+
+<script type="module">
+    import ProximityEffect from "https://unpkg.com/proximity-effect@4/dist/proximity-effect.mjs";
+
+    const dots = document.getElementById("dots");
+    for (let i = 0; i < 60; i++) {
+        dots.append(document.createElement("div"));
+    }
+
+    const effect = new ProximityEffect(dots.children, { threshold: 20, runoff: 150, decay: 0.1 });
+    effect.addStyle("scale", [1.5, 1]);
+    effect.addStyle("brightness", [300, 100]);
+</script>
+</body>
+</html>
+```
+
+Move the pointer over the dots, and the nearest ones grow and light up, then fade slowly as it moves away.
 
 ## Use
 
-### Add some content to affect
-
-In your `<body>` content add some elements you want to affect:
-
-```html
-<div>
-   <div class="foo">...</div>
-   <div class="foo">...</div>
-   <div class="foo">...</div>
-   ...
-</div>
+```javascript
+const myEffect = new ProximityEffect(elements, [params]);
+myEffect.addStyle(property, keyframes, [params]);
 ```
 
-You could also generate some elements programmatically.
+This section covers the essentials. The [API reference](docs/API.md) has every property, method and event in full.
 
-### Set-up
+### Elements
 
-Remaining set-up should be done after content has loaded. Start by defining your list of `elements` to animate, and `params` object to control the animation.
-
-#### Elements
-
-ProximityEffect needs a NodeList containing all the elements to include. You can use any suitable DOM method for this, e.g.:
+First, choose the elements to animate. This can be a single element, a NodeList, an HTMLCollection or an array of elements, e.g.:
 
 ```javascript
-let elements = document.querySelectorAll("*.foo");
+const elements = document.querySelectorAll(".foo");
 ```
 
-#### Params
+You can set up the effect at any time, even before the page has finished loading. It measures the elements once the page has loaded.
 
-Next, define the effect parameters in an object. All parameters are optional, but without setting at least a value for `threshold` or `runoff` you won't see anything. Nearly all parameters can also be accessed as properties after instantiation.
+### Params
 
-| Parameter | Type | Details |
-| :---: | :---: | :--- |
-| `attack` and `decay` | Number | Sets the rate of change when approaching (`attack`) or receding (`decay`), giving an effect of inertia. 1 is full speed,  0 is no movement (effectively disabling the animation). Default is 1. |
-| `tolerance` | Number | How close (0 to 1) an eased distance must get to its target before it snaps there and the animation comes to rest. Larger values settle sooner, with a bigger final step. Default is 0.0001. |
-| `invert` | Boolean | Reverse the `keyframes` array, effectively swapping near and far distances. Default is `false`. |
-| `threshold` | Number | The minimum distance (from element's mathematical centre) before effect starts, in pixels. Can be any positive number, default is 0. |
-| `runoff` | Number | The distance over which styles are interpolated, in pixels. Default is 0. |
-| `direction` | String | The coordinates axis/axes to use for distance calculations. Can be `"both"`, `"horizontal"` or `"vertical"`. Default is `"both"`. |
-| `offsetX` and `offsetY` | Number | Global horizontal (`offsetX`) and vertical (`offsetY`) centre-point offset. Default is 0. Stacks with individual element offsets. |
-| `jitter`, `jitterX` and `jitterY` | Number | Random offset per element, in pixels. `jitter` affects both X and Y values, while `jitterX` and `jitterY` affect only their respective axis. All three values stack. Default is 0. |
-| `jitterMethod` | String | Random generation method for jitter values. Accepts `"uniform"` or `"gaussian"`. Default is `"uniform"`. |
-| `FPS` | Number or Falsy | If set to a positive number, will attempt to refresh any effects at the specified frame rate. Effect updates cannot be displayed quicker than your screen's refresh rate, but internal calculations can take place more quickly. Specifying any value that is not a positive number, or no value at all, will clear the FPS property and attempt to refresh at the screen's refresh rate. |
-| `reducedMotion` | String | What to do when the user prefers reduced motion: `"rest"` keeps the elements at rest, `"snap"` follows the pointer without easing, `"ignore"` animates as normal. Default is `"rest"`. See [Accessibility](#accessibility). |
-| `primeDistances` | Boolean | If `true`, will initialise all distances to 0, so the effect will appear to spring into its starting position. Can only be set as part of the `params` object during instantiation - it cannot be accessed as a property. |
+Next, define the effect parameters in an object. All parameters are optional. Every parameter except `primeDistances` can also be read and set as a property after creating the instance.
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `threshold` | Number | The distance from an element's centre within which its styles are at their near value, in pixels. Default is 0. |
+| `runoff` | Number | The distance beyond the threshold over which styles change from near to far, in pixels. 0 gives a hard edge. Default is 100. |
+| `invert` | Boolean | Swaps near and far. Default is `false`. |
+| `direction` | String | Which distance to measure: `"both"` (straight-line distance), `"horizontal"` or `"vertical"`. Default is `"both"`. |
+| `attack` and `decay` | Number | How quickly styles change as the pointer approaches (`attack`) or moves away (`decay`), giving an effect of inertia. 1 is full speed, smaller values are slower, and 0 is no movement at all. Default is 1. |
+| `tolerance` | Number | How close (0 to 1) an eased value must get to its target before it snaps there and the animation comes to rest. Larger values settle sooner, with a bigger final step. Default is 0.0001. |
+| `offsetX` and `offsetY` | Number | Shift every element's centre, in pixels. A positive `offsetX` moves it left, and a positive `offsetY` moves it up. Stacks with each element's `data-offsetx` and `data-offsety` attributes. Default is 0. |
+| `jitter`, `jitterX` and `jitterY` | Number | Moves each element's centre by a random amount, up to half this many pixels either way, so the effect's edge looks less regular. `jitter` affects both axes, while `jitterX` and `jitterY` affect only their own. All three stack. Default is 0. |
+| `jitterMethod` | String | How the jitter is distributed: `"uniform"` or `"normal"` (`"gaussian"` also works). Default is `"uniform"`. |
+| `target` | Element | An element to track instead of the pointer. Default is `null` (the pointer). |
+| `FPS` | Number | A frame rate limit. `null`, `false` or 0 follows the screen's refresh rate. Default is `null`. |
+| `zIndex` | Boolean | Sets each element's `z-index` from its distance, so the nearest sit on top. Default is `false`. |
+| `reducedMotion` | String | What to do when the user prefers reduced motion: `"rest"` keeps the elements at rest, `"snap"` follows the pointer without easing, and `"ignore"` animates as normal. Default is `"rest"`. See [Accessibility](#accessibility). |
+| `primeDistances` | Boolean | If `true`, every element starts at its far value and eases into place, so the effect appears to spring into its starting position. Only available here, not as a property. Default is `false`. |
 
 For example:
 
 ```javascript
-let params = {
-   attack:     0.8,
-   decay:      0.7,
-   threshold: 40,
-   runoff:   100,
-   jitter:    35
-}
+const params = {
+    threshold: 40,
+    runoff:   100,
+    attack:     0.8,
+    decay:      0.7,
+    jitter:    35
+};
 ```
 
-### Create a new ProximityEffect instance
+### Create the instance
 
-Next, create a ProximityEffect instance, feeding in the list of elements and the effect parameters:
+Then create the instance, giving it the elements and the parameters:
 
 ```javascript
-let myEffect = new ProximityEffect(elements, params);
+const myEffect = new ProximityEffect(elements, params);
 ```
 
-The `params` object is optional - individual properties on the ProximityEffect instance can also be set after-the-fact, e.g.:
+Properties can also be set afterwards:
 
 ```javascript
 myEffect.runoff = 250;
 myEffect.invert = true;
 ```
 
-### Add style rules
+### Add styles
 
-Finally, add style rules to the ProximityEffect instance as you see fit. The `addStyle()` method is used for this:
+Finally, add the styles to animate with `addStyle()`:
 
 ```javascript
-ProximityEffect.addStyle (property, keyframes, [params]);
+myEffect.addStyle("scale", [1.5, 1]);
+myEffect.addStyle("blur",  [0,  10]);
 ```
-
-Here's how the arguments break down:
 
 | Argument | Type | Description |
-| :---: | :---: | :--- |
-| `property` | String or Object | Defines the CSS property that will be modified. This can be a string that is the name of a [pre-defined CSS property](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects), or can be an object defining a property of your own. [details to come] |
-| `keyframes` | Array | An array of two values: the property's value nearest to the target, then furthest from it. Values can be either a number specifying the value, or can be an object defining additional parameters. [details to come] More than two keyframes throws an error for now; they are planned for 4.3. |
-| `params` | Object | Optional. `id` (String) labels the style. Per-style `threshold`, `runoff`, `invert`, `attack` and `decay` are planned for 4.2 and throw an error for now. |
+| --- | --- | --- |
+| `property` | String or Object | The name of a preset style (see below), or an object describing a [custom style](#custom-styles). |
+| `keyframes` | Array | The style's value nearest the pointer, then furthest from it. Each is a number, or an [object with scatter](#scatter). |
+| `params` | Object | (optional) `id` gives the style a name, which `hasStyleProp()` and `removeStyleProp()` accept. |
 
-ProximityEffect comes pre-defined with [most permitted functions](https://github.com/Adasha/proximity-effect/wiki/API-reference#supported-effects) of the `transform` and `filter` style rules. It currently only supports custom properties with single numerical values in them, so rgb() and the like can't be used yet.
+Preset styles:
 
-For example:
+| Kind | Presets |
+| --- | --- |
+| Transforms | `translateX`, `translateY`, `translateZ`, `rotate`, `rotateX`, `rotateY`, `rotateZ`, `scale`, `scaleX`, `scaleY`, `scaleZ`, `skewX`, `skewY` |
+| Filters | `blur`, `brightness`, `contrast`, `grayscale`, `hueRotate`, `invert`, `opacity`, `saturate`, `sepia` |
+
+Translations and blur are in pixels, rotations and skews in degrees, scales have no unit, and the other filters are percentages. The `opacity` preset is the `filter: opacity()` function, from 0 to 100. The [API reference](docs/API.md#preset-styles) lists each one's range.
+
+#### Custom styles
+
+To animate any other CSS property that takes one number, describe it with an object:
 
 ```javascript
-myEffect.addStyle('opacity', [100, 50]);
-myEffect.addStyle('scale',   [  1,  2]);
-myEffect.addStyle('blur',    [  0, 10]);
+myEffect.addStyle({ rule: "letterSpacing", unit: "px" }, [4, 0]);
+myEffect.addStyle({ rule: "transform", func: "perspective", unit: "px" }, [100, 50]);
 ```
 
-Here are some example of defining custom properties:
+`rule` is the CSS property, `func` an optional CSS function to wrap the value in, and `unit` an optional CSS unit. These are checked, so a style can only ever write one number to one property. See the [API reference](docs/API.md#custom-styles) for the details, and for `min` and `max`.
+
+#### Scatter
+
+A keyframe can be an object with a `value` and a `scatter`, which gives each element a different random amount, up to half the scatter either way:
 
 ```javascript
-myEffect.addStyle({rule: 'left', unit: 'em'}, [100, 50]);
-myEffect.addStyle({rule: 'transform', func: 'perspective', unit: 'px'},  [100, 50]);
+myEffect.addStyle("translateX", [0, { value: 50, scatter: 15 }]);
+myEffect.addStyle("rotateZ", [{ value: 0, scatter: 30 }, { value: 0, scatter: 90, scatterMethod: "normal" }]);
 ```
 
-The `values` array can also contain objects with a `value` key and other optional properties, including a `scatter` value:
+### Controlling the effect
+
+| Method | Description |
+| --- | --- |
+| `pause()` and `resume()` | Stop and restart the animation. |
+| `destroy()` | Stops the effect for good, and gives the elements back their original inline styles. |
+| `setCoords(x, y)` and `clearCoords()` | Track a fixed point (relative to the viewport) instead of the pointer or target. |
+| `clearTarget()` | Go back to tracking the pointer after setting `target`. |
+| `hasStyleProp(name)` and `removeStyleProp(name)` | Find or remove styles by preset name, `func` or `id`. |
+| `setCenterPoints()` | Measure the elements again. Only needed if they move in a way the effect can't see, such as a CSS animation. |
+
+The effect also dispatches three events: `ready` once it has set up, `redraw` after each frame it draws, and `reflow` when it finds an element has moved:
 
 ```javascript
-myEffect.addStyle('translateX', [0, {value: 50, scatter: 15}]);
-myEffect.addStyle({rule: 'padding', unit: 'px'}, [{value: 20, scatter: 30}, {value: 100, scatter: 50}]);
+myEffect.addEventListener("ready", () => console.log("Ready"));
 ```
 
 ## Accessibility
@@ -213,12 +310,60 @@ Automated checkers such as axe-core account for the CSS `opacity` property but n
 
 `demos/a11y.html` puts all of this together, and `npm run a11y` checks it and the other demos in headless Chrome.
 
-## API
+## Performance
 
-Full details on the API are forthcoming, for now there is only an unfinished [page on the wiki](https://github.com/Adasha/proximity-effect/wiki/API-reference).
+The animation loop only runs while something is changing, and stops while the tab is hidden, so an idle effect costs nothing. A few things help keep it smooth with lots of elements:
 
+- Transforms and filters are much cheaper to animate than properties that change the layout, such as a custom `width`, `fontSize` or `letterSpacing`, which make the browser lay the page out again on every frame.
+- For many elements, `will-change: transform` (or `filter`) in your CSS can help the browser further, and `contain: layout` can stop changes inside an element affecting the rest of the page. Neither is applied automatically, since they cost memory for every element.
+- The effect measures the elements again after scrolling, resizing, or anything changing their size. `setCenterPoints()` is only needed for movement it can't see, such as a CSS animation of the elements' positions.
 
+## Browser support
 
-## License:
+Any browser that supports ES2022: Chrome and Edge 93+, Firefox 92+, Safari 15.4+.
 
-This software is provided under the Mozilla Public License 2.0. You can freely use the code in your own projects, using any license, without limitation, but if you modify the code base those changes must be pushed back under the same MPL2 license. Any copyright/credits must be left intact.
+## Known issues
+
+- Only CSS properties that take a single number can be animated, so colours and other multi-value properties can't be used yet (planned for 4.1). CSS custom properties (`--foo`) aren't supported either.
+- `destroy()` gives the elements back the inline styles they had when the instance was created, so inline styles your own code set on them since then are lost.
+- If an element containing a `position: fixed` element is given an animated `filter`, the fixed element can be measured slightly out of place, since the browser positions it relative to the filtered one.
+- When a style changes the elements' size (such as a custom `width`), a size change made by something else in the very same frame isn't noticed until the next scroll, resize or `setCenterPoints()`.
+
+## Development
+
+You'll need Node 24 (there's an `.nvmrc`, so `nvm use` will sort you out).
+
+```sh
+npm install
+npm test            # run the test suite once
+npm run test:watch  # re-run tests as you edit
+npm run lint        # check code style
+npm run typecheck   # check the TypeScript declarations
+npm run build       # build dist/proximity-effect.mjs and dist/proximity-effect.min.js
+npm run a11y        # check the demos for accessibility in headless Chrome
+npm run bench       # time the animation with thousands of elements in headless Chrome
+```
+
+The `demos` folder contains a page for each effect, plus an index. These import the source as a module, so need serving over HTTP rather than opening directly, e.g. with `npx serve` from the project folder.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report a bug or make a change.
+
+## Roadmap
+
+- (for 4.1) Multiple-value CSS properties, such as colours.
+- (for 4.2) Per-property parameters.
+- (for 4.3) Multi-point animations.
+
+## Version history
+
+- v4.0   - Fixed, hardened, made faster and accessible, and documented. Breaking changes, see the [changelog](CHANGELOG.md).
+- v3.0   - Alpha versions only, never published to npm. Keyframe arrays, per-axis jitter and manual coordinates.
+- v2.1   - First published on npm, in 2018.
+
+## Licence
+
+Released under the [Mozilla Public License 2.0](LICENSE). You can use it in any project, under any licence. If you change ProximityEffect's own files and share the result, those files must stay under the MPL 2.0 and their source must be available. Copyright and credit notices must be left intact.
+
+## AI usage disclosure
+
+This project has used AI since v4.0 to assist with fixes, hardening, performance, accessibility and documentation. All AI contributions are reviewed by a human.
