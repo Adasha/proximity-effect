@@ -241,6 +241,7 @@ Measure first, then change. Build a small benchmark page (for example 1,000 and 
 - Full pass: lint, tests, build, `npm audit`, `npm pack --dry-run`, and install the packed tarball into a scratch project (ESM, classic script and TypeScript consumers).
 - Final cross-browser check of the demos (Chrome, Firefox, Safari, mobile).
 - Confirm CHANGELOG, README and versions agree. Tag and publish (**the user publishes; Claude prepares**). Update the live demo site.
+- No further alphas: the next published version is `4.0.0`, straight from `4.0.0-alpha1`. Set it in `package.json`, the lockfile, the README header and the `@version` tag in `src/ProximityEffect.js`, and turn `[Unreleased]` in the CHANGELOG into the 4.0.0 entry.
 - Review remaining TODOs and open issues, and note anything deferred to 4.1.
 - Consider an explicit posterise option (quantised steps), replacing what low `accuracy` did by accident. Discuss the design first; it can be added earlier if that turns out simpler.
 
