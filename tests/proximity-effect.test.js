@@ -287,6 +287,33 @@ describe("distance and easing", () =>
         expect(translateOf(el)).toBe(25);
     });
 
+    it("easing reaches the target instead of stalling one rounding step short", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el, { attack: 0.5, accuracy: 2, primeDistances: true });
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        movePointer(0, 0);
+        for (let i=0; i<20; i++)
+        {
+            step();
+        }
+        expect(pe.getNodeIndexData(0, "lastDelta")).toBe(0);
+        expect(translateOf(el)).toBe(0);
+    });
+
+    it("an attack of 0 never moves", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el, { attack: 0, primeDistances: true });
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        movePointer(0, 0);
+        step();
+        step();
+        expect(translateOf(el)).toBe(100);
+    });
+
     it("a runoff of 0 gives a hard edge instead of NaN", async () =>
     {
         const near = makeNode(0, 0), edge = makeNode(10, 0), far = makeNode(11, 0);
@@ -446,7 +473,9 @@ describe("lifecycle", () =>
         expect(el.style.cssText).toBe("color: blue;");
         movePointer(99, 99);
         expect(pe.pointer).toEqual({ x: 0, y: 0 });
-        window.dispatchEvent(new Event("scroll"));
+        document.dispatchEvent(new Event("scroll"));
+        window.dispatchEvent(new Event("resize"));
+        step();
         expect(reflow).not.toHaveBeenCalled();
 
         expect(() => pe.destroy()).not.toThrow();
@@ -500,6 +529,7 @@ describe("lifecycle", () =>
         await settle();
         for (let i=0; i<6; i++)
         {
+            movePointer(i*10, 0);
             step(1000/60);
         }
         expect(redraw).toHaveBeenCalledTimes(3);
@@ -507,7 +537,9 @@ describe("lifecycle", () =>
         expect(frames.size).toBe(1);
 
         pe.FPS = null;
+        movePointer(100, 0);
         step();
+        movePointer(110, 0);
         step();
         expect(redraw).toHaveBeenCalledTimes(5);
     });
@@ -683,5 +715,343 @@ describe("zIndex", () =>
         expect(el.style.zIndex).toBe("1000");
         pe.removeStyleProp("translateX");
         expect(el.style.zIndex).toBe("3");
+    });
+});
+
+
+
+describe("performance", () =>
+{
+    // settle the loop: draw frames until it stops asking for more
+    function runUntilIdle(limit = 100)
+    {
+        let count = 0;
+        while (frames.size>0 && count<limit)
+        {
+            step();
+            count++;
+        }
+        return count;
+    }
+
+    it("stops the loop once every node has settled, and wakes on pointer movement", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el, { attack: 0.5, decay: 0.5 });
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        movePointer(1000, 0);
+        runUntilIdle();
+        movePointer(0, 0);
+        const count = runUntilIdle();
+        expect(count).toBeGreaterThan(2);
+        expect(count).toBeLessThan(100);
+        expect(frames.size).toBe(0);
+        expect(translateOf(el)).toBe(0);
+
+        movePointer(50, 0);
+        expect(frames.size).toBe(1);
+        runUntilIdle();
+        expect(translateOf(el)).toBe(50);
+    });
+
+    it("draws no frames while idle", async () =>
+    {
+        const pe = create(makeNode(0, 0));
+        const redraw = vi.fn();
+        pe.addEventListener("redraw", redraw);
+        await settle();
+        runUntilIdle();
+        redraw.mockClear();
+        step();
+        step();
+        expect(redraw).not.toHaveBeenCalled();
+    });
+
+    it("wakes when a setting that changes the output is set", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el, { runoff: 100 });
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        pe.setCoords(50, 0);
+        runUntilIdle();
+        expect(translateOf(el)).toBe(50);
+
+        const changes = [
+            [() => { pe.threshold = 25; }, 25],
+            [() => { pe.runoff = 50; }, 50],
+            [() => { pe.invert = true; }, 50],
+            [() => { pe.direction = "vertical"; }, 100],
+            // centre moves to y -60: (60 - 25) / 50 = 0.7, inverted
+            [() => { pe.offsetY = 60; }, 30],
+            [() => { pe.setCoords(0, -60); }, 100],
+        ];
+        for (const [change, expected] of changes)
+        {
+            change();
+            expect(frames.size).toBe(1);
+            runUntilIdle();
+            expect(translateOf(el)).toBe(expected);
+        }
+    });
+
+    it("rewrites every node when the style stack changes, even if nothing moved", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el);
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        pe.setCoords(0, 0);
+        runUntilIdle();
+
+        pe.addStyle("rotate", [0, 90]);
+        expect(frames.size).toBe(1);
+        runUntilIdle();
+        expect(el.style.transform).toBe("translateX(0px) rotate(0deg)");
+
+        pe.removeStyleProp("translateX");
+        runUntilIdle();
+        expect(el.style.transform).toBe("rotate(0deg)");
+    });
+
+    it("keeps running while following a target element, which can move without an event", async () =>
+    {
+        const target = makeNode(0, 0);
+        const pe = create(makeNode(0, 0), { target });
+        await settle();
+        for (let i=0; i<5; i++)
+        {
+            step();
+        }
+        expect(frames.size).toBe(1);
+        pe.clearTarget();
+        runUntilIdle();
+        expect(frames.size).toBe(0);
+    });
+
+    it("only writes styles for nodes whose distance changed", async () =>
+    {
+        const near = makeNode(0, 0), far = makeNode(1000, 0);
+        const pe = create([near, far], { runoff: 100 });
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        movePointer(0, 0);
+        runUntilIdle();
+        expect(translateOf(far)).toBe(100);
+
+        far.style.transform = "none";
+        movePointer(10, 0);
+        runUntilIdle();
+        expect(translateOf(near)).toBe(10);
+        // still out of range, so it wasn't written
+        expect(far.style.transform).toBe("none");
+    });
+
+    it("measures every node in one pass, with layout-moving styles taken off", async () =>
+    {
+        const nodes = [makeNode(0, 0), makeNode(50, 0)];
+        nodes[0].style.transform = "rotate(1deg)";
+        const log = [];
+        for (const el of nodes)
+        {
+            const rect = el.getBoundingClientRect;
+            el.getBoundingClientRect = () => { log.push(nodes.map(n => n.style.transform)); return rect(); };
+        }
+        const pe = create(nodes);
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        pe.setCoords(0, 0);
+        step();
+        expect(nodes.map(translateOf)).toEqual([0, 50]);
+
+        log.length = 0;
+        const cssText = vi.spyOn(CSSStyleDeclaration.prototype, "cssText", "set");
+        pe.setCenterPoints();
+        // every node is back to its original transform before any is measured
+        expect(log).toEqual([["rotate(1deg)", ""], ["rotate(1deg)", ""]]);
+        expect(cssText).not.toHaveBeenCalled();
+        expect(nodes.map(translateOf)).toEqual([0, 50]);
+    });
+
+    it("measures without touching the nodes when the styles can't move them", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el);
+        pe.addStyle("blur", [0, 4]);
+        pe.addStyle("opacity", [100, 50]);
+        await settle();
+        step();
+        const rect = el.getBoundingClientRect;
+        let filter;
+        el.getBoundingClientRect = () => { filter = el.style.filter; return rect(); };
+        pe.setCenterPoints();
+        expect(filter).toBe("blur(4px) opacity(50%)");
+    });
+
+    it("shifts nodes by the page scroll instead of remeasuring them", async () =>
+    {
+        const el = makeNode(100, 100);
+        const pe = create(el, { runoff: 100 });
+        await settle();
+        pe.setCoords(100, 100);
+        step();
+        expect(pe.distanceFrom(el)).toBe(0);
+
+        const measure = vi.spyOn(el, "getBoundingClientRect");
+        const reflow = vi.fn();
+        pe.addEventListener("reflow", reflow);
+        vi.spyOn(window, "scrollY", "get").mockReturnValue(50);
+        document.dispatchEvent(new Event("scroll"));
+        expect(frames.size).toBe(1);
+        step();
+        expect(measure).not.toHaveBeenCalled();
+        expect(reflow).not.toHaveBeenCalled();
+        expect(pe.getNodeIndexData(0, "center")).toEqual({ x: 100, y: 50 });
+        expect(pe.distanceFrom(el)).toBe(0.5);
+    });
+
+    it("remeasures fixed and sticky nodes, and only them, when the page scrolls", async () =>
+    {
+        const bar = document.createElement("nav");
+        bar.style.position = "fixed";
+        document.body.append(bar);
+        const pinned = makeNode(0, 0), sticky = makeNode(0, 0), flow = makeNode(0, 0);
+        bar.append(pinned);
+        sticky.style.position = "sticky";
+        const pe = create([pinned, sticky, flow]);
+        await settle();
+        expect(pe.nodes.map(n => pe.getNodeData(n, "scrollsWithPage"))).toEqual([false, false, true]);
+
+        const measured = [pinned, sticky, flow].map(el => vi.spyOn(el, "getBoundingClientRect"));
+        const reflow = vi.fn();
+        pe.addEventListener("reflow", reflow);
+        vi.spyOn(window, "scrollY", "get").mockReturnValue(30);
+        document.dispatchEvent(new Event("scroll"));
+        step();
+        expect(measured.map(spy => spy.mock.calls.length)).toEqual([1, 1, 0]);
+        expect(reflow).toHaveBeenCalledOnce();
+        expect(pe.getNodeData(pinned, "center").y).toBe(0);
+        expect(pe.getNodeData(flow, "center").y).toBe(-30);
+    });
+
+    it("ignores scrolling in containers that hold none of its nodes", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el);
+        await settle();
+        runUntilIdle();
+        const other = document.createElement("div");
+        document.body.append(other);
+        other.dispatchEvent(new Event("scroll"));
+        expect(frames.size).toBe(0);
+        expect(pe.paused).toBe(false);
+    });
+
+    it("batches resize and container scroll events into one measurement on the next frame", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el);
+        await settle();
+        runUntilIdle();
+
+        const measure = vi.spyOn(el, "getBoundingClientRect");
+        const reflow = vi.fn();
+        pe.addEventListener("reflow", reflow);
+        const timer = vi.spyOn(window, "setTimeout");
+
+        window.dispatchEvent(new Event("resize"));
+        window.dispatchEvent(new Event("resize"));
+        // scrolling inside a container doesn't bubble, but is still seen
+        const box = document.createElement("div");
+        document.body.append(box);
+        box.append(el);
+        box.dispatchEvent(new Event("scroll"));
+
+        expect(measure).not.toHaveBeenCalled();
+        expect(frames.size).toBe(1);
+        step();
+        expect(measure).toHaveBeenCalledOnce();
+        expect(reflow).toHaveBeenCalledOnce();
+        expect(timer).not.toHaveBeenCalled();
+    });
+
+    it("applies offsets and jitter without remeasuring", async () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const el = makeNode(100, 100);
+        const pe = create(el);
+        await settle();
+        const measure = vi.spyOn(el, "getBoundingClientRect");
+        pe.offsetX = 10;
+        pe.jitter = 10;
+        expect(measure).not.toHaveBeenCalled();
+        expect(pe.getNodeIndexData(0, "center")).toEqual({ x: 95, y: 105 });
+    });
+
+    it("measures nodes added later on the next frame", async () =>
+    {
+        const pe = create(makeNode(0, 0));
+        await settle();
+        runUntilIdle();
+        const added = makeNode(40, 0);
+        pe.nodes = [pe.nodes[0], added];
+        expect(pe.getNodeData(added, "center")).toBeUndefined();
+        pe.setCoords(0, 0);
+        step();
+        expect(pe.distanceFrom(added)).toBe(0.4);
+    });
+
+    it("remeasures when a ResizeObserver reports a change, and disconnects on destroy", async () =>
+    {
+        const observers = [];
+        vi.stubGlobal("ResizeObserver", class
+        {
+            constructor(callback) { this.callback = callback; this.observed = new Set(); observers.push(this); }
+            observe(el) { this.observed.add(el); }
+            unobserve(el) { this.observed.delete(el); }
+            disconnect() { this.observed.clear(); this.disconnected = true; }
+        });
+        const a = makeNode(0, 0), b = makeNode(10, 0);
+        const pe = create([a, b]);
+        await settle();
+        runUntilIdle();
+
+        const [observer] = observers;
+        expect(observer.observed).toEqual(new Set([document.documentElement, a, b]));
+
+        const reflow = vi.fn();
+        pe.addEventListener("reflow", reflow);
+        observer.callback([]);
+        step();
+        expect(reflow).toHaveBeenCalledOnce();
+
+        pe.nodes = [b];
+        expect(observer.observed.has(a)).toBe(false);
+
+        pe.destroy();
+        expect(observer.disconnected).toBe(true);
+    });
+
+    it("stops while the page is hidden and remeasures when it's shown again", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el);
+        await settle();
+        expect(frames.size).toBe(1);
+
+        const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+        document.dispatchEvent(new Event("visibilitychange"));
+        expect(frames.size).toBe(0);
+        movePointer(5, 5);
+        expect(frames.size).toBe(0);
+
+        visibility.mockReturnValue("visible");
+        const reflow = vi.fn();
+        pe.addEventListener("reflow", reflow);
+        document.dispatchEvent(new Event("visibilitychange"));
+        expect(frames.size).toBe(1);
+        step();
+        expect(reflow).toHaveBeenCalledOnce();
     });
 });

@@ -11,7 +11,7 @@ Each session below is meant to run as its own conversation. To start one, say "R
 - [x] 2. Utilities and Style class
 - [x] 3. Core correctness and lifecycle
 - [x] 4. Hardening
-- [ ] 5. Performance
+- [x] 5. Performance
 - [ ] 6. Accessibility
 - [ ] 7. Public API, events and types
 - [ ] 8. Build and packaging
@@ -83,7 +83,7 @@ Small, and best done first so later sessions don't re-litigate.
 
 Baseline (2026-10-16, commit `df25917` plus the plan commit): the tree is clean on branch `4.0`, with nothing pushed since `939d1ee`. `npm run build` works on Node 22.12 (it only changes one line of `dist/ProximityEffect.js`; the committed `dist` is otherwise current). `npm run lint` fails because ESLint 10 can't read `.eslintrc.json`, and `npm test` is a stub. Both are Session 1 work.
 
-Remaining for Session 0: capture the demo baseline (open each `tests/*.html` in a browser and note which work). This needs a human, or a browser tool, so it can be skipped if you'd rather judge regressions by eye.
+Remaining for Session 0: capture the demo baseline. (Partly done in Session 5 by a headless check; see its handoff. A manual look in a real browser is still worthwhile.)
 
 **Handoff:** _(fill in)_
 
@@ -180,7 +180,16 @@ Measure first, then change. Build a small benchmark page (for example 1,000 and 
 
 **Done when:** the benchmark shows a measurable improvement, and idle CPU is near zero.
 
-**Handoff:** _(fill in)_
+**Handoff (2026-10-17):**
+- Benchmark: `tests/bench.html` + `scripts/bench.js` (`npm run bench`; options `--n 1000,5000`, `--styles all|filter`, `--baseline <dir of another src/>`). It drives headless Chrome over the DevTools protocol with Node's WebSocket (no dependency), and finds Chrome in `~/.cache/puppeteer` or `$CHROME_PATH`. Not in CI.
+- Results (baseline = commit `113b30d`, 1,000 / 5,000 nodes): frame work 4.5 → 1.8 ms / 15.6 → 2.3 ms; idle frames 60/s → 0; remeasure 0.83 s → 17 ms / 25 s → 67 ms; page scroll froze the page (a remeasure on every scroll) and now runs at 60fps with no remeasure. Figures are in the CHANGELOG under **Performance**.
+- Done: the loop stops when idle (no node's eased value changed) and is woken by pointer moves, scroll/resize, every output-affecting setter and method, and `visibilitychange` (stopped while hidden). With a `target` element it runs every frame. Writes are skipped for unchanged nodes (`#needsRewrite` forces them after style stack or `zIndex` changes). Styles are grouped by property once (`#groupStyles`), not every frame. Params are hoisted, and `data-offsetx/y` are read at measure time.
+- Measuring (`#measure`) is batched into write/read/write passes. It only strips non-paint properties (`PAINT_ONLY_RULES`: filter, opacity, z-index, backdrop-filter), one property at a time from cached originals; cssText swaps forced full layout. Page scroll: nodes not inside fixed or sticky elements (`scrollsWithPage`, from `getComputedStyle` in the read pass) are shifted arithmetically in `update()` (`#followScroll`). Fixed and sticky nodes are remeasured on their own. Container scrolls remeasure only if the container holds a node. `ResizeObserver` (on `documentElement` and every node, feature-detected) and `resize` request a batched remeasure on the next frame. The `setTimeout` hack is gone. Offsets and jitter are applied without remeasuring.
+- Bug found and fixed: easing could stall one rounding step short of the target forever (now snaps when a step rounds to nothing, unless the rate is 0).
+- Decided not to use IntersectionObserver: skipping unchanged nodes already avoids writing to far-away (and so usually off-screen) nodes, and the 5,000-node frame is 2.3 ms. FPS throttle was already done in Session 3.
+- Behaviour changes (all in CHANGELOG): `redraw` only fires for drawn frames; `reflow` fires per remeasure rather than per event; external inline style changes on a node are no longer overwritten every frame; `center` now includes `data-offset`; the node data has new `measured` and `scrollsWithPage` fields (Session 7 decides what of node data is public).
+- Demo check (headless Chrome, mouse moves + scroll): `1`–`7.html` and `div-grid.html` work identically to the baseline. `frame-seq_grid`, `gooffscreen`, `video`, `video2`, `x1` and `x2` are broken in both (404s on old dist paths, non-module scripts), so that's Session 9. `1.html` also has one 404 asset.
+- For later: Session 6 switches `mousemove` to Pointer Events; update `tests/bench.html` (it dispatches `mousemove`). Session 9: document `will-change: transform` / `contain` guidance (not applied automatically), that animating layout properties (custom `width`, `letterSpacing`) makes `ResizeObserver` remeasure every frame, and that `setCenterPoints()` is only needed for movement the instance can't see (e.g. CSS animations of the nodes' positions). The first `ResizeObserver` callback causes one redundant remeasure (and `reflow`) just after `ready`. It's harmless; it could be skipped later.
 
 ## Session 6: Accessibility
 

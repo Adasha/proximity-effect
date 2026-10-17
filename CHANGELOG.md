@@ -31,6 +31,11 @@ All notable changes to this project are documented here. The format is based on 
 - `addStyle()` rejects `NaN` and infinite keyframe values, negative `scatter`, an unknown `scatterMethod`, a keyframe `distance` outside 0 to 1, `min` greater than `max`, and per-style params of the wrong type. Unknown per-style params are dropped.
 - `getNodeIndexData()`, `hasNodeIndexData()` and `distanceFromIndex()` throw a `RangeError` for an index outside the node list. `getNodeData()` and `getNodeIndexData()` return `undefined` for inherited property names such as `constructor`.
 - The undocumented public `preventCenterCalculations` property is removed.
+- The animation loop stops when nothing is moving, so `redraw` is only dispatched for frames that are drawn. It wakes on pointer movement, scrolling, resizing and any setting or method that changes the output. With a `target` element set, it runs every frame, since the target can move without an event.
+- Styles are only written to a node when its eased distance changes (or the style stack or `zIndex` changes). Inline styles another script sets on a node in the meantime are no longer overwritten every frame.
+- `reflow` is dispatched once each time node positions are remeasured, rather than on every scroll and resize event. A page scroll no longer triggers a remeasure (see Performance below).
+- `data-offsetx` and `data-offsety` are read when nodes are measured, not every frame.
+- `setCenterPoints()` measures straight away and is rarely needed: the instance remeasures after resizes (including a `ResizeObserver` on the nodes and the page), container scrolls, changes to `nodes`, and when the tab becomes visible. Setting `offsetX`, `offsetY` or the jitter values no longer remeasures.
 
 ### Fixed
 
@@ -42,6 +47,7 @@ All notable changes to this project are documented here. The format is based on 
 - `removeStyleProp()` removed nothing (it checked a property that doesn't exist), skipped entries when it did, and left per-node values misaligned. It now removes every match, keeps the rest aligned, restores CSS properties that nothing animates any more, and returns whether anything was removed. `hasStyleProp()` and `removeStyleProp()` accept preset names such as `hueRotate`.
 - `setCoords()` stored any value because its type check could never pass. Manual coordinates no longer stop the animation loop.
 - A `runoff` of 0 produced `NaN`; it now gives a hard edge at the threshold.
+- Easing with a low `accuracy` could stall one rounding step short of its target (for example 0.1px from the near value) and never arrive. It now finishes on the target.
 - The first frame eased from `null` unless `primeDistances` was set; it now starts at the current distance.
 - The constructor stored the caller's `params` object and setters changed it; it is now copied, and only its own properties are read.
 - Jitter was lost for nodes set after construction, and `jitterMethod` from the params was never validated.
@@ -54,6 +60,15 @@ All notable changes to this project are documented here. The format is based on 
 - Scattered style values are clamped to the style's range.
 - The preset style table existed twice; it is now a single frozen module.
 - Removed the unused helpers `map`, `valToObj` and `isVisibleInViewport`, and `Style extends Object`.
+
+### Performance
+
+Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styles):
+
+- Measuring node positions took 0.83 s for 1,000 nodes and 25 s for 5,000, because each node was measured in turn with its inline style swapped out, forcing a fresh layout for every node. Nodes are now measured in one batch, and only properties that can move a box (such as `transform`, but not `filter` or `opacity`) are taken off. It now takes about 17 ms and 67 ms.
+- Page scrolls no longer remeasure: nodes that scroll with the page are moved by the scroll distance, and only fixed and sticky nodes are remeasured. Scrolling stays at the screen refresh rate with 5,000 nodes (it previously froze the page). Scrolling inside a container only remeasures if the container holds one of the nodes. Scroll and resize events are batched to at most one measurement per frame, replacing the `setTimeout` workaround.
+- A frame's work fell from 4.5 ms to 1.8 ms (1,000 nodes) and from 15.6 ms to 2.3 ms (5,000 nodes): values are computed with no per-node layout or attribute reads, functions sharing a property are grouped once rather than every frame, and nodes whose value hasn't changed are skipped.
+- An idle instance draws no frames (previously about 60 a second), and the loop stops while the tab is hidden.
 
 ### Added
 

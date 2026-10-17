@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProximityEffect benchmark</title>
+<style>
+    body { margin: 0; padding-bottom: 150vh; font: 14px/1.4 system-ui, sans-serif; }
+    #report { position: fixed; top: 8px; right: 8px; z-index: 10000; background: #fff; color: #000; padding: 8px; border: 1px solid #888; white-space: pre; font: 12px monospace; }
+    #grid { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; }
+    #grid span { display: block; width: 24px; height: 24px; background: #36c; color: #fff; text-align: center; line-height: 24px; }
+</style>
+</head>
+<body>
+<pre id="report">Running…</pre>
+<div id="grid"></div>
+
+<script type="module">
+// Usage: bench.html?n=1000&styles=all|filter&lib=../src/ProximityEffect.js
+// scripts/bench.js runs this headlessly and prints window.benchResult.
+const query  = new URLSearchParams(location.search);
+const n      = Number(query.get("n") ?? 1000);
+const styles = query.get("styles") ?? "all";
+const lib    = query.get("lib") ?? "../src/ProximityEffect.js";
+
+const { default: ProximityEffect } = await import(lib);
+
+const grid = document.getElementById("grid");
+for (let i=0; i<n; i++)
+{
+    const el = document.createElement("span");
+    el.textContent = String.fromCharCode(65 + i%26);
+    grid.append(el);
+}
+
+const pe = new ProximityEffect(grid.children, { threshold: 0, runoff: 200, attack: 0.3, decay: 0.3 });
+if (styles==="all")
+{
+    pe.addStyle("scale",   [1.5, 1]);
+    pe.addStyle("rotate",  [45, 0]);
+}
+pe.addStyle("blur",    [0, 2]);
+pe.addStyle("opacity", [100, 40]);
+await new Promise(resolve => pe.addEventListener("ready", resolve, { once: true }));
+
+
+const frame  = () => new Promise(requestAnimationFrame);
+const wait   = ms => new Promise(resolve => setTimeout(resolve, ms));
+const median = list => [...list].sort((a, b) => a-b)[Math.floor(list.length/2)];
+const p95    = list => [...list].sort((a, b) => a-b)[Math.floor(list.length*0.95)];
+const round  = x => Math.round(x*100)/100;
+const stats  = list => ({ median: round(median(list)), p95: round(p95(list)) });
+
+const cx = innerWidth/2, cy = innerHeight/2;
+function pointAt(i)
+{
+    const a = i/20;
+    document.dispatchEvent(new MouseEvent("mousemove", { clientX: cx + Math.cos(a)*250, clientY: cy + Math.sin(a)*250 }));
+}
+
+// count and time the instance's work without changing the library
+let updates = 0, updateMs = [], reflowMs = [];
+const update = pe.update, setCenterPoints = pe.setCenterPoints;
+pe.update = function() { const t = performance.now(); update.call(this); updateMs.push(performance.now()-t); updates++; };
+pe.setCenterPoints = function() { const t = performance.now(); setCenterPoints.call(this); reflowMs.push(performance.now()-t); };
+
+
+const result = { n, styles, lib };
+
+// 1. One frame's work, measured synchronously: update() plus the style
+// recalculation and layout it causes. The loop is paused so it can't interfere.
+pe.pause();
+const sync = [];
+for (let i=0; i<120; i++)
+{
+    pointAt(i);
+    const t = performance.now();
+    pe.update();
+    void document.documentElement.offsetWidth;
+    sync.push(performance.now()-t);
+}
+result.syncFrameMs = stats(sync.slice(20));
+pe.resume();
+
+// 2. The real loop with the pointer moving every frame.
+updateMs = [];
+const intervals = [];
+let last = await frame();
+for (let i=0; i<180; i++)
+{
+    pointAt(i);
+    const now = await frame();
+    intervals.push(now-last);
+    last = now;
+}
+result.movingUpdateMs = stats(updateMs.slice(20));
+result.movingFrameIntervalMs = stats(intervals.slice(20));
+
+// 3. Idle: the pointer stops. Count the frames drawn once it has had time to settle.
+await wait(1500);
+updates = 0;
+await wait(2000);
+result.idleUpdatesPer2s = updates;
+
+// 4. Remeasuring every node's centre, which happens after a scroll or resize.
+for (let i=0; i<5; i++)
+{
+    pe.setCenterPoints();
+}
+result.measureMs = stats(reflowMs);
+
+// 5. Scrolling with the pointer still: frame times while centres are remeasured.
+let reflows = 0;
+pe.addEventListener("reflow", () => reflows++);
+const scrollIntervals = [];
+last = await frame();
+for (let i=0; i<60; i++)
+{
+    scrollBy(0, i<30 ? 10 : -10);
+    const now = await frame();
+    scrollIntervals.push(now-last);
+    last = now;
+}
+await wait(200);
+result.scrollReflowEvents = reflows;
+result.scrollFrameIntervalMs = stats(scrollIntervals.slice(5));
+
+pe.destroy();
+
+document.getElementById("report").textContent = JSON.stringify(result, null, 2);
+window.benchResult = result;
+</script>
+</body>
+</html>

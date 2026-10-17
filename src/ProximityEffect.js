@@ -12,6 +12,11 @@ import * as Validate from './validate.mjs';
  */
 
 
+// properties that don't move or resize an element's box, so nodes can be
+// measured without taking them off first
+const PAINT_ONLY_RULES = new Set(["filter", "backdropFilter", "backdrop-filter", "opacity", "zIndex", "z-index"]);
+
+
 
 /**
  * Class representing a ProximityEffect.
@@ -39,6 +44,7 @@ export default class ProximityEffect extends EventTarget
     #pointer = null;
     #coords = null;
     #stylesStack = [];
+    #styleGroups = [];
     #properties;
     #nodes = [];
     #nodeData = [];
@@ -48,15 +54,23 @@ export default class ProximityEffect extends EventTarget
     #paused = false;
     #destroyed = false;
     #abort = new AbortController();
+    #resizeObserver = null;
     #frameId = null;
     #lastFrameTime;
-    #reflowTimerRef = null;
+    #needsMeasure = false;
+    #needsPinnedMeasure = false;
+    #scrollX = 0;
+    #scrollY = 0;
+    #needsRewrite = true;
+    #changed = false;
     #scratchStyle;
 
     // stable listener references, so they can all be removed
-    #onPointerMove = (evt) => this.updatePointer(evt);
-    #onReflow      = (evt) => this.reflowEvent(evt);
-    #onFrame       = (timestamp) => this.#frame(timestamp);
+    #onPointerMove  = (evt) => this.updatePointer(evt);
+    #onReflow       = () => this.reflowEvent();
+    #onScroll       = (evt) => this.#scrolled(evt);
+    #onVisibility   = () => this.#visibilityChange();
+    #onFrame        = (timestamp) => this.#frame(timestamp);
 
 
 
@@ -185,6 +199,7 @@ export default class ProximityEffect extends EventTarget
         {
             throw new TypeError(`ProximityEffect: ${target} is not a valid target.`);
         }
+        this.#start();
     }
 
 
@@ -206,14 +221,16 @@ export default class ProximityEffect extends EventTarget
      */
     set nodes(list)
     {
-        const nodes = this.#toElementArray(list);
-        const kept  = new Map(this.#nodeData.map(data => [data.node, data]));
+        const nodes   = this.#toElementArray(list),
+              keeping = new Set(nodes),
+              kept    = new Map(this.#nodeData.map(data => [data.node, data]));
 
         for (const data of this.#nodeData)
         {
-            if (!nodes.includes(data.node))
+            if (!keeping.has(data.node))
             {
                 data.node.style.cssText = data.style;
+                this.#resizeObserver?.unobserve(data.node);
             }
         }
 
@@ -222,7 +239,8 @@ export default class ProximityEffect extends EventTarget
 
         if (this.#ready)
         {
-            this.setCenterPoints();
+            this.#observe(nodes);
+            this.#requestMeasure();
         }
     }
 
@@ -267,6 +285,7 @@ export default class ProximityEffect extends EventTarget
     set threshold(value)
     {
     	this.#globalParams.threshold = Math.max(Validate.finite(value, "threshold"), 0);
+    	this.#start();
     }
 
 
@@ -289,6 +308,7 @@ export default class ProximityEffect extends EventTarget
     set runoff(value)
     {
     	this.#globalParams.runoff = Math.max(Validate.finite(value, "runoff"), 0);
+    	this.#start();
     }
 
 
@@ -324,6 +344,7 @@ export default class ProximityEffect extends EventTarget
     set invert(flag)
     {
         this.#globalParams.invert = Validate.boolean(flag, "invert");
+        this.#start();
     }
 
 
@@ -355,6 +376,7 @@ export default class ProximityEffect extends EventTarget
                 this.#restoreProperty(data, "zIndex");
             }
         }
+        this.#invalidate();
     }
 
 
@@ -377,6 +399,7 @@ export default class ProximityEffect extends EventTarget
     set attack(value)
     {
     	this.#globalParams.attack = AdashaUtils.constrain(Validate.finite(value, "attack"), 0, 1);
+    	this.#start();
     }
 
 
@@ -398,6 +421,7 @@ export default class ProximityEffect extends EventTarget
     set decay(value)
     {
     	this.#globalParams.decay = AdashaUtils.constrain(Validate.finite(value, "decay"), 0, 1);
+    	this.#start();
     }
 
 
@@ -431,10 +455,7 @@ export default class ProximityEffect extends EventTarget
     set offsetX(value)
     {
         this.#globalParams.offsetX = Validate.finite(value, "offsetX");
-        if (this.#ready)
-        {
-            this.setCenterPoints();
-        }
+        this.#applyOffsets();
   	}
 
     /**
@@ -444,10 +465,7 @@ export default class ProximityEffect extends EventTarget
     set offsetY(value)
     {
         this.#globalParams.offsetY = Validate.finite(value, "offsetY");
-        if (this.#ready)
-        {
-            this.setCenterPoints();
-        }
+        this.#applyOffsets();
   	}
 
 
@@ -556,6 +574,7 @@ export default class ProximityEffect extends EventTarget
         if (this.#VALID_DIRECTIONS.has(str))
         {
         	this.#globalParams.direction = str;
+        	this.#start();
         }
         else
         {
@@ -613,6 +632,7 @@ export default class ProximityEffect extends EventTarget
     set accuracy(num)
     {
         this.#globalParams.accuracy = Math.floor(AdashaUtils.constrain(Validate.finite(num, "accuracy"), 0, this.#MAX_ACCURACY));
+        this.#start();
     }
 
 
@@ -688,6 +708,8 @@ export default class ProximityEffect extends EventTarget
 
         this.#stylesStack.push(style);
         this.#nodeData.forEach((data, i) => data.styles.push(values[i]));
+        this.#groupStyles();
+        this.#invalidate();
     }
 
 
@@ -744,6 +766,11 @@ export default class ProximityEffect extends EventTarget
             }
         }
 
+        if (rules.size>0)
+        {
+            this.#groupStyles();
+            this.#invalidate();
+        }
         return rules.size>0;
     }
 
@@ -849,6 +876,7 @@ export default class ProximityEffect extends EventTarget
     setCoords(x, y)
     {
         this.#coords = { x: Validate.finite(x, "x coordinate"), y: Validate.finite(y, "y coordinate") };
+        this.#start();
     }
 
 
@@ -858,6 +886,7 @@ export default class ProximityEffect extends EventTarget
     clearCoords()
     {
         this.#coords = null;
+        this.#start();
     }
 
 
@@ -865,26 +894,14 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
-     * Recalculate each node's centre point, including global offset and jitter.
+     * Measure each node's centre point now, including global offset and jitter.
+     * The instance remeasures by itself when the page scrolls or resizes, so this
+     * is only needed after moving nodes in a way it can't detect.
      */
     setCenterPoints()
     {
-        for (const data of this.#nodeData)
-        {
-    		const node   = data.node,
-                  cssTxt = node.style.cssText;
-
-            // measure the node without the effect's styles applied
-            node.style.cssText = data.style;
-
-    		const bounds = node.getBoundingClientRect();
-
-            node.style.cssText = cssTxt;
-            data.center = {
-                x: (bounds.left+bounds.right )*0.5 - this.offsetX + data.jitter.x,
-                y: (bounds.top +bounds.bottom)*0.5 - this.offsetY + data.jitter.y
-            };
-        }
+        this.#measure(this.#nodeData);
+        this.#start();
     }
 
 
@@ -928,9 +945,8 @@ export default class ProximityEffect extends EventTarget
         }
         this.#destroyed = true;
         this.#abort.abort();
+        this.#resizeObserver?.disconnect();
         this.#stop();
-        clearTimeout(this.#reflowTimerRef);
-        this.#reflowTimerRef = null;
 
         for (const data of this.#nodeData)
         {
@@ -946,7 +962,9 @@ export default class ProximityEffect extends EventTarget
      * @typedef {Object} NodeData
      * @property {Element} node - A reference to the node.
      * @property {string} style - The node's original inline style.
-     * @property {Object} center - The node's centre point, including offset and jitter.
+     * @property {Object} measured - The node's measured centre point (relative to the viewport, with any data-offsetx/data-offsety applied).
+     * @property {Object} center - The node's centre point, including global offset and jitter.
+     * @property {boolean} scrollsWithPage - False if the node is, or is inside, a fixed or sticky element.
      * @property {Object} jitter - The node's random x and y jitter.
      * @property {number} distance - The normalised distance to the target as of the last frame.
      * @property {number} lastDelta - The eased distance as of the last frame.
@@ -1019,12 +1037,22 @@ export default class ProximityEffect extends EventTarget
             return;
         }
         this.#ready = true;
-        this.setCenterPoints();
+        this.#measure(this.#nodeData);
 
         const options = { signal: this.#abort.signal, passive: true };
-        window.addEventListener("scroll", this.#onReflow, options);
+        // capture, so scrolling inside any container is seen as well as the page
+        document.addEventListener("scroll", this.#onScroll, { ...options, capture: true });
         window.addEventListener("resize", this.#onReflow, options);
         document.addEventListener("mousemove", this.#onPointerMove, options);
+        document.addEventListener("visibilitychange", this.#onVisibility, options);
+
+        if (typeof ResizeObserver!=="undefined")
+        {
+            // nodes, or the page around them, changing size moves the centres
+            this.#resizeObserver = new ResizeObserver(this.#onReflow);
+            this.#resizeObserver.observe(document.documentElement);
+            this.#observe(this.#nodes);
+        }
 
         this.dispatchEvent(new Event("ready"));
         this.#start();
@@ -1032,11 +1060,57 @@ export default class ProximityEffect extends EventTarget
 
 
 
+    #observe(nodes)
+    {
+        for (const node of nodes)
+        {
+            this.#resizeObserver?.observe(node);
+        }
+    }
+
+
+
+    // the loop only runs while there's something to draw; anything that could
+    // change the output calls this to wake it
     #start()
     {
-        if (this.#ready && !this.#paused && !this.#destroyed && this.#frameId===null)
+        if (this.#ready && !this.#paused && !this.#destroyed && this.#frameId===null
+            && document.visibilityState!=="hidden")
         {
             this.#frameId = requestAnimationFrame(this.#onFrame);
+        }
+    }
+
+
+
+    // the styles need writing even for nodes whose distance hasn't changed
+    #invalidate()
+    {
+        this.#needsRewrite = true;
+        this.#start();
+    }
+
+
+
+    // remeasure on the next frame, so a burst of scroll or resize events costs one measurement
+    #requestMeasure()
+    {
+        this.#needsMeasure = true;
+        this.#start();
+    }
+
+
+
+    #visibilityChange()
+    {
+        if (document.visibilityState==="hidden")
+        {
+            this.#stop();
+        }
+        else
+        {
+            // the page may have changed while hidden
+            this.#requestMeasure();
         }
     }
 
@@ -1063,13 +1137,207 @@ export default class ProximityEffect extends EventTarget
             // 1ms tolerance, so 30fps on a 60Hz screen draws every other frame
             || timestamp - this.#lastFrameTime >= 1000/fps - 1;
 
-        if (due)
+        if (!due)
         {
-            this.#lastFrameTime = timestamp;
-            this.update();
-            this.dispatchEvent(new Event("redraw"));
+            this.#start();
+            return;
+        }
+
+        this.#lastFrameTime = timestamp;
+        if (this.#needsMeasure)
+        {
+            this.#measure(this.#nodeData);
+            this.dispatchEvent(new Event("reflow"));
+        }
+        else if (this.#needsPinnedMeasure)
+        {
+            this.#measure(this.#nodeData.filter(data => data.scrollsWithPage===false));
+            this.dispatchEvent(new Event("reflow"));
+        }
+        this.update();
+        this.dispatchEvent(new Event("redraw"));
+
+        // keep going while nodes are still easing. A target element is followed
+        // every frame, since it can move without any event to say so.
+        if (this.#changed || this.target)
+        {
+            this.#start();
+        }
+    }
+
+
+
+    // Measure nodes' centres without the effect's styles applied. Done in
+    // three passes (write, read, write) so the page is laid out once, not
+    // once per node. Only the properties that can move a node's box are put
+    // back to their original values, one by one: replacing the whole cssText
+    // would make the browser redo layout for every node.
+    #measure(all)
+    {
+        if (all===this.#nodeData)
+        {
+            this.#needsMeasure = false;
+        }
+        this.#needsPinnedMeasure = false;
+
+        const rules = [...new Set(this.#styleGroups.map(group => group.rule))]
+                  .filter(rule => !PAINT_ONLY_RULES.has(rule)),
+              saved = all.map(data => rules.map(rule => data.node.style[rule]));
+
+        for (const data of all)
+        {
+            for (const rule of rules)
+            {
+                data.node.style[rule] = this.#originalValue(data, rule);
+            }
+        }
+
+        // read pass: positions, and whether each node scrolls with the page
+        const bounds = all.map(data => data.node.getBoundingClientRect()),
+              cache  = new Map(),
+              pinned = all.map(data => this.#isPinned(data.node, cache));
+
+        // the page scroll these measurements belong to (see #followScroll)
+        if (all===this.#nodeData)
+        {
+            this.#scrollX = window.scrollX;
+            this.#scrollY = window.scrollY;
+        }
+
+        all.forEach((data, i) =>
+        {
+            const b    = bounds[i],
+                  node = data.node;
+            rules.forEach((rule, r) =>
+            {
+                node.style[rule] = saved[i][r];
+            });
+            data.measured = {
+                x: (b.left+b.right )*0.5 - this.#dataOffset(node.dataset.offsetx),
+                y: (b.top +b.bottom)*0.5 - this.#dataOffset(node.dataset.offsety)
+            };
+            data.scrollsWithPage = !pinned[i];
+            this.#applyOffset(data);
+        });
+    }
+
+
+
+    // whether an element, or anything it sits inside, is fixed or sticky, so
+    // it doesn't simply move with the page when it scrolls. Shared ancestors
+    // are only looked up once per measurement.
+    #isPinned(el, cache)
+    {
+        if (!el)
+        {
+            return false;
+        }
+        if (!cache.has(el))
+        {
+            const position = getComputedStyle(el).position;
+            cache.set(el, position==="fixed" || position==="sticky"
+                || this.#isPinned(el.parentElement ?? el.getRootNode().host, cache));
+        }
+        return cache.get(el);
+    }
+
+
+
+    // A page scroll moves every node that isn't fixed or sticky by exactly the
+    // scroll distance, so their centres are shifted rather than remeasured.
+    #followScroll()
+    {
+        const dx = window.scrollX - this.#scrollX,
+              dy = window.scrollY - this.#scrollY;
+
+        if (dx===0 && dy===0)
+        {
+            return;
+        }
+        this.#scrollX += dx;
+        this.#scrollY += dy;
+        for (const data of this.#nodeData)
+        {
+            if (data.scrollsWithPage && data.measured)
+            {
+                data.measured.x -= dx;
+                data.measured.y -= dy;
+                this.#applyOffset(data);
+            }
+        }
+    }
+
+
+
+    #scrolled(evt)
+    {
+        const target = evt.target;
+        if (target===document)
+        {
+            // update() moves the nodes that scroll with the page; the rest need measuring
+            if (this.#nodeData.some(data => data.scrollsWithPage===false))
+            {
+                this.#needsPinnedMeasure = true;
+            }
+            this.#start();
+        }
+        else if (target instanceof Node && this.#nodes.some(node => target.contains(node)))
+        {
+            this.#requestMeasure();
+        }
+    }
+
+
+
+    // a node's centre is where it was measured, moved by the global offset and its jitter
+    #applyOffset(data)
+    {
+        if (data.measured)
+        {
+            data.center ??= {};
+            data.center.x = data.measured.x - this.offsetX + data.jitter.x;
+            data.center.y = data.measured.y - this.offsetY + data.jitter.y;
+        }
+    }
+
+
+
+    #applyOffsets()
+    {
+        for (const data of this.#nodeData)
+        {
+            this.#applyOffset(data);
         }
         this.#start();
+    }
+
+
+
+    // Group the stack by CSS property, so functions that share one (transform,
+    // filter) are written together. Plain properties come first, in stack order.
+    #groupStyles()
+    {
+        const plain = [],
+              funcs = new Map();
+
+        this.#stylesStack.forEach((style, index) =>
+        {
+            const item = { index, func: style.func, unit: style.unit || "" };
+            if (!style.func)
+            {
+                plain.push({ rule: style.rule, items: [item] });
+            }
+            else
+            {
+                if (!funcs.has(style.rule))
+                {
+                    funcs.set(style.rule, { rule: style.rule, items: [] });
+                }
+                funcs.get(style.rule).items.push(item);
+            }
+        });
+
+        this.#styleGroups = [...plain, ...funcs.values()];
     }
 
 
@@ -1147,10 +1415,7 @@ export default class ProximityEffect extends EventTarget
         {
             data.jitter = this.#randomJitter();
         }
-        if (this.#ready)
-        {
-            this.setCenterPoints();
-        }
+        this.#applyOffsets();
     }
 
 
@@ -1186,12 +1451,25 @@ export default class ProximityEffect extends EventTarget
 
 
 
+    // a node's original inline value for one CSS property, parsed once and kept
+    #originalValue(data, rule)
+    {
+        data.originals ??= new Map();
+        if (!data.originals.has(rule))
+        {
+            this.#scratchStyle ??= document.createElement("div").style;
+            this.#scratchStyle.cssText = data.style;
+            data.originals.set(rule, this.#scratchStyle[rule]);
+        }
+        return data.originals.get(rule);
+    }
+
+
+
     // put back a node's original inline value for one CSS property
     #restoreProperty(data, rule)
     {
-        this.#scratchStyle ??= document.createElement("div").style;
-        this.#scratchStyle.cssText = data.style;
-        data.node.style[rule] = this.#scratchStyle[rule];
+        data.node.style[rule] = this.#originalValue(data, rule);
     }
 
 
@@ -1237,26 +1515,23 @@ export default class ProximityEffect extends EventTarget
 
     updatePointer(evt)
     {
-        this.#pointer = { x: evt.clientX, y: evt.clientY };
+        this.#pointer ??= { x: 0, y: 0 };
+        this.#pointer.x = evt.clientX;
+        this.#pointer.y = evt.clientY;
+        this.#start();
     }
 
 
 
 
 
+    // the page scrolled or resized: remeasure the nodes on the next frame
+    // (which dispatches "reflow")
     reflowEvent()
     {
-        this.dispatchEvent(new Event("reflow"));
-
-        // TODO: is this a hack? or the best way to do it? (replaced in Session 5)
         if (this.#ready && !this.#destroyed)
         {
-            clearTimeout(this.#reflowTimerRef);
-            this.#reflowTimerRef = setTimeout(() =>
-            {
-                this.#reflowTimerRef = null;
-                this.setCenterPoints();
-            }, 1);
+            this.#requestMeasure();
         }
     }
 
@@ -1275,14 +1550,20 @@ export default class ProximityEffect extends EventTarget
             return;
         }
 
-        // read everything needed from layout before writing any styles
-        const point  = this.#targetPoint(),
-              styles = this.#stylesStack;
+        // the layout reads (page scroll, a target's position) happen before any
+        // style is written; node centres are measured separately and cached
+        this.#followScroll();
+        const point   = this.#targetPoint(),
+              groups  = this.#styleGroups,
+              rewrite = this.#needsRewrite,
+              { threshold, runoff, invert, attack, decay, accuracy, direction, zIndex } = this.#globalParams;
+
+        this.#needsRewrite = false;
+        let changed = rewrite;
 
         for (const data of this.#nodeData)
         {
-            const node   = data.node,
-                  center = data.center;
+            const center = data.center;
 
             if (!center)
             {
@@ -1294,74 +1575,83 @@ export default class ProximityEffect extends EventTarget
 
             if (point)
             {
-                const dx = point.x - (center.x - this.#dataOffset(node.dataset.offsetx)),
-                      dy = point.y - (center.y - this.#dataOffset(node.dataset.offsety));
+                const dx = point.x - center.x,
+                      dy = point.y - center.y;
 
                 // calculate distance
-                const dd = this.direction==="both"
+                const dd = direction==="both"
                     ? Math.hypot(dx, dy)
-                    : Math.abs(this.direction==="horizontal" ? dx : dy);
+                    : Math.abs(direction==="horizontal" ? dx : dy);
 
                 // normalise to boundaries; a runoff of 0 is a hard edge
-                td = this.runoff===0
-                    ? (dd>this.threshold ? 1 : 0)
-                    : AdashaUtils.constrain((dd-this.threshold) / this.runoff, 0, 1);
+                td = runoff===0
+                    ? (dd>threshold ? 1 : 0)
+                    : AdashaUtils.constrain((dd-threshold) / runoff, 0, 1);
             }
 
-            if (this.invert)
+            if (invert)
             {
                 td = 1 - td;
             }
 
             data.distance = td;
 
-            // apply easing (the first frame starts where it is, unless primed)
-            const last = data.lastDelta;
-            let d = last===undefined
-                ? td
-                : last+(td-last)*(AdashaUtils.xor(td>last, this.invert) ? this.decay : this.attack);
+            // apply easing (the first frame starts where it is, unless primed),
+            // rounded to reduce jitter
+            const last = data.lastDelta,
+                  rate = AdashaUtils.xor(td>last, invert) ? decay : attack;
+            let d = AdashaUtils.roundTo(last===undefined ? td : last+(td-last)*rate, accuracy);
 
-            // round value to reduce jitter
-            d = AdashaUtils.roundTo(d, this.accuracy);
+            // a step too small to survive rounding would stall short of the target
+            if (d===last && rate>0)
+            {
+                d = AdashaUtils.roundTo(td, accuracy);
+            }
 
             data.lastDelta = d;
 
-
-            if (styles.length>0)
+            // a node that hasn't moved would get the same styles as last time
+            if (d===last && !rewrite)
             {
-                const funcs = {};
+                continue;
+            }
+            changed = true;
 
-                for (let f=0; f<styles.length; f++)
-                {
-      				const style    = styles[f],
-                          nodeVals = data.styles[f],
-                          rule     = style.rule,
-                          func     = style.func,
-                          unit     = style.unit || "",
-                          val      = AdashaUtils.lerp(d, nodeVals.near, nodeVals.far);
-
-                    if (!func)
-                    {
-                        node.style[rule] = `${val}${unit}`;
-                    }
-                    else
-                    {
-                        (funcs[rule] ??= []).push(`${func}(${val}${unit})`);
-                    }
-                }
-
-                for (const rule in funcs)
-                {
-                    node.style[rule] = funcs[rule].join(" ");
-                }
-
-                if (this.zIndex)
-                {
-                    const ix = Math.floor(d*1000);
-                    node.style.zIndex = this.invert ? ix : 1000-ix;
-                }
+            if (groups.length>0)
+            {
+                this.#writeStyles(data, d, groups, zIndex, invert);
             }
         }
+
+        this.#changed = changed;
     } // update end
+
+
+
+    #writeStyles(data, d, groups, zIndex, invert)
+    {
+        const style = data.node.style;
+
+        for (const group of groups)
+        {
+            let value = "";
+            for (const { index, func, unit } of group.items)
+            {
+                const vals = data.styles[index],
+                      val  = AdashaUtils.lerp(d, vals.near, vals.far);
+
+                value += func
+                    ? `${value==="" ? "" : " "}${func}(${val}${unit})`
+                    : `${val}${unit}`;
+            }
+            style[group.rule] = value;
+        }
+
+        if (zIndex)
+        {
+            const ix = Math.floor(d*1000);
+            style.zIndex = invert ? ix : 1000-ix;
+        }
+    }
 
 }
