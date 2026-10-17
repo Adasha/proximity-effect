@@ -39,6 +39,11 @@ if (styles==="all")
     pe.addStyle("scale",   [1.5, 1]);
     pe.addStyle("rotate",  [45, 0]);
 }
+else if (styles==="layout")
+{
+    // resizes the nodes, so the ResizeObserver reports every frame
+    pe.addStyle({ rule: "width", unit: "px" }, [36, 24]);
+}
 pe.addStyle("blur",    [0, 2]);
 pe.addStyle("opacity", [100, 40]);
 await new Promise(resolve => pe.addEventListener("ready", resolve, { once: true }));
@@ -84,6 +89,9 @@ pe.resume();
 
 // 2. The real loop with the pointer moving every frame.
 updateMs = [];
+let movingReflows = 0;
+const countReflow = () => movingReflows++;
+pe.addEventListener("reflow", countReflow);
 const intervals = [];
 let last = await frame();
 for (let i=0; i<180; i++)
@@ -95,6 +103,8 @@ for (let i=0; i<180; i++)
 }
 result.movingUpdateMs = stats(updateMs.slice(20));
 result.movingFrameIntervalMs = stats(intervals.slice(20));
+result.movingReflows = movingReflows;
+pe.removeEventListener("reflow", countReflow);
 
 // 3. Idle: the pointer stops. Count the frames drawn once it has had time to settle.
 await wait(1500);

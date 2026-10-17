@@ -1,6 +1,6 @@
 // Runs tests/bench.html in headless Chrome and prints the results.
 //
-//   node scripts/bench.js [--n 1000,5000] [--styles all|filter] [--baseline <dir>] [--chrome <path>]
+//   node scripts/bench.js [--n 1000,5000] [--styles all|filter|layout] [--baseline <dir>] [--chrome <path>]
 //
 // --baseline serves another copy of src/ (for example a git worktree of an
 // older commit) and benchmarks it alongside the current one.

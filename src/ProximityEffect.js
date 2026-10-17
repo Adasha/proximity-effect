@@ -16,6 +16,10 @@ import * as Validate from './validate.mjs';
 // measured without taking them off first
 const PAINT_ONLY_RULES = new Set(["filter", "backdropFilter", "backdrop-filter", "opacity", "zIndex", "z-index"]);
 
+// properties that can't change an element's size, so writing them never
+// makes the ResizeObserver report
+const SIZE_NEUTRAL_RULES = new Set([...PAINT_ONLY_RULES, "transform", "translate", "rotate", "scale"]);
+
 
 
 /**
@@ -58,6 +62,8 @@ export default class ProximityEffect extends EventTarget
     #lastFrameTime;
     #needsMeasure = false;
     #needsPinnedMeasure = false;
+    #measureWhenSettled = false;
+    #ownResizes = new Set();
     #scrollX = 0;
     #scrollY = 0;
     #needsRewrite = true;
@@ -67,6 +73,7 @@ export default class ProximityEffect extends EventTarget
     // stable listener references, so they can all be removed
     #onPointerMove  = (evt) => this.updatePointer(evt);
     #onReflow       = () => this.reflowEvent();
+    #onResize       = (entries) => this.#resized(entries);
     #onScroll       = (evt) => this.#scrolled(evt);
     #onVisibility   = () => this.#visibilityChange();
     #onFrame        = (timestamp) => this.#frame(timestamp);
@@ -1050,7 +1057,7 @@ export default class ProximityEffect extends EventTarget
         if (typeof ResizeObserver!=="undefined")
         {
             // nodes, or the page around them, changing size moves the centres
-            this.#resizeObserver = new ResizeObserver(this.#onReflow);
+            this.#resizeObserver = new ResizeObserver(this.#onResize);
             this.#resizeObserver.observe(document.documentElement);
             this.#observe(this.#nodes);
         }
@@ -1102,6 +1109,25 @@ export default class ProximityEffect extends EventTarget
 
 
 
+    // The observer reports after layout, in the same frame as the writes that
+    // caused it. Size changes the effect made itself can't move the centres,
+    // since #measure takes its styles off first, so only other changes count.
+    #resized(entries)
+    {
+        const external = entries.some(entry => !this.#ownResizes.has(entry.target));
+        this.#ownResizes.clear();
+
+        if (external && this.#ready && !this.#destroyed)
+        {
+            // sizes can change every frame (the page reflowing around nodes the
+            // effect resizes, images loading), so measure once things settle
+            this.#measureWhenSettled = true;
+            this.#start();
+        }
+    }
+
+
+
     #visibilityChange()
     {
         if (document.visibilityState==="hidden")
@@ -1145,22 +1171,29 @@ export default class ProximityEffect extends EventTarget
         }
 
         this.#lastFrameTime = timestamp;
-        if (this.#needsMeasure)
+        // marks from earlier frames have already been reported, if they resized anything
+        this.#ownResizes.clear();
+
+        let moved = false;
+        if (this.#needsMeasure || (this.#measureWhenSettled && !this.#changed))
         {
-            this.#measure(this.#nodeData);
-            this.dispatchEvent(new Event("reflow"));
+            moved = this.#measure(this.#nodeData);
         }
         else if (this.#needsPinnedMeasure)
         {
-            this.#measure(this.#nodeData.filter(data => data.scrollsWithPage===false));
+            moved = this.#measure(this.#nodeData.filter(data => data.scrollsWithPage===false));
+        }
+        if (moved)
+        {
             this.dispatchEvent(new Event("reflow"));
         }
         this.update();
         this.dispatchEvent(new Event("redraw"));
 
-        // keep going while nodes are still easing. A target element is followed
-        // every frame, since it can move without any event to say so.
-        if (this.#changed || this.target)
+        // keep going while nodes are still easing, or a measurement is waiting
+        // for them to stop. A target element is followed every frame, since it
+        // can move without any event to say so.
+        if (this.#changed || this.#measureWhenSettled || this.target)
         {
             this.#start();
         }
@@ -1172,12 +1205,14 @@ export default class ProximityEffect extends EventTarget
     // three passes (write, read, write) so the page is laid out once, not
     // once per node. Only the properties that can move a node's box are put
     // back to their original values, one by one: replacing the whole cssText
-    // would make the browser redo layout for every node.
+    // would make the browser redo layout for every node. Returns whether any
+    // node's position changed.
     #measure(all)
     {
         if (all===this.#nodeData)
         {
             this.#needsMeasure = false;
+            this.#measureWhenSettled = false;
         }
         this.#needsPinnedMeasure = false;
 
@@ -1205,10 +1240,12 @@ export default class ProximityEffect extends EventTarget
             this.#scrollY = window.scrollY;
         }
 
+        let moved = false;
         all.forEach((data, i) =>
         {
             const b    = bounds[i],
-                  node = data.node;
+                  node = data.node,
+                  last = data.measured;
             rules.forEach((rule, r) =>
             {
                 node.style[rule] = saved[i][r];
@@ -1217,9 +1254,14 @@ export default class ProximityEffect extends EventTarget
                 x: (b.left+b.right )*0.5 - this.#dataOffset(node.dataset.offsetx),
                 y: (b.top +b.bottom)*0.5 - this.#dataOffset(node.dataset.offsety)
             };
+            // scroll-shifted centres can be off by rounding noise, not a real move
+            moved ||= !last
+                || Math.abs(data.measured.x-last.x)>0.01
+                || Math.abs(data.measured.y-last.y)>0.01;
             data.scrollsWithPage = !pinned[i];
             this.#applyOffset(data);
         });
+        return moved;
     }
 
 
@@ -1323,16 +1365,17 @@ export default class ProximityEffect extends EventTarget
 
         this.#stylesStack.forEach((style, index) =>
         {
-            const item = { index, func: style.func, unit: style.unit || "" };
+            const item    = { index, func: style.func, unit: style.unit || "" },
+                  resizes = !SIZE_NEUTRAL_RULES.has(style.rule);
             if (!style.func)
             {
-                plain.push({ rule: style.rule, items: [item] });
+                plain.push({ rule: style.rule, resizes, items: [item] });
             }
             else
             {
                 if (!funcs.has(style.rule))
                 {
-                    funcs.set(style.rule, { rule: style.rule, items: [] });
+                    funcs.set(style.rule, { rule: style.rule, resizes, items: [] });
                 }
                 funcs.get(style.rule).items.push(item);
             }
@@ -1527,7 +1570,7 @@ export default class ProximityEffect extends EventTarget
 
 
     // the page scrolled or resized: remeasure the nodes on the next frame
-    // (which dispatches "reflow")
+    // (which dispatches "reflow" if any of them moved)
     reflowEvent()
     {
         if (this.#ready && !this.#destroyed)
@@ -1645,6 +1688,10 @@ export default class ProximityEffect extends EventTarget
                     : `${val}${unit}`;
             }
             style[group.rule] = value;
+            if (group.resizes)
+            {
+                this.#ownResizes.add(data.node);
+            }
         }
 
         if (zIndex)

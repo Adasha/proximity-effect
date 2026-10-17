@@ -13,12 +13,18 @@ function step(ms = 16)
     callbacks.forEach(cb => cb(now));
 }
 
+// A layout box centred on (x, y).
+function boxAt(x, y, size = 10)
+{
+    const h = size/2;
+    return { left: x-h, right: x+h, top: y-h, bottom: y+h, width: size, height: size, x: x-h, y: y-h };
+}
+
 // A node whose layout box is centred on (x, y).
 function makeNode(x, y, size = 10)
 {
     const el = document.createElement("div");
-    const h = size/2;
-    el.getBoundingClientRect = () => ({ left: x-h, right: x+h, top: y-h, bottom: y+h, width: size, height: size, x: x-h, y: y-h });
+    el.getBoundingClientRect = () => boxAt(x, y, size);
     document.body.append(el);
     return el;
 }
@@ -945,7 +951,8 @@ describe("performance", () =>
         document.dispatchEvent(new Event("scroll"));
         step();
         expect(measured.map(spy => spy.mock.calls.length)).toEqual([1, 1, 0]);
-        expect(reflow).toHaveBeenCalledOnce();
+        // they're pinned, so they didn't move
+        expect(reflow).not.toHaveBeenCalled();
         expect(pe.getNodeData(pinned, "center").y).toBe(0);
         expect(pe.getNodeData(flow, "center").y).toBe(-30);
     });
@@ -970,7 +977,7 @@ describe("performance", () =>
         await settle();
         runUntilIdle();
 
-        const measure = vi.spyOn(el, "getBoundingClientRect");
+        const measure = vi.spyOn(el, "getBoundingClientRect").mockReturnValue(boxAt(20, 0));
         const reflow = vi.fn();
         pe.addEventListener("reflow", reflow);
         const timer = vi.spyOn(window, "setTimeout");
@@ -1017,35 +1024,129 @@ describe("performance", () =>
         expect(pe.distanceFrom(added)).toBe(0.4);
     });
 
-    it("remeasures when a ResizeObserver reports a change, and disconnects on destroy", async () =>
+    describe("ResizeObserver", () =>
     {
-        const observers = [];
-        vi.stubGlobal("ResizeObserver", class
+        let observer;
+
+        beforeEach(() =>
         {
-            constructor(callback) { this.callback = callback; this.observed = new Set(); observers.push(this); }
-            observe(el) { this.observed.add(el); }
-            unobserve(el) { this.observed.delete(el); }
-            disconnect() { this.observed.clear(); this.disconnected = true; }
+            vi.stubGlobal("ResizeObserver", class
+            {
+                constructor(callback) { this.callback = callback; this.observed = new Set(); observer = this; }
+                observe(el) { this.observed.add(el); }
+                unobserve(el) { this.observed.delete(el); }
+                disconnect() { this.observed.clear(); this.disconnected = true; }
+            });
         });
-        const a = makeNode(0, 0), b = makeNode(10, 0);
-        const pe = create([a, b]);
-        await settle();
-        runUntilIdle();
 
-        const [observer] = observers;
-        expect(observer.observed).toEqual(new Set([document.documentElement, a, b]));
+        // the observer reports sizes after layout, in the same frame as the writes
+        const report = (...targets) => observer.callback(targets.map(target => ({ target })));
 
-        const reflow = vi.fn();
-        pe.addEventListener("reflow", reflow);
-        observer.callback([]);
-        step();
-        expect(reflow).toHaveBeenCalledOnce();
+        it("observes the page and the nodes, and disconnects on destroy", async () =>
+        {
+            const a = makeNode(0, 0), b = makeNode(10, 0);
+            const pe = create([a, b]);
+            await settle();
+            expect(observer.observed).toEqual(new Set([document.documentElement, a, b]));
+            pe.nodes = [b];
+            expect(observer.observed.has(a)).toBe(false);
+            pe.destroy();
+            expect(observer.disconnected).toBe(true);
+        });
 
-        pe.nodes = [b];
-        expect(observer.observed.has(a)).toBe(false);
+        it("remeasures after an outside size change, dispatching reflow only if a node moved", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el);
+            await settle();
+            runUntilIdle();
+            const measure = vi.spyOn(el, "getBoundingClientRect");
+            const reflow = vi.fn();
+            pe.addEventListener("reflow", reflow);
 
-        pe.destroy();
-        expect(observer.disconnected).toBe(true);
+            report(el);
+            step();
+            expect(measure).toHaveBeenCalledOnce();
+            expect(reflow).not.toHaveBeenCalled();
+
+            measure.mockReturnValue(boxAt(20, 0));
+            report(document.documentElement);
+            step();
+            expect(measure).toHaveBeenCalledTimes(2);
+            expect(reflow).toHaveBeenCalledOnce();
+            expect(pe.getNodeIndexData(0, "center")).toEqual({ x: 20, y: 0 });
+        });
+
+        it("ignores size changes the effect makes itself", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el);
+            pe.addStyle({ rule: "width", unit: "px" }, [20, 10]);
+            await settle();
+            runUntilIdle();
+            const measure = vi.spyOn(el, "getBoundingClientRect");
+
+            pe.setCoords(0, 0);
+            step();
+            expect(el.style.width).toBe("20px");
+            report(el);
+            expect(runUntilIdle()).toBe(1);
+            expect(measure).not.toHaveBeenCalled();
+
+            // a later change to the same node is someone else's
+            report(el);
+            step();
+            expect(measure).toHaveBeenCalledOnce();
+        });
+
+        it("still counts nodes resized only by a transform", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el);
+            pe.addStyle("scale", [2, 1]);
+            await settle();
+            runUntilIdle();
+            const measure = vi.spyOn(el, "getBoundingClientRect");
+            pe.setCoords(0, 0);
+            step();
+            report(el);
+            runUntilIdle();
+            expect(measure).toHaveBeenCalledOnce();
+        });
+
+        it("waits for nodes to settle before remeasuring", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { attack: 0.5 });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            runUntilIdle();
+            const measure = vi.spyOn(el, "getBoundingClientRect");
+
+            pe.setCoords(0, 0);
+            step();
+            report(document.documentElement);
+            step();
+            step();
+            expect(measure).not.toHaveBeenCalled();
+            runUntilIdle();
+            expect(measure).toHaveBeenCalledOnce();
+        });
+
+        it("measures straight away for a window resize, even while nodes are moving", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { attack: 0.5 });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            runUntilIdle();
+            const measure = vi.spyOn(el, "getBoundingClientRect");
+            pe.setCoords(0, 0);
+            step();
+            window.dispatchEvent(new Event("resize"));
+            step();
+            expect(measure).toHaveBeenCalledOnce();
+        });
     });
 
     it("stops while the page is hidden and remeasures when it's shown again", async () =>
@@ -1062,6 +1163,7 @@ describe("performance", () =>
         expect(frames.size).toBe(0);
 
         visibility.mockReturnValue("visible");
+        el.getBoundingClientRect = () => boxAt(20, 0);
         const reflow = vi.fn();
         pe.addEventListener("reflow", reflow);
         document.dispatchEvent(new Event("visibilitychange"));

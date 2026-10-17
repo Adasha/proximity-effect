@@ -34,7 +34,7 @@ All notable changes to this project are documented here. The format is based on 
 - The undocumented public `preventCenterCalculations` property is removed.
 - The animation loop stops when nothing is moving, so `redraw` is only dispatched for frames that are drawn. It wakes on pointer movement, scrolling, resizing and any setting or method that changes the output. With a `target` element set, it runs every frame, since the target can move without an event.
 - Styles are only written to a node when its eased distance changes (or the style stack or `zIndex` changes). Inline styles another script sets on a node in the meantime are no longer overwritten every frame.
-- `reflow` is dispatched once each time node positions are remeasured, rather than on every scroll and resize event. A page scroll no longer triggers a remeasure (see Performance below).
+- `reflow` is dispatched only when a remeasure finds that a node has moved, rather than on every scroll and resize event. A page scroll no longer triggers a remeasure (see Performance below).
 - `data-offsetx` and `data-offsety` are read when nodes are measured, not every frame.
 - `setCenterPoints()` measures straight away and is rarely needed: the instance remeasures after resizes (including a `ResizeObserver` on the nodes and the page), container scrolls, changes to `nodes`, and when the tab becomes visible. Setting `offsetX`, `offsetY` or the jitter values no longer remeasures.
 
@@ -70,6 +70,7 @@ Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styl
 - Page scrolls no longer remeasure: nodes that scroll with the page are moved by the scroll distance, and only fixed and sticky nodes are remeasured. Scrolling stays at the screen refresh rate with 5,000 nodes (it previously froze the page). Scrolling inside a container only remeasures if the container holds one of the nodes. Scroll and resize events are batched to at most one measurement per frame, replacing the `setTimeout` workaround.
 - A frame's work fell from 4.5 ms to 1.8 ms (1,000 nodes) and from 15.6 ms to 2.3 ms (5,000 nodes): values are computed with no per-node layout or attribute reads, functions sharing a property are grouped once rather than every frame, and nodes whose value hasn't changed are skipped.
 - An idle instance draws no frames (previously about 60 a second), and the loop stops while the tab is hidden.
+- Styles that change a node's size (a custom `width`, `fontSize` and so on) no longer cause a remeasure every frame. Size changes the effect makes itself are ignored, since they can't move the measured centres, and other size changes reported by the `ResizeObserver` wait until the nodes stop moving. Animating `width` on 5,000 nodes went from 10 to 20 frames a second, and from 181 `reflow` events in three seconds of pointer movement to none.
 
 ### Added
 
