@@ -57,6 +57,7 @@ export default class ProximityEffect extends EventTarget
     #paused = false;
     #destroyed = false;
     #abort = new AbortController();
+    #shadowRoots = new Map();
     #resizeObserver = null;
     #frameId = null;
     #lastFrameTime;
@@ -246,6 +247,7 @@ export default class ProximityEffect extends EventTarget
         if (this.#ready)
         {
             this.#observe(nodes);
+            this.#listenInShadowRoots();
             this.#requestMeasure();
         }
     }
@@ -953,6 +955,8 @@ export default class ProximityEffect extends EventTarget
         }
         this.#destroyed = true;
         this.#abort.abort();
+        this.#shadowRoots.forEach(abort => abort.abort());
+        this.#shadowRoots.clear();
         this.#resizeObserver?.disconnect();
         this.#stop();
 
@@ -1050,6 +1054,7 @@ export default class ProximityEffect extends EventTarget
         const options = { signal: this.#abort.signal, passive: true };
         // capture, so scrolling inside any container is seen as well as the page
         document.addEventListener("scroll", this.#onScroll, { ...options, capture: true });
+        this.#listenInShadowRoots();
         window.addEventListener("resize", this.#onReflow, options);
         document.addEventListener("mousemove", this.#onPointerMove, options);
         document.addEventListener("visibilitychange", this.#onVisibility, options);
@@ -1064,6 +1069,40 @@ export default class ProximityEffect extends EventTarget
 
         this.dispatchEvent(new Event("ready"));
         this.#start();
+    }
+
+
+
+    // Scroll events don't leave the shadow root they happen in, so listen in
+    // every shadow root that holds a node, or holds the host of one that does.
+    #listenInShadowRoots()
+    {
+        const roots = new Set();
+        for (const node of this.#nodes)
+        {
+            for (let root = node.getRootNode(); root instanceof ShadowRoot && !roots.has(root); root = root.host.getRootNode())
+            {
+                roots.add(root);
+            }
+        }
+
+        for (const [root, abort] of this.#shadowRoots)
+        {
+            if (!roots.has(root))
+            {
+                abort.abort();
+                this.#shadowRoots.delete(root);
+            }
+        }
+        for (const root of roots)
+        {
+            if (!this.#shadowRoots.has(root))
+            {
+                const abort = new AbortController();
+                root.addEventListener("scroll", this.#onScroll, { capture: true, passive: true, signal: abort.signal });
+                this.#shadowRoots.set(root, abort);
+            }
+        }
     }
 
 
@@ -1324,10 +1363,26 @@ export default class ProximityEffect extends EventTarget
             }
             this.#start();
         }
-        else if (target instanceof Node && this.#nodes.some(node => target.contains(node)))
+        else if (!this.#needsMeasure && target instanceof Node
+            && this.#nodes.some(node => this.#isInside(node, target)))
         {
             this.#requestMeasure();
         }
+    }
+
+
+
+    // like container.contains(el), but also looking out of shadow roots to their hosts
+    #isInside(el, container)
+    {
+        for (let parent = el; parent; parent = parent.parentNode ?? parent.host)
+        {
+            if (parent===container)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
 

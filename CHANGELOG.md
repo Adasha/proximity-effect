@@ -46,6 +46,7 @@ All notable changes to this project are documented here. The format is based on 
 - Instances created after the page had loaded never initialised (`readyState` was compared with `"completed"`).
 - `distanceFrom()` and `getNodeData()` always threw (an undefined variable). They now throw a `RangeError` only for a node the instance doesn't control.
 - `removeStyleProp()` removed nothing (it checked a property that doesn't exist), skipped entries when it did, and left per-node values misaligned. It now removes every match, keeps the rest aligned, restores CSS properties that nothing animates any more, and returns whether anything was removed. `hasStyleProp()` and `removeStyleProp()` accept preset names such as `hueRotate`.
+- Scrolling a container inside a shadow root, or a page container holding a web component whose shadow root holds nodes, didn't remeasure the nodes. Scroll events are now also heard inside each shadow root that holds a node, and containment is checked across shadow boundaries.
 - `setCoords()` stored any value because its type check could never pass. Manual coordinates no longer stop the animation loop.
 - A `runoff` of 0 produced `NaN`; it now gives a hard edge at the threshold.
 - Easing with a low `accuracy` could stall one rounding step short of its target (for example 0.1px from the near value) and never arrive. Easing is no longer rounded (see `tolerance`), so it always finishes on the target.

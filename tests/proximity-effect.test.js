@@ -970,6 +970,81 @@ describe("performance", () =>
         expect(pe.paused).toBe(false);
     });
 
+    describe("shadow DOM", () =>
+    {
+        // a host in the page, a scrolling box inside its shadow root, and a node in the box
+        function shadowNode(parent = document.body)
+        {
+            const host = document.createElement("div");
+            parent.append(host);
+            const root = host.attachShadow({ mode: "closed" });
+            const box = document.createElement("div");
+            root.append(box);
+            const el = makeNode(0, 0);
+            box.append(el);
+            return { host, root, box, el };
+        }
+
+        // scroll events don't bubble or leave their shadow root
+        const scroll = el => el.dispatchEvent(new Event("scroll"));
+
+        it("remeasures when a container inside a shadow root scrolls", async () =>
+        {
+            const { box, el } = shadowNode();
+            create(el);
+            await settle();
+            runUntilIdle();
+            const measure = vi.spyOn(el, "getBoundingClientRect");
+            scroll(box);
+            step();
+            expect(measure).toHaveBeenCalledOnce();
+        });
+
+        it("remeasures when a page container scrolls a host whose shadow root holds a node", async () =>
+        {
+            const outer = document.createElement("div");
+            document.body.append(outer);
+            const { el } = shadowNode(outer);
+            create(el);
+            await settle();
+            runUntilIdle();
+            const measure = vi.spyOn(el, "getBoundingClientRect");
+            scroll(outer);
+            step();
+            expect(measure).toHaveBeenCalledOnce();
+        });
+
+        it("listens through nested shadow roots", async () =>
+        {
+            const outer = shadowNode();
+            const inner = shadowNode(outer.box);
+            create(inner.el);
+            await settle();
+            runUntilIdle();
+            const measure = vi.spyOn(inner.el, "getBoundingClientRect");
+            scroll(outer.box);
+            step();
+            expect(measure).toHaveBeenCalledOnce();
+        });
+
+        it("stops listening in shadow roots that no longer hold a node, and on destroy", async () =>
+        {
+            const a = shadowNode(), b = shadowNode();
+            const pe = create(a.el);
+            await settle();
+            pe.nodes = [b.el];
+            runUntilIdle();
+            scroll(a.box);
+            expect(frames.size).toBe(0);
+            scroll(b.box);
+            expect(frames.size).toBe(1);
+            pe.destroy();
+            frames.clear();
+            scroll(b.box);
+            expect(frames.size).toBe(0);
+        });
+    });
+
     it("batches resize and container scroll events into one measurement on the next frame", async () =>
     {
         const el = makeNode(0, 0);
