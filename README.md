@@ -73,6 +73,7 @@ Next, define the effect parameters in an object. All parameters are optional, bu
 | `jitter`, `jitterX` and `jitterY` | Number | Random offset per element, in pixels. `jitter` affects both X and Y values, while `jitterX` and `jitterY` affect only their respective axis. All three values stack. Default is 0. |
 | `jitterMethod` | String | Random generation method for jitter values. Accepts `"uniform"` or `"gaussian"`. Default is `"uniform"`. |
 | `FPS` | Number or Falsy | If set to a positive number, will attempt to refresh any effects at the specified frame rate. Effect updates cannot be displayed quicker than your screen's refresh rate, but internal calculations can take place more quickly. Specifying any value that is not a positive number, or no value at all, will clear the FPS property and attempt to refresh at the screen's refresh rate. |
+| `reducedMotion` | String | What to do when the user prefers reduced motion: `"rest"` keeps the elements at rest, `"snap"` follows the pointer without easing, `"ignore"` animates as normal. Default is `"rest"`. See [Accessibility](#accessibility). |
 | `primeDistances` | Boolean | If `true`, will initialise all distances to 0, so the effect will appear to spring into its starting position. Can only be set as part of the `params` object during instantiation - it cannot be accessed as a property. |
 
 For example:
@@ -141,6 +142,76 @@ The `values` array can also contain objects with a `value` key and other optiona
 myEffect.addStyle('translateX', [0, {value: 50, scatter: 15}]);
 myEffect.addStyle({rule: 'padding', unit: 'px'}, [{value: 20, scatter: 30}, {value: 100, scatter: 50}]);
 ```
+
+## Accessibility
+
+The effect only changes inline styles on the elements you give it. It never touches ARIA attributes, `hidden`, `tabindex`, text or the DOM structure, so assistive technology sees the page exactly as written. A few things are still up to you.
+
+### Reduced motion
+
+When the user's system asks for reduced motion (the [`prefers-reduced-motion`](https://developer.mozilla.org/docs/Web/CSS/@media/prefers-reduced-motion) media query), the elements stay at rest by default and don't follow the pointer, a target or coordinates. The setting is followed live, so changing it while the page is open takes effect straight away. This meets [WCAG 2.3.3 Animation from Interactions](https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions).
+
+If your effect doesn't move anything (say it only changes colour or brightness), you can let it follow without easing instead, or ignore the preference:
+
+```javascript
+new ProximityEffect(elements, { reducedMotion: "snap" });   // or "ignore"
+```
+
+`motionReduced` tells you whether motion is being reduced right now.
+
+### Pointer, touch and pen
+
+The pointer is followed with Pointer Events, so mouse, pen and touch all work. A touch is only followed while the finger is down, and with several touches only the first is followed. When the pointer leaves the page, a touch lifts off, or the window loses focus, the elements ease back to rest.
+
+### Pausing
+
+If the effect keeps moving without the user doing anything (for example, with a `target` that is itself animated), [WCAG 2.2.2 Pause, Stop, Hide](https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide) asks for a way to pause it. `pause()` and `resume()` do that:
+
+```html
+<button type="button" id="pause" aria-pressed="false">Pause effect</button>
+```
+
+```javascript
+const button = document.getElementById("pause");
+button.addEventListener("click", () => {
+    myEffect.paused ? myEffect.resume() : myEffect.pause();
+    button.setAttribute("aria-pressed", String(myEffect.paused));
+});
+```
+
+### Keyboard focus
+
+Keyboard users don't have a pointer to bring near the elements. You can make the focused element the target instead. Checking `:focus-visible` means a mouse click doesn't take over from the pointer:
+
+```javascript
+container.addEventListener("focusin", (evt) => {
+    if (evt.target.matches(":focus-visible")) {
+        myEffect.target = evt.target;
+    }
+});
+container.addEventListener("focusout", (evt) => {
+    if (!container.contains(evt.relatedTarget)) {
+        myEffect.clearTarget();
+    }
+});
+```
+
+Keep a visible focus outline as well ([WCAG 2.4.7](https://www.w3.org/WAI/WCAG22/Understanding/focus-visible)); growing an element is not a focus indicator on its own.
+
+### Contrast and readability
+
+Fading or blurring text reduces its contrast. Text must keep a contrast ratio of at least 4.5:1 (3:1 for large text) in every state it can rest in, which is usually the far keyframe ([WCAG 1.4.3 Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum)). For text on a white background, the lowest `opacity` that keeps it readable is:
+
+| Text colour | Contrast at full opacity | Lowest opacity for 4.5:1 | Lowest opacity for 3:1 (large text) |
+| :---: | :---: | :---: | :---: |
+| `#000` | 21:1 | 54% | 42% |
+| `#1a1a1a` | 17.4:1 | 60% | 46% |
+| `#333` | 12.6:1 | 67% | 52% |
+| `#555` | 7.5:1 | 80% | 63% |
+
+Automated checkers such as axe-core account for the CSS `opacity` property but not for `filter: opacity()`, which is what the `opacity` preset uses, so check those states by hand. Keep `blur` off text that people need to read, or below about 1px, since no contrast ratio captures it. Text that looks faded or invisible is still read out by screen readers, so don't use the effect to hide content. And since scaling text down can make it hard to read, avoid shrinking text below its normal size at rest.
+
+`tests/a11y.html` puts all of this together, and `npm run a11y` checks it (or another demo, with `--page`) in headless Chrome.
 
 ## API
 

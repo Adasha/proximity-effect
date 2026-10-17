@@ -12,7 +12,7 @@ Each session below is meant to run as its own conversation. To start one, say "R
 - [x] 3. Core correctness and lifecycle
 - [x] 4. Hardening
 - [x] 5. Performance
-- [ ] 6. Accessibility
+- [x] 6. Accessibility
 - [ ] 7. Public API, events and types
 - [ ] 8. Build and packaging
 - [ ] 9. Documentation and demos
@@ -202,7 +202,15 @@ Measure first, then change. Build a small benchmark page (for example 1,000 and 
 - A visible and programmatic way to pause or stop the effect (`pause()` from Session 3), with example markup for a "pause animations" control.
 - Run an automated check (axe-core in a demo page) and a manual screen reader pass on one demo.
 
-**Handoff:** _(fill in)_
+**Handoff (2026-10-17):**
+- Reduced motion: new `reducedMotion` param/property, `"rest"` (default) | `"snap"` | `"ignore"`, and read-only `motionReduced`. `matchMedia("(prefers-reduced-motion: reduce)")` is read in `#init` and followed live (`change` listener on the abort signal; feature-detected, since jsdom has no `matchMedia`). "rest" makes `#targetPoint()` return null (so nodes rest exactly as with nothing tracked, including with `invert`) and `#followingTarget()` false, so the loop sleeps even with a target. Any reduced mode sets the easing rate to 1, so switching snaps rather than eases.
+- Pointer Events: `pointermove` + `pointerdown` replace `mousemove`. `updatePointer` ignores `isPrimary===false` (so synthetic `PointerEvent`s need `isPrimary: true`; plain `MouseEvent`s still work if passed in directly). `pointerout` with `relatedTarget===null` (left the page, or touch/pen lifted) and window `blur` set `pointer` to null and the nodes ease back to rest. `tests/bench.html` dispatches `pointermove`.
+- Never touches ARIA/`hidden`/`tabindex`/DOM: tested with a `MutationObserver` (only `style` attribute changes, on controlled nodes). That test found `destroy()` leaving an empty `style=""`; node data now has `hadStyle` and `#restoreInlineStyle` removes the attribute when there was none (also when nodes are dropped).
+- Demo `tests/a11y.html`: pause toggle (`aria-pressed`), keyboard focus as target (`focusin` + `:focus-visible`, `focusout` clears), reducedMotion select and a `role="status"` line. `npm run a11y [-- --page tests/x.html]` (`scripts/a11y.js`) runs axe-core 4.14 (new devDependency) at rest, with the pointer over a node and under emulated reduced motion, plus its own checks: text contrast with `opacity` and `filter: opacity()` blended in (axe misses the latter; confirmed with a 40% copy of the demo, which axe passed and the custom check failed), pointer moves nodes, Tab makes focus the target, reduced motion rests. All pass. The page must expose `window.pe`. Server + DevTools client moved from `bench.js` into `scripts/chrome.js` (`open()` now navigates and waits for load); bench re-run, same figures.
+- README: new **Accessibility** section (reduced motion, pointer/touch, pause markup, focus example, contrast table of minimum opacity for 4.5:1 and 3:1, blur and screen-reader notes, WCAG 1.4.3, 2.2.2, 2.3.3, 2.4.7) and a `reducedMotion` row in the params table. Session 9 can carry it into the rewrite.
+- Tests: 143 pass on Node 24 (new "accessibility" block, 18 tests). Lint clean.
+- **Not done: the manual screen reader pass.** Needs a person: open `tests/a11y.html` with NVDA/VoiceOver/Orca, confirm the links read as "Item n, link" in order, that the pause button announces its pressed state, and the status line is read. Fold into Session 10's cross-browser check if not done earlier.
+- For Session 7: new public surface to pin: `reducedMotion`, `motionReduced`, `hadStyle` in node data; `updatePointer`'s `isPrimary` rule if it stays public. For Session 9: demos now rest under reduced motion automatically; the other demos could get `npm run a11y` once they expose `window.pe`. For Session 10: check `pointerout` with a null `relatedTarget` fires on leaving the window in Firefox and Safari, and touch behaviour on a real phone.
 
 ## Session 7: Public API, events and types
 
