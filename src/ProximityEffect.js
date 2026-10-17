@@ -33,8 +33,7 @@ export default class ProximityEffect extends EventTarget
 
     #VALID_DIRECTIONS       = new Set(["both", "horizontal", "vertical"]);
     #DEFAULT_DIRECTION      = "both";
-    #DEFAULT_ACCURACY       =   5;
-    #MAX_ACCURACY           =  20;
+    #DEFAULT_TOLERANCE      = 0.0001;
     #DEFAULT_RUNOFF         = 100;
     #DEFAULT_SCATTER_METHOD = "uniform";
     #DEFAULT_JITTER_METHOD  = "uniform";
@@ -93,7 +92,7 @@ export default class ProximityEffect extends EventTarget
      * @param {number}  [params.jitterX=0] - The effect jitter for the X axis only, in pixels.
      * @param {number}  [params.jitterY=0] - The effect jitter for the Y axis only, in pixels.
      * @param {string}  [params.jitterMethod="uniform"] - The random method for generating jitter values, "uniform" or "normal" ("gaussian" is an alias).
-     * @param {number}  [params.accuracy=5] - The effect accuracy, in decimal places.
+     * @param {number}  [params.tolerance=0.0001] - How close (0 to 1) eased distances must get to their target before snapping to it.
      * @param {number|Falsy} [params.FPS] - The frame rate of the effect, either the number specified or with the screen refresh.
      * @param {Element} [params.target] - The effect tracker target.
      * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
@@ -132,7 +131,7 @@ export default class ProximityEffect extends EventTarget
         this.runoff       = param("runoff", this.#DEFAULT_RUNOFF);
         this.attack       = param("attack", 1);
         this.decay        = param("decay", 1);
-        this.accuracy     = param("accuracy", this.#DEFAULT_ACCURACY);
+        this.tolerance    = param("tolerance", this.#DEFAULT_TOLERANCE);
         this.invert       = param("invert", false);
         this.zIndex       = param("zIndex", false);
         this.offsetX      = param("offsetX", 0);
@@ -617,21 +616,23 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
-     * Get the effect accuracy.
-     * @return {number} The accuracy value.
+     * Get the easing tolerance.
+     * @return {number} The tolerance value.
      */
-    get accuracy()
+    get tolerance()
     {
-        return this.#globalParams.accuracy;
+        return this.#globalParams.tolerance;
     }
 
     /**
-     * Set the effect accuracy.
-     * @param {number} num - The new accuracy value.
+     * Set the easing tolerance: once an eased distance is within this amount
+     * of its target it snaps to the target, letting the animation come to rest.
+     * Larger values settle sooner but end with a bigger final step.
+     * @param {number} num - The new tolerance, from 0 to 1 (clamped).
      */
-    set accuracy(num)
+    set tolerance(num)
     {
-        this.#globalParams.accuracy = Math.floor(AdashaUtils.constrain(Validate.finite(num, "accuracy"), 0, this.#MAX_ACCURACY));
+        this.#globalParams.tolerance = AdashaUtils.constrain(Validate.finite(num, "tolerance"), 0, 1);
         this.#start();
     }
 
@@ -1556,7 +1557,7 @@ export default class ProximityEffect extends EventTarget
         const point   = this.#targetPoint(),
               groups  = this.#styleGroups,
               rewrite = this.#needsRewrite,
-              { threshold, runoff, invert, attack, decay, accuracy, direction, zIndex } = this.#globalParams;
+              { threshold, runoff, invert, attack, decay, tolerance, direction, zIndex } = this.#globalParams;
 
         this.#needsRewrite = false;
         let changed = rewrite;
@@ -1596,16 +1597,15 @@ export default class ProximityEffect extends EventTarget
 
             data.distance = td;
 
-            // apply easing (the first frame starts where it is, unless primed),
-            // rounded to reduce jitter
+            // apply easing (the first frame starts where it is, unless primed)
             const last = data.lastDelta,
                   rate = AdashaUtils.xor(td>last, invert) ? decay : attack;
-            let d = AdashaUtils.roundTo(last===undefined ? td : last+(td-last)*rate, accuracy);
+            let d = last===undefined ? td : last+(td-last)*rate;
 
-            // a step too small to survive rounding would stall short of the target
-            if (d===last && rate>0)
+            // easing only approaches its target, so snap once close enough to come to rest
+            if (rate>0 && Math.abs(td-d)<=tolerance)
             {
-                d = AdashaUtils.roundTo(td, accuracy);
+                d = td;
             }
 
             data.lastDelta = d;

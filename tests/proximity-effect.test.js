@@ -287,19 +287,34 @@ describe("distance and easing", () =>
         expect(translateOf(el)).toBe(25);
     });
 
-    it("easing reaches the target instead of stalling one rounding step short", async () =>
+    it("easing snaps to the target once within the tolerance", async () =>
     {
         const el = makeNode(0, 0);
-        const pe = create(el, { attack: 0.5, accuracy: 2, primeDistances: true });
+        const pe = create(el, { attack: 0.5, tolerance: 0.01, primeDistances: true });
         pe.addStyle("translateX", [0, 100]);
         await settle();
         movePointer(0, 0);
-        for (let i=0; i<20; i++)
+        // halving from 1: 1/64 is still outside the tolerance, 1/128 is inside
+        for (let i=0; i<6; i++)
         {
             step();
         }
+        expect(pe.getNodeIndexData(0, "lastDelta")).toBe(1/64);
+        step();
         expect(pe.getNodeIndexData(0, "lastDelta")).toBe(0);
         expect(translateOf(el)).toBe(0);
+    });
+
+    it("eased values are not quantised", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el, { attack: 0.3, primeDistances: true });
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        movePointer(0, 0);
+        step();
+        step();
+        expect(pe.getNodeIndexData(0, "lastDelta")).toBeCloseTo(0.49, 10);
     });
 
     it("an attack of 0 never moves", async () =>
@@ -567,7 +582,7 @@ describe("lifecycle", () =>
 
 describe("hardening", () =>
 {
-    const NUMERIC = ["threshold", "runoff", "attack", "decay", "accuracy", "offsetX", "offsetY", "jitter", "jitterX", "jitterY"];
+    const NUMERIC = ["threshold", "runoff", "attack", "decay", "tolerance", "offsetX", "offsetY", "jitter", "jitterX", "jitterY"];
 
     it("rejects non-numbers and non-finite numbers in every numeric setter, leaving the value unchanged", () =>
     {
@@ -595,12 +610,12 @@ describe("hardening", () =>
 
     it("clamps numbers that are out of range", () =>
     {
-        const pe = create(makeNode(0, 0), { threshold: -5, runoff: -1, attack: 2, decay: -1, accuracy: 1000, jitter: -3 });
+        const pe = create(makeNode(0, 0), { threshold: -5, runoff: -1, attack: 2, decay: -1, tolerance: 5, jitter: -3 });
         expect(pe.threshold).toBe(0);
         expect(pe.runoff).toBe(0);
         expect(pe.attack).toBe(1);
         expect(pe.decay).toBe(0);
-        expect(pe.accuracy).toBe(20);
+        expect(pe.tolerance).toBe(1);
         expect(pe.jitter).toBe(0);
     });
 
@@ -792,7 +807,7 @@ describe("performance", () =>
             change();
             expect(frames.size).toBe(1);
             runUntilIdle();
-            expect(translateOf(el)).toBe(expected);
+            expect(translateOf(el)).toBeCloseTo(expected, 10);
         }
     });
 

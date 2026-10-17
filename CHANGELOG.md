@@ -24,7 +24,8 @@ All notable changes to this project are documented here. The format is based on 
 - `FPS` throttles the animation frame loop instead of running a separate interval timer.
 - `styles` returns a copy of the styles array.
 - The effect no longer sets `z-index` on the nodes by default. Set `zIndex: true` to keep the old behaviour, where the nearest nodes sit on top.
-- Every numeric setter and parameter (`threshold`, `runoff`, `attack`, `decay`, `accuracy`, `offsetX`, `offsetY`, `jitter`, `jitterX`, `jitterY`) throws a `TypeError` for a non-number and a `RangeError` for `NaN` or `Infinity`, leaving the old value in place. Out-of-range numbers are still clamped (for example, a negative `threshold` becomes 0). `accuracy` is capped at 20.
+- Every numeric setter and parameter (`threshold`, `runoff`, `attack`, `decay`, `tolerance`, `offsetX`, `offsetY`, `jitter`, `jitterX`, `jitterY`) throws a `TypeError` for a non-number and a `RangeError` for `NaN` or `Infinity`, leaving the old value in place. Out-of-range numbers are still clamped (for example, a negative `threshold` becomes 0).
+- `accuracy` is removed. Eased distances are no longer rounded, which made low values step visibly (at `accuracy: 0` the effect was simply on or off). Easing now snaps to its target once within the new `tolerance` (0 to 1, default 0.0001), so the animation still comes to rest. A posterised effect may return later as an explicit option.
 - `invert`, `zIndex` and `primeDistances` must be booleans; anything else throws a `TypeError`.
 - `FPS` accepts a positive number, or `null`, `undefined`, `false` or 0 to follow the screen refresh. A negative, `NaN` or infinite value throws a `RangeError`, and a non-number throws a `TypeError`, instead of quietly turning the limit off.
 - `setCoords()` throws a `RangeError` (was `TypeError`) for `NaN` or infinite coordinates.
@@ -47,7 +48,7 @@ All notable changes to this project are documented here. The format is based on 
 - `removeStyleProp()` removed nothing (it checked a property that doesn't exist), skipped entries when it did, and left per-node values misaligned. It now removes every match, keeps the rest aligned, restores CSS properties that nothing animates any more, and returns whether anything was removed. `hasStyleProp()` and `removeStyleProp()` accept preset names such as `hueRotate`.
 - `setCoords()` stored any value because its type check could never pass. Manual coordinates no longer stop the animation loop.
 - A `runoff` of 0 produced `NaN`; it now gives a hard edge at the threshold.
-- Easing with a low `accuracy` could stall one rounding step short of its target (for example 0.1px from the near value) and never arrive. It now finishes on the target.
+- Easing with a low `accuracy` could stall one rounding step short of its target (for example 0.1px from the near value) and never arrive. Easing is no longer rounded (see `tolerance`), so it always finishes on the target.
 - The first frame eased from `null` unless `primeDistances` was set; it now starts at the current distance.
 - The constructor stored the caller's `params` object and setters changed it; it is now copied, and only its own properties are read.
 - Jitter was lost for nodes set after construction, and `jitterMethod` from the params was never validated.

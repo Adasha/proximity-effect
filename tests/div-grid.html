@@ -126,7 +126,6 @@
         <label for="rngAttack">Attack</label><input type="range" min="0" max="1" step="0.01" value="0" id="rngAttack"><br>
         <label for="rngDecay">Decay</label><input type="range" min="0" max="1" step="0.01" value="0" id="rngDecay"><br>
         <label for="cbInvert">Invert</label><input type="checkbox" id="cbInvert"><br>
-        <label for="rngAccuracy">Accuracy</label><input type="range" min="0" max="10" step="1" value="5" id="rngAccuracy">
     </section>
 
     <!-- <script src="../dist/ProximityEffect.js"></script> -->
@@ -178,8 +177,6 @@
                 decay:       1,
                 reverse: false,
                 invert:  false,
-
-                accuracy: 2
             };
 
         let fader1 = new ProximityEffect(document.querySelectorAll('*.childelement'), params1);

@@ -239,6 +239,7 @@ Measure first, then change. Build a small benchmark page (for example 1,000 and 
 - Final cross-browser check of the demos (Chrome, Firefox, Safari, mobile).
 - Confirm CHANGELOG, README and versions agree. Tag and publish (**the user publishes; Claude prepares**). Update the live demo site.
 - Review remaining TODOs and open issues, and note anything deferred to 4.1.
+- Consider an explicit posterise option (quantised steps), replacing what low `accuracy` did by accident. Discuss the design first; it can be added earlier if that turns out simpler.
 
 **Handoff:** _(fill in)_
 

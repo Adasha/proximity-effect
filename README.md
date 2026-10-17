@@ -64,6 +64,7 @@ Next, define the effect parameters in an object. All parameters are optional, bu
 | Parameter | Type | Details |
 | :---: | :---: | :--- |
 | `attack` and `decay` | Number | Sets the rate of change when approaching (`attack`) or receding (`decay`), giving an effect of inertia. 1 is full speed,  0 is no movement (effectively disabling the animation). Default is 1. |
+| `tolerance` | Number | How close (0 to 1) an eased distance must get to its target before it snaps there and the animation comes to rest. Larger values settle sooner, with a bigger final step. Default is 0.0001. |
 | `invert` | Boolean | Reverse the `keyframes` array, effectively swapping near and far distances. Default is `false`. |
 | `threshold` | Number | The minimum distance (from element's mathematical centre) before effect starts, in pixels. Can be any positive number, default is 0. |
 | `runoff` | Number | The distance over which styles are interpolated, in pixels. Default is 0. |
