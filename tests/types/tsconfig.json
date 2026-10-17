@@ -9,5 +9,5 @@
         "skipLibCheck": false,
         "types": []
     },
-    "include": ["*.ts", "../../src/ProximityEffect.d.ts"]
+    "include": ["*.ts", "../../src/ProximityEffect.d.ts", "../../src/ProximityEffect.global.d.ts"]
 }

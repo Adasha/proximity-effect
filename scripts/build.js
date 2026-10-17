@@ -1,5 +1,5 @@
 import { build } from "esbuild";
-import { copyFile, readFile, rm } from "node:fs/promises";
+import { copyFile, readFile, rm, writeFile } from "node:fs/promises";
 
 const entry = "src/ProximityEffect.js";
 const outdir = "dist";
@@ -46,4 +46,10 @@ await Promise.all([
 // Hand-written type declarations (checked by tests/api.test.js and `npm run typecheck`).
 await copyFile("src/ProximityEffect.d.ts", `${outdir}/proximity-effect.d.ts`);
 
-console.log(`Built ${outdir}/proximity-effect.mjs, ${outdir}/proximity-effect.min.js and ${outdir}/proximity-effect.d.ts`);
+// The global declaration for the classic script imports the module's types,
+// whose file is renamed in dist.
+const globalTypes = await readFile("src/ProximityEffect.global.d.ts", "utf8");
+await writeFile(`${outdir}/proximity-effect.global.d.ts`,
+    globalTypes.replace(`from "./ProximityEffect.js"`, `from "./proximity-effect.js"`));
+
+console.log(`Built ${outdir}/proximity-effect.mjs, ${outdir}/proximity-effect.min.js and their type declarations`);

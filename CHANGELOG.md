@@ -13,6 +13,7 @@ All notable changes to this project are documented here. The format is based on 
 
 - The package is now an ES module, built with esbuild for ES2022. The ES5 build and the `@babel/polyfill` and `event-target` dependencies have been removed.
 - Build files are renamed: `dist/proximity-effect.mjs` (ES module) and `dist/proximity-effect.min.js` (classic script, adds a global `ProximityEffect`). The bare `https://unpkg.com/proximity-effect` URL still points at the classic script.
+- `dist/ProximityEffect.js` and `dist/ProximityEffect.min.js` no longer exist, and `dist/` is no longer committed to the repository (it is built when the package is packed). Pages that hot-link the old files from GitHub (raw or jsDelivr `gh` URLs on `master`) will break when 4.0 reaches `master`; pin a tag instead, such as `https://cdn.jsdelivr.net/gh/Adasha/proximity-effect@2.1.14/dist/ProximityEffect.min.js`. npm CDN URLs that name a 2.x version keep working. The bare `https://unpkg.com/proximity-effect` and `https://cdn.jsdelivr.net/npm/proximity-effect` URLs work again: the published 2.1.19 package contained no `dist` folder, so they returned 404.
 
 - The multi-argument preset styles `color`, `backgroundColor` and `scale3D` are removed. They were defined but never worked, and the README listed them as unsupported. Multi-value properties are planned for 4.1.
 - `random()` and the jitter and scatter methods are now `"uniform"` (default) or `"normal"`; `"gaussian"` is accepted as an alias. Any other method name throws a `RangeError` instead of silently falling back to uniform.
@@ -97,5 +98,6 @@ Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styl
 - `reducedMotion` parameter and property: what to do when the user prefers reduced motion (the `prefers-reduced-motion` media query, followed live). `"rest"` (default) keeps the nodes at rest; `"snap"` follows without easing; `"ignore"` carries on as normal. The read-only `motionReduced` reports whether motion is being reduced right now.
 - Touch and pen support (see Breaking changes).
 - TypeScript declarations (`dist/proximity-effect.d.ts`, referenced from `package.json`), including typed event listeners for `ready`, `redraw` and `reflow`.
+- A TypeScript declaration for the classic script's global `ProximityEffect`: add `/// <reference types="proximity-effect/global" />` to code that uses the global instead of importing the module.
 - `hasStyleProp()` and `removeStyleProp()` also find a style by the `id` given in its params, and `Style` has an `id` getter.
 - Documentation for `totalNodes`, `update()` and the events. Events are plain `Event` objects that don't bubble, can't be cancelled and carry no detail.

@@ -13,6 +13,9 @@
       "types": "./dist/proximity-effect.d.ts",
       "default": "./dist/proximity-effect.mjs"
     },
+    "./global": {
+      "types": "./dist/proximity-effect.global.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "module": "./dist/proximity-effect.mjs",
@@ -69,6 +72,13 @@
     "email": "adasha76@outlook.com"
   },
   "license": "MPL-2.0",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=24",
+      "onFail": "warn"
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "axe-core": "^4.14.0",
