@@ -36,6 +36,7 @@ export default class ProximityEffect extends EventTarget
 {
 
     #VALID_DIRECTIONS       = new Set(["both", "horizontal", "vertical"]);
+    #VALID_REDUCED_MOTION   = new Set(["rest", "snap", "ignore"]);
     #DEFAULT_DIRECTION      = "both";
     #DEFAULT_TOLERANCE      = 0.0001;
     #DEFAULT_RUNOFF         = 100;
@@ -73,9 +74,13 @@ export default class ProximityEffect extends EventTarget
     #lastTargetPoint = null;
     #changed = false;
     #scratchStyle;
+    #prefersReducedMotion = false;
 
     // stable listener references, so they can all be removed
     #onPointerMove  = (evt) => this.updatePointer(evt);
+    #onPointerOut   = (evt) => this.#pointerOut(evt);
+    #onBlur         = () => this.#pointerLeft();
+    #onMotionPref   = (evt) => this.#motionPreference(evt.matches);
     #onReflow       = () => this.reflowEvent();
     #onResize       = (entries) => this.#resized(entries);
     #onScroll       = (evt) => this.#scrolled(evt);
@@ -108,6 +113,7 @@ export default class ProximityEffect extends EventTarget
      * @param {Element} [params.target] - The effect tracker target.
      * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
      * @param {boolean} [params.zIndex=false] - Set each node's z-index from its distance, so the nearest nodes sit on top.
+     * @param {string}  [params.reducedMotion="rest"] - What to do when the user prefers reduced motion: "rest" (nodes stay at rest and ignore the pointer), "snap" (nodes follow without easing) or "ignore".
      * @throws {TypeError} If an argument or parameter is the wrong type.
      * @throws {RangeError} If a parameter value is not allowed (NaN, Infinity, an unknown name).
      */
@@ -145,6 +151,7 @@ export default class ProximityEffect extends EventTarget
         this.tolerance    = param("tolerance", this.#DEFAULT_TOLERANCE);
         this.invert       = param("invert", false);
         this.zIndex       = param("zIndex", false);
+        this.reducedMotion = param("reducedMotion", "rest");
         this.offsetX      = param("offsetX", 0);
         this.offsetY      = param("offsetY", 0);
         this.jitterMethod = param("jitterMethod", this.#DEFAULT_JITTER_METHOD);
@@ -239,7 +246,7 @@ export default class ProximityEffect extends EventTarget
         {
             if (!keeping.has(data.node))
             {
-                data.node.style.cssText = data.style;
+                this.#restoreInlineStyle(data);
                 this.#resizeObserver?.unobserve(data.node);
                 this.#sizeReported.delete(data.node);
             }
@@ -654,8 +661,49 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
-     * Get the last known mouse pointer coordinates, relative to the viewport, in pixels.
-     * @return {Object|null} An object containing x and y properties, or null before the pointer has moved.
+     * Get what the effect does when the user prefers reduced motion.
+     * @return {string} "rest", "snap" or "ignore".
+     */
+    get reducedMotion()
+    {
+        return this.#globalParams.reducedMotion;
+    }
+
+    /**
+     * Set what the effect does when the user prefers reduced motion (the
+     * prefers-reduced-motion media query, which is followed as it changes):
+     * "rest" keeps the nodes at rest, as though nothing were being tracked;
+     * "snap" follows the pointer or target without easing; "ignore" carries on as normal.
+     * @param {string} mode - "rest", "snap" or "ignore".
+     * @throws {RangeError} If the mode is not one of those.
+     */
+    set reducedMotion(mode)
+    {
+        if (!this.#VALID_REDUCED_MOTION.has(mode))
+        {
+            throw new RangeError(`ProximityEffect: '${String(mode)}' is not a valid reducedMotion. Use "rest", "snap" or "ignore".`);
+        }
+        this.#globalParams.reducedMotion = mode;
+        this.#start();
+    }
+
+
+
+    /**
+     * Whether motion is being reduced right now: the user prefers reduced
+     * motion and reducedMotion isn't "ignore".
+     * @return {boolean}
+     */
+    get motionReduced()
+    {
+        return this.#prefersReducedMotion && this.reducedMotion!=="ignore";
+    }
+
+
+
+    /**
+     * Get the last known pointer coordinates, relative to the viewport, in pixels.
+     * @return {Object|null} An object containing x and y properties, or null before the pointer has moved and after it leaves the page.
      */
     get pointer()
     {
@@ -962,7 +1010,7 @@ export default class ProximityEffect extends EventTarget
 
         for (const data of this.#nodeData)
         {
-            data.node.style.cssText = data.style;
+            this.#restoreInlineStyle(data);
         }
     }
 
@@ -974,6 +1022,7 @@ export default class ProximityEffect extends EventTarget
      * @typedef {Object} NodeData
      * @property {Element} node - A reference to the node.
      * @property {string} style - The node's original inline style.
+     * @property {boolean} hadStyle - Whether the node had a style attribute to begin with.
      * @property {Object} measured - The node's measured centre point (relative to the viewport, with any data-offsetx/data-offsety applied).
      * @property {Object} center - The node's centre point, including global offset and jitter.
      * @property {boolean} scrollsWithPage - False if the node is, or is inside, a fixed or sticky element.
@@ -1056,8 +1105,19 @@ export default class ProximityEffect extends EventTarget
         document.addEventListener("scroll", this.#onScroll, { ...options, capture: true });
         this.#listenInShadowRoots();
         window.addEventListener("resize", this.#onReflow, options);
-        document.addEventListener("mousemove", this.#onPointerMove, options);
+        // pointerdown too, since a touch has no pointermove before it starts
+        document.addEventListener("pointermove", this.#onPointerMove, options);
+        document.addEventListener("pointerdown", this.#onPointerMove, options);
+        document.addEventListener("pointerout", this.#onPointerOut, options);
+        window.addEventListener("blur", this.#onBlur, options);
         document.addEventListener("visibilitychange", this.#onVisibility, options);
+
+        if (typeof window.matchMedia==="function")
+        {
+            const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+            this.#prefersReducedMotion = query.matches;
+            query.addEventListener("change", this.#onMotionPref, options);
+        }
 
         if (typeof ResizeObserver!=="undefined")
         {
@@ -1274,7 +1334,23 @@ export default class ProximityEffect extends EventTarget
     // set coordinates take over from the target, so it needn't be watched
     #followingTarget()
     {
-        return this.target!=null && this.#coords===null;
+        return this.target!=null && this.#coords===null && !this.#resting();
+    }
+
+
+
+    // reduced motion in "rest" mode: nothing is tracked, so the nodes stay at rest
+    #resting()
+    {
+        return this.motionReduced && this.reducedMotion==="rest";
+    }
+
+
+
+    #motionPreference(reduce)
+    {
+        this.#prefersReducedMotion = reduce;
+        this.#start();
     }
 
 
@@ -1562,6 +1638,7 @@ export default class ProximityEffect extends EventTarget
         return {
             node:      node,
             style:     node.style.cssText,
+            hadStyle:  node.hasAttribute("style"),
             lastDelta: this.#globalParams.primeDistances ? 1 : undefined,
             jitter:    this.#randomJitter(),
             styles:    this.#stylesStack.map(style => this.#scatterValues(style))
@@ -1653,6 +1730,22 @@ export default class ProximityEffect extends EventTarget
 
 
 
+    // put back a node's whole original inline style, and no empty style
+    // attribute if it didn't have one
+    #restoreInlineStyle(data)
+    {
+        if (data.hadStyle)
+        {
+            data.node.style.cssText = data.style;
+        }
+        else
+        {
+            data.node.removeAttribute("style");
+        }
+    }
+
+
+
     // put back a node's original inline value for one CSS property
     #restoreProperty(data, rule)
     {
@@ -1673,6 +1766,10 @@ export default class ProximityEffect extends EventTarget
     // the point being tracked: manual coords, then target, then pointer
     #targetPoint()
     {
+        if (this.#resting())
+        {
+            return null;
+        }
         if (this.#coords)
         {
             return this.#coords;
@@ -1700,12 +1797,42 @@ export default class ProximityEffect extends EventTarget
 
 
 
+    // any pointer (mouse, pen or touch); with several touches, only the first is followed
     updatePointer(evt)
     {
+        if (evt.isPrimary===false)
+        {
+            return;
+        }
         this.#pointer ??= { x: 0, y: 0 };
         this.#pointer.x = evt.clientX;
         this.#pointer.y = evt.clientY;
         this.#start();
+    }
+
+
+
+
+
+    // pointerout with no element to go to: the pointer left the page, or a
+    // touch or pen lifted off. The nodes settle back to rest.
+    #pointerOut(evt)
+    {
+        if (evt.relatedTarget===null && evt.isPrimary!==false)
+        {
+            this.#pointerLeft();
+        }
+    }
+
+
+
+    #pointerLeft()
+    {
+        if (this.#pointer!==null)
+        {
+            this.#pointer = null;
+            this.#start();
+        }
     }
 
 
@@ -1743,6 +1870,7 @@ export default class ProximityEffect extends EventTarget
         const point   = this.#targetPoint(),
               groups  = this.#styleGroups,
               rewrite = this.#needsRewrite,
+              instant = this.motionReduced,
               { threshold, runoff, invert, attack, decay, tolerance, direction, zIndex } = this.#globalParams;
 
         this.#needsRewrite = false;
@@ -1784,9 +1912,10 @@ export default class ProximityEffect extends EventTarget
 
             data.distance = td;
 
-            // apply easing (the first frame starts where it is, unless primed)
+            // apply easing (the first frame starts where it is, unless primed;
+            // with reduced motion there's no easing at all)
             const last = data.lastDelta,
-                  rate = AdashaUtils.xor(td>last, invert) ? decay : attack;
+                  rate = instant ? 1 : AdashaUtils.xor(td>last, invert) ? decay : attack;
             let d = last===undefined ? td : last+(td-last)*rate;
 
             // easing only approaches its target, so snap once close enough to come to rest

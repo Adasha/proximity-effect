@@ -38,6 +38,9 @@ All notable changes to this project are documented here. The format is based on 
 - `reflow` is dispatched only when a remeasure finds that a node has moved, rather than on every scroll and resize event. A page scroll no longer triggers a remeasure (see Performance below).
 - `data-offsetx` and `data-offsety` are read when nodes are measured, not every frame.
 - `setCenterPoints()` measures straight away and is rarely needed: the instance remeasures after resizes (including a `ResizeObserver` on the nodes and the page), container scrolls, changes to `nodes`, and when the tab becomes visible. Setting `offsetX`, `offsetY` or the jitter values no longer remeasures.
+- The pointer is followed with Pointer Events (`pointermove` and `pointerdown`) instead of `mousemove`, so touch and pen work as well as the mouse. With several touches, only the primary one is followed. Code that dispatched synthetic `mousemove` events to drive the effect must dispatch `pointermove` instead (with `isPrimary: true`).
+- When the pointer leaves the page (or a touch or pen lifts off), or the window loses focus, `pointer` becomes `null` and the nodes ease back to rest. Previously they stayed as they were when the mouse left.
+- When the user prefers reduced motion, the nodes stay at rest by default and don't follow the pointer, a target or coordinates. Set `reducedMotion: "ignore"` for the old behaviour (see Added).
 
 ### Fixed
 
@@ -78,10 +81,12 @@ Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styl
 ### Added
 
 - Automated test suite, linting and continuous integration.
-- `destroy()`: removes every listener, stops the animation loop and restores each node's original inline style. `destroyed` reports whether it has been called.
+- `destroy()`: removes every listener, stops the animation loop and restores each node's original inline style (removing the `style` attribute from nodes that had none). `destroyed` reports whether it has been called.
 - `pause()`, `resume()` and `paused`.
 - `nodes` accepts a `NodeList`, an `HTMLCollection`, an array of Elements or a single Element.
 - `zIndex` parameter and property, to opt in to distance-based stacking. Turning it off restores the nodes' original `z-index`.
 - Custom style `rule` can be written in kebab-case (`"letter-spacing"`) as well as camelCase.
 - `SECURITY.md`, and an updated CodeQL workflow that also scans the `4.0` branch and pull requests.
 - The module can be imported without a DOM (for example during server-side rendering); constructing an instance there throws a clear error.
+- `reducedMotion` parameter and property: what to do when the user prefers reduced motion (the `prefers-reduced-motion` media query, followed live). `"rest"` (default) keeps the nodes at rest; `"snap"` follows without easing; `"ignore"` carries on as normal. The read-only `motionReduced` reports whether motion is being reduced right now.
+- Touch and pen support (see Breaking changes).

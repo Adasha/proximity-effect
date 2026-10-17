@@ -29,9 +29,26 @@ function makeNode(x, y, size = 10)
     return el;
 }
 
-function movePointer(x, y)
+function movePointer(x, y, init = {})
 {
-    document.dispatchEvent(new MouseEvent("mousemove", { clientX: x, clientY: y }));
+    document.dispatchEvent(new PointerEvent("pointermove", { clientX: x, clientY: y, isPrimary: true, pointerType: "mouse", ...init }));
+}
+
+// A stand-in for matchMedia("(prefers-reduced-motion: reduce)") that can be flipped.
+function fakeMotionQuery(matches)
+{
+    const query = new EventTarget();
+    query.matches = matches;
+    query.media = "(prefers-reduced-motion: reduce)";
+    query.set = (value) =>
+    {
+        query.matches = value;
+        const evt = new Event("change");
+        evt.matches = value;
+        query.dispatchEvent(evt);
+    };
+    vi.stubGlobal("matchMedia", (media) => { expect(media).toBe(query.media); return query; });
+    return query;
 }
 
 // construction defers init to a microtask
@@ -1370,5 +1387,294 @@ describe("performance", () =>
         expect(frames.size).toBe(1);
         step();
         expect(reflow).toHaveBeenCalledOnce();
+    });
+});
+
+
+
+describe("accessibility", () =>
+{
+    describe("pointer events", () =>
+    {
+        it("follows touch and pen as well as the mouse", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { runoff: 100 });
+            await settle();
+            movePointer(50, 0, { pointerType: "touch" });
+            step();
+            expect(pe.distanceFrom(el)).toBe(0.5);
+            movePointer(0, 25, { pointerType: "pen" });
+            step();
+            expect(pe.distanceFrom(el)).toBe(0.25);
+        });
+
+        it("starts following a touch on pointerdown", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { runoff: 100 });
+            await settle();
+            document.dispatchEvent(new PointerEvent("pointerdown", { clientX: 0, clientY: 50, isPrimary: true, pointerType: "touch" }));
+            step();
+            expect(pe.pointer).toEqual({ x: 0, y: 50 });
+            expect(pe.distanceFrom(el)).toBe(0.5);
+        });
+
+        it("ignores all but the primary pointer", async () =>
+        {
+            const pe = create(makeNode(0, 0));
+            await settle();
+            movePointer(10, 10);
+            movePointer(90, 90, { isPrimary: false, pointerType: "touch" });
+            expect(pe.pointer).toEqual({ x: 10, y: 10 });
+        });
+
+        it("no longer listens for mousemove", async () =>
+        {
+            const pe = create(makeNode(0, 0));
+            await settle();
+            document.dispatchEvent(new MouseEvent("mousemove", { clientX: 10, clientY: 10 }));
+            expect(pe.pointer).toBeNull();
+        });
+
+        it("settles to rest when the pointer leaves the page", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { decay: 0.5 });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            movePointer(0, 0);
+            step();
+            expect(translateOf(el)).toBe(0);
+
+            // moving between elements isn't leaving
+            el.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, isPrimary: true, relatedTarget: document.body }));
+            expect(pe.pointer).not.toBeNull();
+
+            el.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, isPrimary: true, relatedTarget: null }));
+            expect(pe.pointer).toBeNull();
+            step();
+            expect(translateOf(el)).toBe(50);
+            for (let i=0; i<40; i++) step();
+            expect(translateOf(el)).toBe(100);
+            expect(frames.size).toBe(0);
+        });
+
+        it("ignores a secondary touch lifting off", async () =>
+        {
+            const pe = create(makeNode(0, 0));
+            await settle();
+            movePointer(10, 10);
+            document.dispatchEvent(new PointerEvent("pointerout", { isPrimary: false, pointerType: "touch", relatedTarget: null }));
+            expect(pe.pointer).toEqual({ x: 10, y: 10 });
+        });
+
+        it("settles to rest when the window loses focus", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el);
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            movePointer(0, 0);
+            step();
+            window.dispatchEvent(new Event("blur"));
+            expect(pe.pointer).toBeNull();
+            step();
+            expect(translateOf(el)).toBe(100);
+        });
+
+        it("removes the pointer listeners on destroy", async () =>
+        {
+            const pe = create(makeNode(0, 0));
+            await settle();
+            movePointer(10, 10);
+            pe.destroy();
+            movePointer(20, 20);
+            document.dispatchEvent(new PointerEvent("pointerout", { isPrimary: true, relatedTarget: null }));
+            window.dispatchEvent(new Event("blur"));
+            expect(pe.pointer).toEqual({ x: 10, y: 10 });
+        });
+    });
+
+
+    describe("reduced motion", () =>
+    {
+        it("defaults to 'rest' and validates the mode", () =>
+        {
+            const pe = create(makeNode(0, 0));
+            expect(pe.reducedMotion).toBe("rest");
+            for (const mode of ["snap", "ignore", "rest"])
+            {
+                pe.reducedMotion = mode;
+                expect(pe.reducedMotion).toBe(mode);
+            }
+            expect(() => { pe.reducedMotion = "off"; }).toThrow(RangeError);
+            expect(() => { pe.reducedMotion = true; }).toThrow(RangeError);
+            expect(pe.reducedMotion).toBe("rest");
+            expect(() => create(makeNode(0, 0), { reducedMotion: "none" })).toThrow(RangeError);
+        });
+
+        it("works without matchMedia", async () =>
+        {
+            vi.stubGlobal("matchMedia", undefined);
+            const el = makeNode(0, 0);
+            const pe = create(el, { runoff: 100 });
+            await settle();
+            movePointer(50, 0);
+            step();
+            expect(pe.motionReduced).toBe(false);
+            expect(pe.distanceFrom(el)).toBe(0.5);
+        });
+
+        it("'rest' keeps nodes at rest and ignores the pointer, target and coords", async () =>
+        {
+            fakeMotionQuery(true);
+            const el = makeNode(0, 0);
+            const pe = create(el, { attack: 0.1, target: makeNode(0, 0) });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            expect(pe.motionReduced).toBe(true);
+            movePointer(0, 0);
+            step();
+            expect(translateOf(el)).toBe(100);
+            pe.setCoords(0, 0);
+            step();
+            expect(translateOf(el)).toBe(100);
+            // nothing to follow, so the loop rests even with a target set
+            expect(frames.size).toBe(0);
+        });
+
+        it("'rest' with invert rests at the near value, as with nothing tracked", async () =>
+        {
+            fakeMotionQuery(true);
+            const el = makeNode(0, 0);
+            const pe = create(el, { invert: true });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            movePointer(500, 500);
+            step();
+            expect(translateOf(el)).toBe(0);
+        });
+
+        it("'snap' follows the pointer without easing", async () =>
+        {
+            fakeMotionQuery(true);
+            const el = makeNode(0, 0);
+            const pe = create(el, { attack: 0.1, decay: 0.1, reducedMotion: "snap", primeDistances: true });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            movePointer(50, 0);
+            step();
+            expect(translateOf(el)).toBe(50);
+            movePointer(0, 0);
+            step();
+            expect(translateOf(el)).toBe(0);
+            step();
+            expect(frames.size).toBe(0);
+        });
+
+        it("'ignore' eases as normal", async () =>
+        {
+            fakeMotionQuery(true);
+            const el = makeNode(0, 0);
+            const pe = create(el, { attack: 0.5, reducedMotion: "ignore", primeDistances: true });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            expect(pe.motionReduced).toBe(false);
+            movePointer(0, 0);
+            step();
+            expect(translateOf(el)).toBe(50);
+        });
+
+        it("follows the preference as it changes", async () =>
+        {
+            const query = fakeMotionQuery(false);
+            const el = makeNode(0, 0);
+            const pe = create(el, { attack: 0.5, decay: 0.5 });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            movePointer(0, 0);
+            step();
+            expect(translateOf(el)).toBe(0);
+
+            // turning it on snaps straight to rest, without easing
+            query.set(true);
+            expect(pe.motionReduced).toBe(true);
+            expect(frames.size).toBe(1);
+            step();
+            expect(translateOf(el)).toBe(100);
+
+            // turning it off picks the pointer up again, eased
+            query.set(false);
+            step();
+            expect(translateOf(el)).toBe(50);
+        });
+
+        it("changing reducedMotion while reduced takes effect straight away", async () =>
+        {
+            fakeMotionQuery(true);
+            const el = makeNode(0, 0);
+            const pe = create(el);
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            movePointer(0, 0);
+            step();
+            expect(translateOf(el)).toBe(100);
+            pe.reducedMotion = "snap";
+            step();
+            expect(translateOf(el)).toBe(0);
+        });
+
+        it("stops listening for preference changes on destroy", async () =>
+        {
+            const query = fakeMotionQuery(false);
+            const pe = create(makeNode(0, 0));
+            await settle();
+            pe.destroy();
+            query.set(true);
+            expect(pe.motionReduced).toBe(false);
+        });
+    });
+
+
+    it("only ever changes the nodes' style attribute", async () =>
+    {
+        const host = document.createElement("div");
+        host.innerHTML = `<button aria-label="One" tabindex="0">One</button><a href="#" aria-hidden="false">Two</a><p hidden>Three</p>`;
+        document.body.append(host);
+        const nodes = [...host.children];
+        nodes.forEach((el, i) => { el.getBoundingClientRect = () => boxAt(i*20, 0); });
+        const before = host.innerHTML;
+
+        const records = [];
+        const observer = new MutationObserver(list => records.push(...list));
+        observer.observe(document.documentElement, { subtree: true, childList: true, attributes: true, characterData: true });
+
+        const pe = create(nodes, { runoff: 50, zIndex: true });
+        pe.addStyle("opacity", [100, 40]);
+        pe.addStyle("translateY", [-5, 0]);
+        pe.addStyle({ rule: "letterSpacing", unit: "px" }, [2, 0]);
+        await settle();
+        for (let i=0; i<5; i++)
+        {
+            movePointer(i*10, 0);
+            step();
+        }
+        pe.removeStyleProp("opacity");
+        step();
+        pe.destroy();
+        await settle();
+        observer.disconnect();
+        records.push(...observer.takeRecords());
+
+        expect(records.length).toBeGreaterThan(0);
+        for (const record of records)
+        {
+            expect(record.type).toBe("attributes");
+            expect(record.attributeName).toBe("style");
+            expect(nodes).toContain(record.target);
+        }
+        // and destroy leaves the markup exactly as it was
+        expect(host.innerHTML).toBe(before);
     });
 });

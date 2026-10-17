@@ -60,7 +60,7 @@ const cx = innerWidth/2, cy = innerHeight/2;
 function pointAt(i)
 {
     const a = i/20;
-    document.dispatchEvent(new MouseEvent("mousemove", { clientX: cx + Math.cos(a)*250, clientY: cy + Math.sin(a)*250 }));
+    document.dispatchEvent(new PointerEvent("pointermove", { clientX: cx + Math.cos(a)*250, clientY: cy + Math.sin(a)*250, isPrimary: true, pointerType: "mouse" }));
 }
 
 // count and time the instance's work without changing the library
