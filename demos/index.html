@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProximityEffect demos</title>
+<link rel="stylesheet" href="demo.css">
+<style>
+    dt { margin-top: 1rem; font-weight: bold; }
+    dd { margin-left: 0; }
+</style>
+</head>
+<body>
+<main>
+    <h1>ProximityEffect demos</h1>
+    <p>Each demo animates a set of elements by their distance from the pointer. Touch and pen work too, while touching the screen. If you've asked your system for reduced motion, the elements stay at rest. Every demo has a button to pause it.</p>
+    <p>The source of each page is short and commented, and shows the parameters and styles it uses. See the <a href="https://github.com/Adasha/proximity-effect">README</a> for the full documentation.</p>
+
+    <dl>
+        <dt><a href="bubbles.html">Bubbles</a></dt>
+        <dd>Bubbles light up and grow near the pointer, with a ragged hard edge and a trail.</dd>
+
+        <dt><a href="depth.html">Depth</a></dt>
+        <dd>Tiles lift towards you and go out of focus, using 3D transforms and filters together.</dd>
+
+        <dt><a href="flip.html">Flip</a></dt>
+        <dd>A photo cut into tiles that turn over in a diagonal band, using horizontal distance and per-element offsets.</dd>
+
+        <dt><a href="reveal.html">Reveal</a></dt>
+        <dd>Hidden bubbles appear in a small pool around the pointer.</dd>
+
+        <dt><a href="lens.html">Lens</a></dt>
+        <dd>The letters of a poem grow and come into focus as the pointer passes, and stay readable at rest.</dd>
+
+        <dt><a href="scatter.html">Scatter</a></dt>
+        <dd>The letters or words of a poem are scattered in 3D and gather near the pointer, with a <code>redraw</code> listener adding blur.</dd>
+
+        <dt><a href="pulse.html">Pulse</a></dt>
+        <dd>900 squares distort around the pointer, with a threshold that changes every frame.</dd>
+
+        <dt><a href="playground.html">Playground</a></dt>
+        <dd>Controls for the main properties, to see what each one does.</dd>
+
+        <dt><a href="a11y.html">Accessibility</a></dt>
+        <dd>A pause control, keyboard focus as the target, a reduced-motion setting, and text that stays readable.</dd>
+    </dl>
+</main>
+</body>
+</html>

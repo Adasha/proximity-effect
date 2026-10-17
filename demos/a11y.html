@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ProximityEffect accessibility demo</title>
+<title>Accessibility: ProximityEffect demo</title>
 <style>
     :root { --text: #1a1a1a; --bg: #fff; --accent: #0b57d0; }
     body { margin: 0 auto; max-width: 60rem; padding: 1rem; font: 1rem/1.5 system-ui, sans-serif; color: var(--text); background: var(--bg); }
@@ -11,14 +11,16 @@
     button, select { font: inherit; }
     #pause[aria-pressed="true"] { background: var(--text); color: var(--bg); }
     #grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr)); gap: 1rem; padding: 1rem; margin: 0; }
+    nav a { color: var(--accent); }
     #grid a { display: block; padding: 1rem 0.5rem; text-align: center; color: var(--text); text-decoration: underline; border-radius: 0.25rem; }
     /* the effect's scale is no substitute for a visible focus indicator (WCAG 2.4.7) */
     #grid a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 </style>
 </head>
 <body>
+<nav><a href="index.html">All demos</a></nav>
 <main>
-    <h1>ProximityEffect accessibility demo</h1>
+    <h1>Accessibility</h1>
     <p>Links grow and darken as the pointer, or keyboard focus, comes near. The effect only changes how they look: every link stays readable at rest, can be reached with the keyboard, and reads the same to a screen reader.</p>
 
     <div class="controls">

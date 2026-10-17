@@ -1,0 +1,72 @@
+﻿<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flip: ProximityEffect demo</title>
+<link rel="stylesheet" href="demo.css">
+<style>
+    /* no background: turned tiles sit behind the stage in 3D, and would be hidden by it */
+    #stage { position: relative; width: 640px; height: 640px; margin: 1rem auto; perspective: 500px; transform-style: preserve-3d; }
+    .tile { position: absolute; width: 64px; height: 64px; pointer-events: none; transform-style: preserve-3d; }
+    .tile > div { position: absolute; inset: 0; background-size: 640px; backface-visibility: hidden; }
+    .tile > div:first-child { background-image: url("assets/sunset1.jpg"); }
+    .tile > div:last-child  { background-image: url("assets/sunset2.jpg"); transform: rotateY(180deg); }
+</style>
+</head>
+<body>
+<nav><a href="index.html">All demos</a></nav>
+<main>
+    <h1>Flip</h1>
+    <p>One photo is cut into tiles, each with a second photo on its back. Tiles turn over as the pointer passes. Only horizontal distance counts (<code>direction: "horizontal"</code>), and each row's <code>data-offsetx</code> shifts its centres, so the tiles turn in a diagonal band.</p>
+
+    <div class="controls">
+        <button type="button" id="pause" aria-pressed="false">Pause effect</button>
+    </div>
+
+    <div id="stage" role="img" aria-label="A sunset photo, cut into tiles that turn over to show a second sunset photo near the pointer."></div>
+</main>
+
+<script type="module">
+import ProximityEffect from "../src/ProximityEffect.js";
+import { demo } from "./demo.js";
+
+const stage = document.getElementById("stage"),
+      size  = 64;
+
+for (let col=0; col<10; col++)
+{
+    for (let row=0; row<10; row++)
+    {
+        const tile = document.createElement("div"),
+              x = col*size,
+              y = row*size;
+        tile.className = "tile";
+        tile.style.left = `${x}px`;
+        tile.style.top  = `${y}px`;
+        tile.append(document.createElement("div"), document.createElement("div"));
+        for (const face of tile.children)
+        {
+            face.style.backgroundPosition = `${-x}px ${-y}px`;
+        }
+        // each row's centres are shifted, so the band runs diagonally
+        tile.dataset.offsetx = (5-row)*32;
+        stage.append(tile);
+    }
+}
+
+const pe = new ProximityEffect(stage.children, {
+    threshold: 64,
+    runoff:    96,
+    direction: "horizontal",
+    attack:     0.6,
+    decay:      0.6,
+});
+pe.addStyle("rotateY",    [180,    0]);
+pe.addStyle("translateZ", [ 40,    0]);
+pe.addStyle("scale",      [  1.01, 1]);
+
+demo(pe);
+</script>
+</body>
+</html>

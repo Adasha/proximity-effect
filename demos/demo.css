@@ -1,0 +1,56 @@
+/* Shared by the demos. Each page adds the styles for its own stage. */
+
+:root
+{
+    --text: #1a1a1a;
+    --bg: #fff;
+    --stage: #eee;
+    --accent: #0b57d0;
+}
+
+body
+{
+    margin: 0 auto;
+    max-width: 60rem;
+    padding: 1rem;
+    font: 1rem/1.5 system-ui, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+}
+
+a
+{
+    color: var(--accent);
+}
+
+.controls
+{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    align-items: center;
+    margin: 1rem 0;
+}
+
+button, select, input
+{
+    font: inherit;
+}
+
+#pause[aria-pressed="true"]
+{
+    background: var(--text);
+    color: var(--bg);
+}
+
+:focus-visible
+{
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.stage
+{
+    margin: 1rem 0;
+    background: var(--stage);
+}

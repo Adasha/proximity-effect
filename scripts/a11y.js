@@ -3,17 +3,19 @@
 // can't make (the contrast of text faded by filter: opacity(), reduced
 // motion, keyboard focus as the target).
 //
-//   node scripts/a11y.js [--page tests/a11y.html] [--chrome <path>]
+//   node scripts/a11y.js [--page demos/a11y.html ...] [--chrome <path>]
 //
-// The page must expose its instance as window.pe. Exits with 1 on any failure.
+// Without --page it checks every demo in demos/ (except the index). Each page
+// must expose its instance as window.pe. Exits with 1 on any failure.
 
+import { readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { serve, launch } from "./chrome.js";
 
 const { values: args } = parseArgs({
     options: {
-        page:   { type: "string", default: "tests/a11y.html" },
+        page:   { type: "string", multiple: true },
         chrome: { type: "string" },
     },
 });
@@ -111,7 +113,8 @@ async function check(page)
     await page.evaluate(helpers);
     await page.evaluate(`new Promise((done, fail) => { const s = document.createElement("script"); s.src = "/node_modules/axe-core/axe.min.js"; s.onload = done; s.onerror = fail; document.head.append(s); })`);
 
-    const centre = JSON.parse(await page.evaluate(`JSON.stringify((() => { const b = pe.nodes[Math.floor(pe.nodes.length/2)].getBoundingClientRect(); return { x: (b.left+b.right)/2, y: (b.top+b.bottom)/2 }; })())`));
+    // the centre the instance measures from, since a node's transformed box can be anywhere
+    const centre = JSON.parse(await page.evaluate(`JSON.stringify(pe.getNodeIndexData(Math.floor(pe.totalNodes/2), "center"))`));
     const mouse  = (x, y) => page.send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
 
     await page.evaluate("a11y.settled()");
@@ -150,12 +153,19 @@ async function check(page)
 }
 
 
+const pages = args.page ?? (await readdir(resolve(root, "demos")))
+    .filter(file => file.endsWith(".html") && file!=="index.html")
+    .map(file => `demos/${file}`);
+
 try
 {
-    const page = await browser.open(`${server.origin}/${args.page}`);
-    console.log(args.page);
-    await check(page);
-    await page.close();
+    for (const path of pages)
+    {
+        const page = await browser.open(`${server.origin}/${path}`);
+        console.log(`\n${path}`);
+        await check(page);
+        await page.close();
+    }
 }
 finally
 {

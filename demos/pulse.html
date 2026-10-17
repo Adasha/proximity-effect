@@ -1,0 +1,57 @@
+﻿<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse: ProximityEffect demo</title>
+<link rel="stylesheet" href="demo.css">
+<style>
+    #stage { display: flex; flex-wrap: wrap; align-content: center; width: 600px; max-width: 100%; height: 600px; margin: 1rem auto; background: var(--bg); }
+    #stage div { width: 20px; height: 20px; border-radius: 2px; background: #191; }
+</style>
+</head>
+<body>
+<nav><a href="index.html">All demos</a></nav>
+<main>
+    <h1>Pulse</h1>
+    <p>900 squares, skewed and stretched by random amounts near the pointer. A <code>redraw</code> listener changes the <code>threshold</code> on every frame, so the area around the pointer pulses. Since the effect only draws frames while something is changing, the pulse stops when the pointer leaves, and so does the work.</p>
+
+    <div class="controls">
+        <button type="button" id="pause" aria-pressed="false">Pause effect</button>
+    </div>
+
+    <div id="stage" class="stage" aria-hidden="true"></div>
+</main>
+
+<script type="module">
+import ProximityEffect from "../src/ProximityEffect.js";
+import { demo } from "./demo.js";
+
+const stage = document.getElementById("stage");
+for (let i=0; i<900; i++)
+{
+    stage.append(document.createElement("div"));
+}
+
+const pe = new ProximityEffect(stage.children, {
+    threshold: 30,
+    runoff:    40,
+    jitter:    50,
+    attack:     1,
+    decay:      0.1,
+});
+pe.addStyle("skewX",   [{ value:  0,   scatter: 120 }, 0]);
+pe.addStyle("skewY",   [{ value:  0,   scatter: 120 }, 0]);
+pe.addStyle("scaleX",  [{ value:  1.33, scatter: 1  }, 1]);
+pe.addStyle("scaleY",  [{ value:  1.33, scatter: 1  }, 1]);
+pe.addStyle("opacity", [{ value: 80,   scatter: 50 }, 100]);
+
+pe.addEventListener("redraw", () =>
+{
+    pe.threshold = (Math.sin(performance.now()*0.002)+1)*30 + 15;
+});
+
+demo(pe);
+</script>
+</body>
+</html>

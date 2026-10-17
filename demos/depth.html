@@ -1,0 +1,50 @@
+﻿<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Depth: ProximityEffect demo</title>
+<link rel="stylesheet" href="demo.css">
+<style>
+    #stage { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 4px; min-height: 600px; padding: 10px; perspective: 500px; transform-style: preserve-3d; }
+    #stage div { width: 100px; height: 100px; background: #900; }
+</style>
+</head>
+<body>
+<nav><a href="index.html">All demos</a></nav>
+<main>
+    <h1>Depth</h1>
+    <p>Tiles near the pointer lift towards you, brighten and go out of focus, as though seen through a camera lens. The <code>translateZ</code> keyframe has some <code>scatter</code>, so each tile lifts a slightly different amount.</p>
+
+    <div class="controls">
+        <button type="button" id="pause" aria-pressed="false">Pause effect</button>
+    </div>
+
+    <div id="stage" class="stage" aria-hidden="true"></div>
+</main>
+
+<script type="module">
+import ProximityEffect from "../src/ProximityEffect.js";
+import { demo } from "./demo.js";
+
+const stage = document.getElementById("stage");
+for (let i=0; i<25; i++)
+{
+    stage.append(document.createElement("div"));
+}
+
+const pe = new ProximityEffect(stage.children, {
+    threshold: 60,
+    runoff:   100,
+    attack:     0.6,
+    decay:      0.6,
+});
+pe.addStyle("translateZ", [{ value: 200, scatter: 50 }, 0]);
+pe.addStyle("blur",       [ 10,   0]);
+pe.addStyle("saturate",   [100,   0]);
+pe.addStyle("brightness", [100, 250]);
+
+demo(pe);
+</script>
+</body>
+</html>

@@ -211,7 +211,7 @@ Fading or blurring text reduces its contrast. Text must keep a contrast ratio of
 
 Automated checkers such as axe-core account for the CSS `opacity` property but not for `filter: opacity()`, which is what the `opacity` preset uses, so check those states by hand. Keep `blur` off text that people need to read, or below about 1px, since no contrast ratio captures it. Text that looks faded or invisible is still read out by screen readers, so don't use the effect to hide content. And since scaling text down can make it hard to read, avoid shrinking text below its normal size at rest.
 
-`tests/a11y.html` puts all of this together, and `npm run a11y` checks it (or another demo, with `--page`) in headless Chrome.
+`demos/a11y.html` puts all of this together, and `npm run a11y` checks it and the other demos in headless Chrome.
 
 ## API
 
