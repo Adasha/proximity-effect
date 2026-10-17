@@ -1173,6 +1173,8 @@ describe("performance", () =>
 
         // the observer reports sizes after layout, in the same frame as the writes
         const report = (...targets) => observer.callback(targets.map(target => ({ target })));
+        // as a browser does, report every element's size when observing begins
+        const reportInitial = () => report(...observer.observed);
 
         it("observes the page and the nodes, and disconnects on destroy", async () =>
         {
@@ -1191,6 +1193,7 @@ describe("performance", () =>
             const el = makeNode(0, 0);
             const pe = create(el);
             await settle();
+            reportInitial();
             runUntilIdle();
             const measure = vi.spyOn(el, "getBoundingClientRect");
             const reflow = vi.fn();
@@ -1215,6 +1218,7 @@ describe("performance", () =>
             const pe = create(el);
             pe.addStyle({ rule: "width", unit: "px" }, [20, 10]);
             await settle();
+            reportInitial();
             runUntilIdle();
             const measure = vi.spyOn(el, "getBoundingClientRect");
 
@@ -1237,6 +1241,7 @@ describe("performance", () =>
             const pe = create(el);
             pe.addStyle("scale", [2, 1]);
             await settle();
+            reportInitial();
             runUntilIdle();
             const measure = vi.spyOn(el, "getBoundingClientRect");
             pe.setCoords(0, 0);
@@ -1252,6 +1257,7 @@ describe("performance", () =>
             const pe = create(el, { attack: 0.5 });
             pe.addStyle("translateX", [0, 100]);
             await settle();
+            reportInitial();
             runUntilIdle();
             const measure = vi.spyOn(el, "getBoundingClientRect");
 
@@ -1278,6 +1284,30 @@ describe("performance", () =>
             window.dispatchEvent(new Event("resize"));
             step();
             expect(measure).toHaveBeenCalledOnce();
+        });
+
+        it("skips the first report for each element, which only gives its starting size", async () =>
+        {
+            const a = makeNode(0, 0), b = makeNode(10, 0);
+            const pe = create(a);
+            await settle();
+            const measure = vi.spyOn(a, "getBoundingClientRect");
+            reportInitial();
+            runUntilIdle();
+            expect(measure).not.toHaveBeenCalled();
+
+            // nodes added later are measured once, by the nodes setter
+            pe.nodes = [a, b];
+            reportInitial();
+            runUntilIdle();
+            expect(measure).toHaveBeenCalledOnce();
+
+            // a node dropped and added back starts again
+            pe.nodes = [b];
+            pe.nodes = [a, b];
+            reportInitial();
+            runUntilIdle();
+            expect(measure).toHaveBeenCalledTimes(2);
         });
     });
 

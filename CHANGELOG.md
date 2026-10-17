@@ -71,6 +71,7 @@ Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styl
 - Page scrolls no longer remeasure: nodes that scroll with the page are moved by the scroll distance, and only fixed and sticky nodes are remeasured. Scrolling stays at the screen refresh rate with 5,000 nodes (it previously froze the page). Scrolling inside a container only remeasures if the container holds one of the nodes. Scroll and resize events are batched to at most one measurement per frame, replacing the `setTimeout` workaround.
 - A frame's work fell from 4.5 ms to 1.8 ms (1,000 nodes) and from 15.6 ms to 2.3 ms (5,000 nodes): values are computed with no per-node layout or attribute reads, functions sharing a property are grouped once rather than every frame, and nodes whose value hasn't changed are skipped.
 - An idle instance draws no frames (previously about 60 a second), and the loop stops while the tab is hidden.
+- Nodes are measured once at start-up and once when added, rather than again when the `ResizeObserver` reports their starting sizes.
 - Styles that change a node's size (a custom `width`, `fontSize` and so on) no longer cause a remeasure every frame. Size changes the effect makes itself are ignored, since they can't move the measured centres, and other size changes reported by the `ResizeObserver` wait until the nodes stop moving. Animating `width` on 5,000 nodes went from 10 to 20 frames a second, and from 181 `reflow` events in three seconds of pointer movement to none.
 
 ### Added

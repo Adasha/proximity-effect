@@ -65,6 +65,7 @@ export default class ProximityEffect extends EventTarget
     #needsPinnedMeasure = false;
     #measureWhenSettled = false;
     #ownResizes = new Set();
+    #sizeReported = new WeakSet();
     #scrollX = 0;
     #scrollY = 0;
     #needsRewrite = true;
@@ -240,6 +241,7 @@ export default class ProximityEffect extends EventTarget
             {
                 data.node.style.cssText = data.style;
                 this.#resizeObserver?.unobserve(data.node);
+                this.#sizeReported.delete(data.node);
             }
         }
 
@@ -1162,9 +1164,22 @@ export default class ProximityEffect extends EventTarget
     // The observer reports after layout, in the same frame as the writes that
     // caused it. Size changes the effect made itself can't move the centres,
     // since #measure takes its styles off first, so only other changes count.
+    // An element's first report is just its size when observing began; it was
+    // measured then (in #init, or after nodes changed), so it's skipped.
     #resized(entries)
     {
-        const external = entries.some(entry => !this.#ownResizes.has(entry.target));
+        let external = false;
+        for (const { target } of entries)
+        {
+            if (!this.#sizeReported.has(target))
+            {
+                this.#sizeReported.add(target);
+            }
+            else if (!this.#ownResizes.has(target))
+            {
+                external = true;
+            }
+        }
         this.#ownResizes.clear();
 
         if (external && this.#ready && !this.#destroyed)
