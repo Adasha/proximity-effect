@@ -107,7 +107,7 @@ No behaviour changes in this session.
 - CI: `.github/workflows/ci.yml` (lint, test, build, `npm pack --dry-run`) on push to master/4.0 and PRs. Actions are pinned to the same SHAs as wrap-chars. CodeQL workflow untouched (still `@v1`/`v2` actions, master only; update in Session 4). Not yet run on GitHub since nothing is pushed.
 - Repo hygiene: removed `old/`, generated `docs/`, and the committed `dist/` (now gitignored, built on `prepack`). `old/` and `docs/` remain in history. Hot-linking `dist/ProximityEffect*.js` from raw GitHub will break; npm/unpkg users are covered by the new `unpkg` field. Recheck in Session 8.
 - `CHANGELOG.md` started. `tests/1.html` now imports `../src/ProximityEffect.js`; dead `event-target` script tags removed from the demos. Other demos (`div-grid.html`, `frame-seq_grid.html`, `video*.html`, `6.html`) were not checked for working imports.
-- `package.json` version is still `v4.0.0-alpha1` (with the `v`); fix in Session 8.
+- `package.json` version is still `v4.0.0-alpha1` (with the `v`); fix in Session 8. Done after review: the `v` is gone from `package.json` and the lockfile (the build banner adds it), and the README header now says `v4.0.0-alpha1`.
 
 ## Session 2: Utilities and Style class
 

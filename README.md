@@ -1,6 +1,6 @@
 # ProximityEffect.js
 
-v4.0.0-a4
+v4.0.0-alpha1
 
 Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Very customisable, definitely overdeveloped. A fun pet project originally from the Flash days, remade in JS for practice.
 
