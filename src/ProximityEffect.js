@@ -1584,12 +1584,13 @@ export default class ProximityEffect extends EventTarget
 
 
 
+    // the constructor sets the jitter parameters before any node data is built
     #randomJitter()
     {
-        const method = this.jitterMethod ?? this.#DEFAULT_JITTER_METHOD;
+        const { jitter, jitterX, jitterY, jitterMethod } = this.#globalParams;
         return {
-            x: AdashaUtils.random((this.jitter ?? 0) + (this.jitterX ?? 0), method),
-            y: AdashaUtils.random((this.jitter ?? 0) + (this.jitterY ?? 0), method)
+            x: AdashaUtils.random(jitter + jitterX, jitterMethod),
+            y: AdashaUtils.random(jitter + jitterY, jitterMethod)
         };
     }
 
