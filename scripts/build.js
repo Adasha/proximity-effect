@@ -1,5 +1,5 @@
 import { build } from "esbuild";
-import { readFile, rm } from "node:fs/promises";
+import { copyFile, readFile, rm } from "node:fs/promises";
 
 const entry = "src/ProximityEffect.js";
 const outdir = "dist";
@@ -43,4 +43,7 @@ await Promise.all([
     }),
 ]);
 
-console.log(`Built ${outdir}/proximity-effect.mjs and ${outdir}/proximity-effect.min.js`);
+// Hand-written type declarations (checked by tests/api.test.js and `npm run typecheck`).
+await copyFile("src/ProximityEffect.d.ts", `${outdir}/proximity-effect.d.ts`);
+
+console.log(`Built ${outdir}/proximity-effect.mjs, ${outdir}/proximity-effect.min.js and ${outdir}/proximity-effect.d.ts`);

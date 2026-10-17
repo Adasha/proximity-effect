@@ -51,11 +51,24 @@ describe("Style", () =>
         expect(s.near.scatterMethod).toBe("normal");
     });
 
-    it("uses first and last of several keyframes", () =>
+    it("rejects keyframes in between and keyframe distances until 4.3", () =>
     {
-        const s = new Style("scale", [1, 5, 2]);
-        expect(s.near.value).toBe(1);
-        expect(s.far.value).toBe(2);
+        expect(() => new Style("scale", [1, 5, 2])).toThrow(RangeError);
+        expect(() => new Style("scale", [1, { value: 2, distance: 1 }])).toThrow(RangeError);
+        expect(() => new Style("scale", [{ value: 1, distance: 0 }, 2])).toThrow(RangeError);
+    });
+
+    it("gives every keyframe its distance", () =>
+    {
+        const s = new Style("scale", [{ value: 1 }, 2]);
+        expect(s.near.distance).toBe(0);
+        expect(s.far.distance).toBe(1);
+    });
+
+    it("exposes the id from its params", () =>
+    {
+        expect(new Style("blur", [0, 1], { id: "soft" }).id).toBe("soft");
+        expect(new Style("blur", [0, 1]).id).toBeUndefined();
     });
 
     it("does not mutate the caller's keyframes", () =>
@@ -198,12 +211,11 @@ describe("Style hardening", () =>
         }
     });
 
-    it("validates keyframe scatter, scatterMethod and distance", () =>
+    it("validates keyframe scatter and scatterMethod", () =>
     {
         expect(() => new Style("blur", [0, { value: 1, scatter: "2" }])).toThrow(TypeError);
         expect(() => new Style("blur", [0, { value: 1, scatter: -2 }])).toThrow(RangeError);
         expect(() => new Style("blur", [0, { value: 1, scatter: 2, scatterMethod: "bogus" }])).toThrow(RangeError);
-        expect(() => new Style("blur", [0, { value: 1, distance: 2 }])).toThrow(RangeError);
         expect(new Style("blur", [0, { value: 1, scatter: 2, scatterMethod: "gaussian" }]).far.scatterMethod).toBe("gaussian");
     });
 

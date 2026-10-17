@@ -1016,7 +1016,6 @@ describe("performance", () =>
         sticky.style.position = "sticky";
         const pe = create([pinned, sticky, flow]);
         await settle();
-        expect(pe.nodes.map(n => pe.getNodeData(n, "scrollsWithPage"))).toEqual([false, false, true]);
 
         const measured = [pinned, sticky, flow].map(el => vi.spyOn(el, "getBoundingClientRect"));
         const reflow = vi.fn();

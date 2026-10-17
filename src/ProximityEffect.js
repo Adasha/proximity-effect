@@ -20,6 +20,19 @@ const PAINT_ONLY_RULES = new Set(["filter", "backdropFilter", "backdrop-filter",
 // makes the ResizeObserver report
 const SIZE_NEUTRAL_RULES = new Set([...PAINT_ONLY_RULES, "transform", "translate", "rotate", "scale"]);
 
+// the public node data fields, each read as a copy (see getNodeData)
+const point = (p) => p && { x: p.x, y: p.y };
+const NODE_DATA = Object.freeze({
+    __proto__: null,
+    node:      (data) => data.node,
+    measured:  (data) => point(data.measured),
+    center:    (data) => point(data.center),
+    jitter:    (data) => point(data.jitter),
+    distance:  (data) => data.distance,
+    lastDelta: (data) => data.lastDelta,
+    styles:    (data) => data.styles.map(({ near, far }) => ({ near, far })),
+});
+
 
 
 /**
@@ -49,7 +62,6 @@ export default class ProximityEffect extends EventTarget
     #coords = null;
     #stylesStack = [];
     #styleGroups = [];
-    #properties;
     #nodes = [];
     #nodeData = [];
 
@@ -77,11 +89,11 @@ export default class ProximityEffect extends EventTarget
     #prefersReducedMotion = false;
 
     // stable listener references, so they can all be removed
-    #onPointerMove  = (evt) => this.updatePointer(evt);
+    #onPointerMove  = (evt) => this.#pointerMove(evt);
     #onPointerOut   = (evt) => this.#pointerOut(evt);
     #onBlur         = () => this.#pointerLeft();
     #onMotionPref   = (evt) => this.#motionPreference(evt.matches);
-    #onReflow       = () => this.reflowEvent();
+    #onReflow       = () => this.#reflow();
     #onResize       = (entries) => this.#resized(entries);
     #onScroll       = (evt) => this.#scrolled(evt);
     #onVisibility   = () => this.#visibilityChange();
@@ -225,11 +237,11 @@ export default class ProximityEffect extends EventTarget
 
     /**
      * Get the list of nodes.
-     * @return {Array<Element>} The node array.
+     * @return {Array<Element>} A copy of the node array.
      */
     get nodes()
     {
-        return this.#nodes;
+        return [...this.#nodes];
     }
 
     /**
@@ -266,11 +278,12 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
-     *
+     * Get the number of nodes.
+     * @return {number} The number of nodes being animated.
      */
     get totalNodes()
     {
-        return this.nodes.length;
+        return this.#nodes.length;
     }
 
 
@@ -753,10 +766,13 @@ export default class ProximityEffect extends EventTarget
      * @param {number} [property.max] - The maximum style value.
      * @param {number} [property.default] - The default style value.
      * @param {string} [property.unit] - The style rule's CSS unit.
-     * @param {Array<number|Object>} keyframes - The style values, from the closest distance to the furthest. Each is a number, or an object with a numeric value and optional scatter and scatterMethod.
+     * @param {Array<number|Object>} keyframes - The near and far style values. Each is a number, or an object with a numeric value and optional scatter and scatterMethod.
+     * Keyframes in between, and a keyframe distance, are planned for 4.3; passing them throws a RangeError.
      * @param {Object} [params] - An object containing additional effect parameters.
-     * @param {string} [params.id] - A string to identify the style rule.
+     * @param {string} [params.id] - A name for the style, which hasStyleProp() and removeStyleProp() accept.
      * Per-style threshold, runoff, invert, attack and decay are planned for 4.2; passing them throws a RangeError.
+     * @throws {TypeError} If an argument is the wrong type.
+     * @throws {RangeError} If a value is not allowed (see Style).
      */
     addStyle(property, keyframes, params)
     {
@@ -774,7 +790,7 @@ export default class ProximityEffect extends EventTarget
 
     /**
      * Check if a named style is on the stack.
-     * @param {string} name - The preset name, or a custom style's func (or rule if it has none).
+     * @param {string} name - The preset name, a custom style's func (or rule if it has none), or the id given in the style's params.
      * @return {boolean} True if the style exists at least once.
      */
     hasStyleProp(name)
@@ -787,7 +803,7 @@ export default class ProximityEffect extends EventTarget
     /**
      * Remove all instances of a style from the stack. CSS properties no longer
      * animated by any style get the nodes' original inline values back.
-     * @param {string} name - The preset name, or a custom style's func (or rule if it has none).
+     * @param {string} name - The preset name, a custom style's func (or rule if it has none), or the id given in the style's params.
      * @return {boolean} True if anything was removed.
      */
     removeStyleProp(name)
@@ -831,52 +847,6 @@ export default class ProximityEffect extends EventTarget
         }
         return rules.size>0;
     }
-
-
-
-
-    /**
-     *
-     * @param {String} prop - The property name - should return a number.
-     * @param {Object} params -
-     * @param {number} params.min -
-     * @param {number} params.max -
-     * @param {Function} params.callback -
-     * @returns
-     */
-    addProperty(name, params)
-    {
-        this.#properties = this.#properties || [];
-
-        let propertyObj = {
-            name: name,
-            params: params
-        };
-        this.#properties.push(propertyObj);
-    }
-
-    /**
-     *
-     * @param {*} n
-     * @returns
-     */
-    hasProperty()
-    {
-
-    }
-
-
-
-    /**
-     *
-     * @param {*} n
-     * @returns
-     */
-    removeProperty()
-    {
-
-    }
-
 
 
 
@@ -1019,23 +989,23 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
+     * A snapshot of one node's effect data. It's a copy, so changing it has no
+     * effect. Fields that have no value yet (before the node is measured or the
+     * first frame is drawn) are left out.
      * @typedef {Object} NodeData
      * @property {Element} node - A reference to the node.
-     * @property {string} style - The node's original inline style.
-     * @property {boolean} hadStyle - Whether the node had a style attribute to begin with.
-     * @property {Object} measured - The node's measured centre point (relative to the viewport, with any data-offsetx/data-offsety applied).
-     * @property {Object} center - The node's centre point, including global offset and jitter.
-     * @property {boolean} scrollsWithPage - False if the node is, or is inside, a fixed or sticky element.
+     * @property {Object} [measured] - The node's measured centre point (relative to the viewport, with any data-offsetx/data-offsety applied).
+     * @property {Object} [center] - The node's centre point, including global offset and jitter.
      * @property {Object} jitter - The node's random x and y jitter.
-     * @property {number} distance - The normalised distance to the target as of the last frame.
-     * @property {number} lastDelta - The eased distance as of the last frame.
-     * @property {Array<Object>} styles - The node's near and far values for each style on the stack.
+     * @property {number} [distance] - The normalised distance to the target as of the last frame.
+     * @property {number} [lastDelta] - The eased distance as of the last frame.
+     * @property {Array<Object>} styles - The node's near and far values for each style on the stack, in stack order.
      */
     /**
-     * Return an object containing the given node's effect data or a specific property of that data.
+     * Return a snapshot of the given node's effect data, or one property of that data.
      * @param {Element} n - The node to return data for.
      * @param {string} [prop] - The data property to return, leave out to return the entire object.
-     * @return {mixed|NodeData} The chosen property value, or an object containing the node's data.
+     * @return {*|NodeData} A copy of the chosen property's value (undefined for anything that isn't a NodeData property), or the node's data.
      * @throws {RangeError} If the node isn't controlled by this instance.
      */
     getNodeData(n, prop)
@@ -1051,10 +1021,10 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
-     * Return the given node index's effect data, or a specific property of that data.
+     * Return a snapshot of the given node index's effect data, or one property of that data.
      * @param {number} i - The node index to return data for.
      * @param {string} [prop] - The data property to return, leave out to return the entire object.
-     * @return {mixed|NodeData} The chosen property value, or an object containing the node's data.
+     * @return {*|NodeData} A copy of the chosen property's value (undefined for anything that isn't a NodeData property), or the node's data.
      * @throws {TypeError} If the index is not a number.
      * @throws {RangeError} If the index is not a whole number within the node list.
      */
@@ -1068,15 +1038,15 @@ export default class ProximityEffect extends EventTarget
 
     /**
      * Return a boolean determining if the given node has the given data.
-     * @param {number} i - The node index to return data for.
-     * @param {string} prop - The data property to return.
-     * @return {boolean} True if the property exists, false otherwise.
+     * @param {number} i - The node index to check.
+     * @param {string} prop - The data property to check.
+     * @return {boolean} True if the property is a NodeData property with a value, false otherwise.
      * @throws {TypeError} If the index is not a number.
      * @throws {RangeError} If the index is not a whole number within the node list.
      */
     hasNodeIndexData(i, prop)
     {
-        return Object.hasOwn(this.#nodeData[this.#checkIndex(i)], prop);
+        return this.#readNodeData(this.#nodeData[this.#checkIndex(i)], prop)!==undefined;
     }
 
 
@@ -1696,21 +1666,32 @@ export default class ProximityEffect extends EventTarget
 
 
 
-    // own properties only, so a name like "constructor" doesn't reach the prototype
+    // copies of the public fields only, so callers can't change the running
+    // effect, and internal bookkeeping stays free to change
     #readNodeData(data, prop)
     {
         if (prop===undefined)
         {
-            return data;
+            const snapshot = {};
+            for (const key in NODE_DATA)
+            {
+                const value = NODE_DATA[key](data);
+                if (value!==undefined)
+                {
+                    snapshot[key] = value;
+                }
+            }
+            return snapshot;
         }
-        return Object.hasOwn(data, prop) ? data[prop] : undefined;
+        // own properties only, so a name like "constructor" doesn't reach the prototype
+        return Object.hasOwn(NODE_DATA, prop) ? NODE_DATA[prop](data) : undefined;
     }
 
 
 
     #styleMatches(style, name)
     {
-        return style.name===name || style.func===name;
+        return style.name===name || style.func===name || (style.id!==undefined && style.id===name);
     }
 
 
@@ -1795,10 +1776,40 @@ export default class ProximityEffect extends EventTarget
     //                //
     ////////////////////
 
+    /*
+     * Events are plain Event objects dispatched on the instance. They don't
+     * bubble (an instance has no parent), can't be cancelled and carry no
+     * detail; read what's needed from the instance itself.
+     */
+
+    /**
+     * The instance has measured its nodes and started listening, once the
+     * document has loaded. Always dispatched asynchronously, so a listener
+     * added straight after construction hears it.
+     * @event ProximityEffect#ready
+     * @type {Event}
+     */
+
+    /**
+     * A frame was drawn by the animation loop. Only frames that are drawn
+     * dispatch it, so an idle effect dispatches nothing. Calling update()
+     * directly doesn't dispatch it.
+     * @event ProximityEffect#redraw
+     * @type {Event}
+     */
+
+    /**
+     * A remeasure found that at least one node's centre moved (after a resize,
+     * a container scroll, a change of nodes...). Dispatched before that frame
+     * is drawn.
+     * @event ProximityEffect#reflow
+     * @type {Event}
+     */
+
 
 
     // any pointer (mouse, pen or touch); with several touches, only the first is followed
-    updatePointer(evt)
+    #pointerMove(evt)
     {
         if (evt.isPrimary===false)
         {
@@ -1839,9 +1850,9 @@ export default class ProximityEffect extends EventTarget
 
 
 
-    // the page scrolled or resized: remeasure the nodes on the next frame
+    // the window resized: remeasure the nodes on the next frame
     // (which dispatches "reflow" if any of them moved)
-    reflowEvent()
+    #reflow()
     {
         if (this.#ready && !this.#destroyed)
         {
@@ -1854,8 +1865,10 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
-     * Draw one frame: work out each node's distance from the target and write its styles.
-     * Called by the animation loop; calling it directly draws an extra frame.
+     * Draw one frame now: work out each node's distance from the target and
+     * write its styles. The animation loop calls this by itself, so it's only
+     * needed to draw while paused, or to draw straight away. It doesn't
+     * dispatch 'redraw', and does nothing once the instance is destroyed.
      */
     update()
     {

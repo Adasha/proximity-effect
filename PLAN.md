@@ -13,7 +13,7 @@ Each session below is meant to run as its own conversation. To start one, say "R
 - [x] 4. Hardening
 - [x] 5. Performance
 - [x] 6. Accessibility
-- [ ] 7. Public API, events and types
+- [x] 7. Public API, events and types
 - [ ] 8. Build and packaging
 - [ ] 9. Documentation and demos
 - [ ] 10. Release
@@ -221,7 +221,20 @@ Measure first, then change. Build a small benchmark page (for example 1,000 and 
 - Decide how the 4.1 to 4.3 roadmap features will fit (multi-value properties, per-property parameters, multi-point animations), so 4.0 doesn't paint them into a corner. Record the decision only; don't build them.
 - Per-style params (review finding): nothing ever read them, despite the JSDoc. Decided: `threshold`, `runoff`, `invert`, `attack` and `decay` now throw a `RangeError` in `Style`, so 4.2 can add them without changing existing calls. `id` is still accepted and stored but unused; decide here whether `removeStyleProp` should match it.
 
-**Handoff:** _(fill in)_
+**Handoff (2026-10-17):**
+- Public surface, pinned in `tests/api.test.js` (exact prototype member list, getter/setter/method kind, `Style` getters, node data keys, and a check that `src/ProximityEffect.d.ts` declares the same members). Read-write: `target nodes threshold runoff invert zIndex attack decay offsetX offsetY jitter jitterX jitterY jitterMethod direction FPS tolerance reducedMotion`. Read-only: `totalNodes styles boundary motionReduced pointer paused destroyed`. Methods: `addStyle hasStyleProp removeStyleProp distanceFrom distanceFromIndex clearTarget getCoords setCoords clearCoords setCenterPoints pause resume destroy getNodeData getNodeIndexData hasNodeIndexData update`. No statics.
+- Removed `addProperty`/`hasProperty`/`removeProperty`. `updatePointer` and `reflowEvent` are private (`#pointerMove`, `#reflow`). `update()` stays public, documented as "draw one frame now" (useful while paused; no `redraw`). `totalNodes` documented and kept. `getCoords`/`setCoords`/`clearCoords` keep their names (a consistent trio; no `coords` property). `nodes` now returns a copy.
+- Node data: `getNodeData`/`getNodeIndexData` return copies built from a frozen field table (`NODE_DATA` in `ProximityEffect.js`): `node, measured, center, jitter, distance, lastDelta, styles`, leaving out fields with no value yet. `style` (original cssText), `hadStyle`, `originals` and `scrollsWithPage` are internal now. `hasNodeIndexData` means "public field with a value".
+- Style `id`: `hasStyleProp`/`removeStyleProp` match it (as well as the name and func); `Style` has an `id` getter.
+- Events: kept as plain `Event` (no bubbling, not cancelable, no detail), documented with `@event` JSDoc and in the types. Moving to `CustomEvent` with a `detail` later is backwards compatible. Not counting listeners for `redraw`: since Session 5 it only fires for drawn frames, and an unheard dispatch is cheap.
+- Keyframes: more than two, or a keyframe `distance`, now throw a `RangeError` (same reasoning as per-style params). Every stored keyframe has `distance` 0 (near) or 1 (far). README line updated. **`tests/frame-seq_grid.html` passes five keyframes and will now throw** (it was already broken; Session 9).
+- Types: hand-written `src/ProximityEffect.d.ts`, copied to `dist/proximity-effect.d.ts` by `scripts/build.js`; `package.json` has `types` and an `exports` `types` condition (pulled forward from Session 8). `npm run typecheck` (`tsc -p tests/types`, TypeScript 7.0.2 devDependency) checks `tests/types/api.ts`, which uses `@ts-expect-error` for what must fail (unknown presets, three keyframes, private/removed members, read-only properties). Added to CI. `dist.test.js` checks the shipped `.d.ts`.
+- Roadmap fit (decision only, nothing built):
+  - 4.1 multi-value properties: keyframe `value` (and `scatter`) will also accept an array of numbers (`[r, g, b]`, `[x, y, z]`); presets gain an argument count and per-argument `min`/`max`; values are joined inside the function. 4.0 rejects non-number values, so it's additive at runtime. In the types, `StyleKeyframe.value` and `NodeStyleValues.near/far` will widen to `number | number[]`, which TypeScript readers of those fields will notice; acceptable for a minor.
+  - 4.2 per-style params: the third `addStyle` argument (already validated and rejecting them). Each style gets its own eased distance; per-style `distance`/`lastDelta` would go in node data `styles[i]` (already objects), while the top-level fields stay global. `#groupStyles` stays; only the lerp input changes per item.
+  - 4.3 multi-point: more than two keyframes, with optional ascending `distance` (missing ones spread evenly). `Style` gains a `keyframes` getter; `near`/`far` stay as first/last, and node data `styles[i]` gains a `values` array alongside `near`/`far`.
+- Tests: 156 pass on Node 24 (new `tests/api.test.js`, 9; style tests updated). Lint, typecheck, build, `npm pack --dry-run` (now 8 files, 66.8 kB) and `npm run a11y` all clean.
+- For Session 8: no type declaration for the classic script's global `ProximityEffect` (consider a `global.d.ts` or document `import type`). The typecheck uses the source path, not the package name; Session 10's tarball install should include a TypeScript consumer. For Session 9: the API reference can be built from the `.d.ts` plus JSDoc; document node data, events and `update()` as above; migration guide entries are in the CHANGELOG.
 
 ## Session 8: Build and packaging
 

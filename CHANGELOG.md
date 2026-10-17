@@ -41,6 +41,11 @@ All notable changes to this project are documented here. The format is based on 
 - The pointer is followed with Pointer Events (`pointermove` and `pointerdown`) instead of `mousemove`, so touch and pen work as well as the mouse. With several touches, only the primary one is followed. Code that dispatched synthetic `mousemove` events to drive the effect must dispatch `pointermove` instead (with `isPrimary: true`).
 - When the pointer leaves the page (or a touch or pen lifts off), or the window loses focus, `pointer` becomes `null` and the nodes ease back to rest. Previously they stayed as they were when the mouse left.
 - When the user prefers reduced motion, the nodes stay at rest by default and don't follow the pointer, a target or coordinates. Set `reducedMotion: "ignore"` for the old behaviour (see Added).
+- The unfinished `addProperty()`, `hasProperty()` and `removeProperty()` methods are removed. They stored their arguments and did nothing else.
+- `updatePointer()` and `reflowEvent()` are no longer public. They were internal event handlers. To drive the effect from your own coordinates, use `setCoords()`; to remeasure, use `setCenterPoints()`.
+- `getNodeData()` and `getNodeIndexData()` return a copy of the node's data, so changing it no longer changes the running effect. The copy has only the documented fields (`node`, `measured`, `center`, `jitter`, `distance`, `lastDelta` and `styles`); fields without a value yet are left out. The original inline style and other internal fields are no longer exposed, and `hasNodeIndexData()` is false for them.
+- `nodes` returns a copy of the node list, as `styles` already did.
+- `addStyle()` throws a `RangeError` for more than two keyframes, or for a keyframe `distance`. Only the first and last keyframes were ever used; keyframes in between are planned for 4.3, and rejecting them until then means that adding them won't change what existing calls do.
 
 ### Fixed
 
@@ -91,3 +96,6 @@ Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styl
 - The module can be imported without a DOM (for example during server-side rendering); constructing an instance there throws a clear error.
 - `reducedMotion` parameter and property: what to do when the user prefers reduced motion (the `prefers-reduced-motion` media query, followed live). `"rest"` (default) keeps the nodes at rest; `"snap"` follows without easing; `"ignore"` carries on as normal. The read-only `motionReduced` reports whether motion is being reduced right now.
 - Touch and pen support (see Breaking changes).
+- TypeScript declarations (`dist/proximity-effect.d.ts`, referenced from `package.json`), including typed event listeners for `ready`, `redraw` and `reflow`.
+- `hasStyleProp()` and `removeStyleProp()` also find a style by the `id` given in its params, and `Style` has an `id` getter.
+- Documentation for `totalNodes`, `update()` and the events. Events are plain `Event` objects that don't bubble, can't be cancelled and carry no detail.

@@ -160,12 +160,13 @@ function checkParams(params)
  * @param {number} [property.max] - The maximum style value.
  * @param {number} [property.default] - The default style value.
  * @param {string} [property.unit] - The style rule's CSS unit, from a fixed list of CSS units.
- * @param {Array<number|Object>} keyframes - The style values, from the closest distance to the furthest. Each is a number, or an object with a numeric value and optional scatter and scatterMethod.
+ * @param {Array<number|Object>} keyframes - The near and far style values. Each is a number, or an object with a numeric value and optional scatter and scatterMethod.
+ * Keyframes in between, and a keyframe distance, are planned for 4.3; passing them throws a RangeError.
  * @param {Object} [params] - An object containing additional effect parameters.
- * @param {string} [params.id] - A string to identify the style rule.
+ * @param {string} [params.id] - A name for the style, which hasStyleProp() and removeStyleProp() accept.
  * Per-style threshold, runoff, invert, attack and decay are planned for 4.2; passing them throws a RangeError.
  * @throws {TypeError} If an argument is the wrong type.
- * @throws {RangeError} If a value is not allowed (unknown preset, unsafe rule, func or unit, non-finite number, a per-style parameter that isn't supported yet).
+ * @throws {RangeError} If a value is not allowed (unknown preset, unsafe rule, func or unit, non-finite number, a feature that isn't supported yet).
  */
 export default class Style
 {
@@ -210,12 +211,17 @@ export default class Style
 
 		if(!Array.isArray(keyframes) || keyframes.length<2)
 		{
-			throw new TypeError("ProximityEffect: a style needs an array of at least two keyframes (near and far).");
+			throw new TypeError("ProximityEffect: a style needs an array of two keyframes (near and far).");
+		}
+		// Keyframes in between are planned for 4.3. Rejected until then, so
+		// adding them won't change what existing calls do.
+		if(keyframes.length>2)
+		{
+			throw new RangeError("ProximityEffect: only two keyframes (near and far) are supported for now.");
 		}
 
 		// the caller's array is never touched: build a normalised copy from own properties only.
 		// Every key is set, even when undefined, so lookups never reach the prototype.
-		const last   = keyframes.length-1;
 		const frames = keyframes.map((val, v) =>
 		{
 			const name = `keyframe ${v}`;
@@ -223,17 +229,17 @@ export default class Style
 
 			if (typeof val==="number")
 			{
-				frame = { value: val, distance: v===0 ? 0 : v===last ? 1 : undefined, scatter: undefined, scatterMethod: undefined };
+				frame = { value: val, distance: v, scatter: undefined, scatterMethod: undefined };
 			}
 			else if (AdashaUtils.isObject(val) && typeof own(val, "value")==="number")
 			{
-				const distance      = optionalFinite(own(val, "distance"), `${name} distance`),
-					  scatter       = optionalFinite(own(val, "scatter"), `${name} scatter`),
+				const scatter       = optionalFinite(own(val, "scatter"), `${name} scatter`),
 					  scatterMethod = own(val, "scatterMethod");
 
-				if (distance!==undefined && (distance<0 || distance>1))
+				// keyframe positions come with multi-point animations in 4.3
+				if (own(val, "distance")!==undefined)
 				{
-					throw new RangeError(`ProximityEffect: ${name} distance must be between 0 and 1.`);
+					throw new RangeError(`ProximityEffect: ${name} distance is not supported yet.`);
 				}
 				if (scatter!==undefined && scatter<0)
 				{
@@ -243,7 +249,7 @@ export default class Style
 				{
 					Validate.randomMethod(scatterMethod, `${name} scatterMethod`);
 				}
-				frame = { value: own(val, "value"), distance, scatter, scatterMethod };
+				frame = { value: own(val, "value"), distance: v, scatter, scatterMethod };
 			}
 			else
 			{
@@ -266,7 +272,7 @@ export default class Style
 		this.#max          = cssParams.max;
 		this.#defaultValue = cssParams.default;
 		this.#near         = frames[0];
-		this.#far          = frames[last];
+		this.#far          = frames[1];
 		this.#params       = checkedParams;
 	}
 
@@ -298,6 +304,9 @@ export default class Style
 
 	/** The normalised keyframe at the furthest distance (a copy). */
 	get far() { return { ...this.#far }; }
+
+	/** The id given in the style's params, if any. */
+	get id() { return this.#params.id; }
 
 	/** Per-style parameter overrides (a copy). */
 	get params() { return { ...this.#params }; }
