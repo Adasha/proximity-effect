@@ -68,6 +68,8 @@ export default class ProximityEffect extends EventTarget
     #scrollX = 0;
     #scrollY = 0;
     #needsRewrite = true;
+    #awake = false;
+    #lastTargetPoint = null;
     #changed = false;
     #scratchStyle;
 
@@ -1121,6 +1123,15 @@ export default class ProximityEffect extends EventTarget
     // change the output calls this to wake it
     #start()
     {
+        this.#awake = true;
+        this.#schedule();
+    }
+
+
+
+    // ask for the next frame without saying anything has changed
+    #schedule()
+    {
         if (this.#ready && !this.#paused && !this.#destroyed && this.#frameId===null
             && document.visibilityState!=="hidden")
         {
@@ -1205,11 +1216,13 @@ export default class ProximityEffect extends EventTarget
 
         if (!due)
         {
-            this.#start();
+            this.#schedule();
             return;
         }
 
         this.#lastFrameTime = timestamp;
+        const awake = this.#awake;
+        this.#awake = false;
         // marks from earlier frames have already been reported, if they resized anything
         this.#ownResizes.clear();
 
@@ -1226,16 +1239,38 @@ export default class ProximityEffect extends EventTarget
         {
             this.dispatchEvent(new Event("reflow"));
         }
-        this.update();
-        this.dispatchEvent(new Event("redraw"));
+
+        // when the only reason for this frame is following the target, and it
+        // hasn't moved, there's nothing to draw
+        const idle = !awake && !moved && !this.#changed;
+        if (!(idle && this.#followingTarget() && this.#samePoint(this.#targetPoint(), this.#lastTargetPoint)))
+        {
+            this.update();
+            this.dispatchEvent(new Event("redraw"));
+        }
 
         // keep going while nodes are still easing, or a measurement is waiting
         // for them to stop. A target element is followed every frame, since it
         // can move without any event to say so.
-        if (this.#changed || this.#measureWhenSettled || this.target)
+        if (this.#changed || this.#measureWhenSettled || this.#followingTarget())
         {
-            this.#start();
+            this.#schedule();
         }
+    }
+
+
+
+    // set coordinates take over from the target, so it needn't be watched
+    #followingTarget()
+    {
+        return this.target!=null && this.#coords===null;
+    }
+
+
+
+    #samePoint(a, b)
+    {
+        return a!==null && b!==null && a.x===b.x && a.y===b.y;
     }
 
 
@@ -1658,6 +1693,7 @@ export default class ProximityEffect extends EventTarget
               { threshold, runoff, invert, attack, decay, tolerance, direction, zIndex } = this.#globalParams;
 
         this.#needsRewrite = false;
+        this.#lastTargetPoint = point && { x: point.x, y: point.y };
         let changed = rewrite;
 
         for (const data of this.#nodeData)

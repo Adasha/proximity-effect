@@ -851,6 +851,63 @@ describe("performance", () =>
         expect(frames.size).toBe(0);
     });
 
+    it("skips drawing while a followed target stays still, and draws when it moves", async () =>
+    {
+        let at = 0;
+        const target = makeNode(0, 0);
+        target.getBoundingClientRect = () => boxAt(at, 0);
+        const el = makeNode(0, 0);
+        const pe = create(el, { target });
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        runUntilIdle(5);
+        const update = vi.spyOn(pe, "update");
+        const redraw = vi.fn();
+        pe.addEventListener("redraw", redraw);
+
+        step();
+        step();
+        expect(update).not.toHaveBeenCalled();
+        expect(redraw).not.toHaveBeenCalled();
+        expect(frames.size).toBe(1);
+
+        at = 50;
+        step();
+        expect(update).toHaveBeenCalledOnce();
+        expect(translateOf(el)).toBe(50);
+        // one more frame confirms nothing is still easing, then it rests again
+        step();
+        step();
+        expect(update).toHaveBeenCalledTimes(2);
+    });
+
+    it("still draws for other changes while following a still target", async () =>
+    {
+        const target = makeNode(0, 0);
+        const el = makeNode(50, 0);
+        const pe = create(el, { target });
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        runUntilIdle(5);
+        pe.runoff = 200;
+        step();
+        expect(translateOf(el)).toBe(25);
+    });
+
+    it("stops following the target while coordinates are set", async () =>
+    {
+        const target = makeNode(0, 0);
+        const pe = create(makeNode(0, 0), { target });
+        await settle();
+        pe.setCoords(100, 100);
+        runUntilIdle();
+        expect(frames.size).toBe(0);
+        pe.clearCoords();
+        step();
+        step();
+        expect(frames.size).toBe(1);
+    });
+
     it("only writes styles for nodes whose distance changed", async () =>
     {
         const near = makeNode(0, 0), far = makeNode(1000, 0);
