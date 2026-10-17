@@ -12,7 +12,7 @@ import { createServer } from "node:http";
 import { readFile, readdir, mkdtemp, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { tmpdir, homedir } from "node:os";
-import { join, resolve, extname } from "node:path";
+import { join, resolve, extname, sep } from "node:path";
 import { parseArgs } from "node:util";
 
 const { values: args } = parseArgs({
@@ -35,14 +35,27 @@ if (args.baseline)
 
 // static server: the repo at /, and the baseline src at /baseline/
 const types = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript" };
+
+// the file a request path maps to, or null if it would fall outside the
+// folder being served (decoding turns %2F.. into a real ../)
+function fileFor(url)
+{
+    const path     = decodeURIComponent(new URL(url, "http://x").pathname),
+          baseline = path.startsWith("/baseline/"),
+          base     = baseline ? resolve(args.baseline) : root,
+          file     = resolve(base, `.${baseline ? path.slice("/baseline".length) : path}`);
+    return file.startsWith(base + sep) ? file : null;
+}
+
 const server = createServer(async (req, res) =>
 {
-    const path = decodeURIComponent(new URL(req.url, "http://x").pathname);
-    const file = path.startsWith("/baseline/")
-        ? join(resolve(args.baseline), path.slice("/baseline/".length))
-        : join(root, path);
     try
     {
+        const file = fileFor(req.url);
+        if (!file)
+        {
+            throw new Error("Outside the served folder.");
+        }
         const body = await readFile(file);
         res.writeHead(200, { "content-type": types[extname(file)] ?? "application/octet-stream" });
         res.end(body);
