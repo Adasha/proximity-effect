@@ -1,35 +1,31 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Something doesn't work as documented
+labels: bug
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**What happened**
+A clear description of the bug, and any error in the console.
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+**What you expected**
+What should have happened instead.
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+**How to reproduce**
+The smallest code that shows the problem: the elements, the `params` object and the `addStyle()` calls. A link to a CodePen or similar is ideal.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+```javascript
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+```
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+**Setup**
 
-**Additional context**
-Add any other context about the problem here.
+- ProximityEffect version: [e.g. 4.0.0]
+- Loaded as: [ES module, classic script from a CDN, bundler]
+- Browser and version: [e.g. Firefox 140]
+- OS or device: [e.g. Windows 11, iPhone 15]
+- Input: [mouse, touch, pen, keyboard]
+- Reduced motion turned on in your system settings? [yes/no]
+
+**Anything else**
+Screenshots, a screen recording, or other context.
