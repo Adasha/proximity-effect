@@ -1014,6 +1014,44 @@ describe("performance", () =>
         expect(pe.getNodeData(flow, "center").y).toBe(-30);
     });
 
+    it("takes a controlled parent's transform off while remeasuring a sticky node inside it", async () =>
+    {
+        const card = makeNode(0, 0);
+        const sticky = document.createElement("div");
+        sticky.style.position = "sticky";
+        card.append(sticky);
+        // the child moves with the card's current translateX
+        sticky.getBoundingClientRect = () => boxAt(translateOf(card) ?? 0, 0);
+        const pe = create([card, sticky]);
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        movePointer(1000, 0);
+        step();
+        expect(translateOf(card)).toBe(100);
+
+        const measured = [card, sticky].map(el => vi.spyOn(el, "getBoundingClientRect"));
+        vi.spyOn(window, "scrollY", "get").mockReturnValue(30);
+        document.dispatchEvent(new Event("scroll"));
+        step();
+        expect(measured.map(spy => spy.mock.calls.length)).toEqual([1, 1]);
+        expect(pe.getNodeData(sticky, "center").x).toBe(0);
+        expect(translateOf(card)).toBe(100);
+    });
+
+    it("remeasures every node after a page scroll when layout styles could move the pinned ones", async () =>
+    {
+        const sticky = makeNode(0, 0), flow = makeNode(0, 0);
+        sticky.style.position = "sticky";
+        const pe = create([sticky, flow]);
+        pe.addStyle({ rule: "width", unit: "px" }, [20, 10]);
+        await settle();
+        const measured = [sticky, flow].map(el => vi.spyOn(el, "getBoundingClientRect"));
+        vi.spyOn(window, "scrollY", "get").mockReturnValue(30);
+        document.dispatchEvent(new Event("scroll"));
+        step();
+        expect(measured.map(spy => spy.mock.calls.length)).toEqual([1, 1]);
+    });
+
     it("ignores scrolling in containers that hold none of its nodes", async () =>
     {
         const el = makeNode(0, 0);

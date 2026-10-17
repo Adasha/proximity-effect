@@ -1244,7 +1244,7 @@ export default class ProximityEffect extends EventTarget
         }
         else if (this.#needsPinnedMeasure)
         {
-            moved = this.#measure(this.#nodeData.filter(data => data.scrollsWithPage===false));
+            moved = this.#measure(this.#pinnedToMeasure());
         }
         if (moved)
         {
@@ -1351,6 +1351,47 @@ export default class ProximityEffect extends EventTarget
 
 
 
+    // The nodes to measure after a page scroll: the fixed and sticky ones, plus
+    // any node they sit inside, since its transform moves them. Layout styles
+    // (width, font size...) can move any node, so with those everything is measured.
+    #pinnedToMeasure()
+    {
+        const pinned = this.#nodeData.filter(data => data.scrollsWithPage===false);
+        if (pinned.length===0)
+        {
+            return pinned;
+        }
+        if (this.#styleGroups.some(group => group.resizes))
+        {
+            return this.#nodeData;
+        }
+
+        const byNode = new Map(this.#nodeData.map(data => [data.node, data])),
+              found  = new Set(pinned);
+        for (const data of pinned)
+        {
+            for (let el = this.#parentOf(data.node); el; el = this.#parentOf(el))
+            {
+                const ancestor = byNode.get(el);
+                if (ancestor)
+                {
+                    found.add(ancestor);
+                }
+            }
+        }
+        return [...found];
+    }
+
+
+
+    // the element's parent, or the host of the shadow root it's at the top of
+    #parentOf(el)
+    {
+        return el.parentElement ?? el.getRootNode().host;
+    }
+
+
+
     // whether an element, or anything it sits inside, is fixed or sticky, so
     // it doesn't simply move with the page when it scrolls. Shared ancestors
     // are only looked up once per measurement.
@@ -1364,7 +1405,7 @@ export default class ProximityEffect extends EventTarget
         {
             const position = getComputedStyle(el).position;
             cache.set(el, position==="fixed" || position==="sticky"
-                || this.#isPinned(el.parentElement ?? el.getRootNode().host, cache));
+                || this.#isPinned(this.#parentOf(el), cache));
         }
         return cache.get(el);
     }
