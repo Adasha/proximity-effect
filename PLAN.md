@@ -15,7 +15,7 @@ Each session below is meant to run as its own conversation. To start one, say "R
 - [x] 6. Accessibility
 - [x] 7. Public API, events and types
 - [x] 8. Build and packaging
-- [ ] 9. Documentation and demos
+- [x] 9. Documentation and demos
 - [ ] 10. Release
 
 Sessions 2 to 7 are ordered by dependency: tests first, then fix, then harden, then optimise. Don't optimise before the tests exist.
@@ -265,7 +265,18 @@ Measure first, then change. Build a small benchmark page (for example 1,000 and 
 - Remove the stale generated `docs/v3.*` folders.
 - `CONTRIBUTING.md`, plus a check that the issue templates are current.
 
-**Handoff:** _(fill in)_
+**Handoff (2026-10-17):**
+- README rewritten in the wrap-chars v3 layout: Contents, About, Installation (npm, browser module, classic script on UNPKG and jsDelivr, TypeScript with `proximity-effect/global`), a quick start page (checked against the local build in headless Chrome; the `@4` URLs only work once 4.0.0 is published), Use (full params table with `runoff` default 100, `addStyle()`, presets, custom styles, scatter, methods, events), Accessibility (kept from Session 6), Performance (`will-change`/`contain` guidance, not applied), Browser support (ES2022: Chrome/Edge 93+, Firefox 92+, Safari 15.4+), Known issues, Development, Roadmap, Version history, Licence, AI usage disclosure.
+- **For the user to confirm:** the AI usage disclosure wording (modelled on wrap-chars), and the licence paragraph, which now describes what the MPL 2.0 asks (changed files stay MPL, with source available) instead of "pushed back".
+- `docs/API.md`: complete hand-written reference (how distances become values, constructor, every property and method, presets with ranges, custom styles and their checks, keyframes, style params and objects, node data, events, `data-offsetx/y`, errors, exported types). It replaces the wiki page, which can now be deleted or pointed at the file.
+- JSDoc and `.d.ts` comments filled in (no `XXXXX` placeholders were left; the vague ones were attack, decay, target, FPS, jitter, offsets). Found while documenting: a positive `offsetX`/`offsetY`/`data-offsetx` moves the centre **left/up** (they're subtracted, as in 2.1.19). Documented, not changed.
+- CHANGELOG: an intro, the renames since the published 2.1.19 that were missing (`addEffect` → `addStyle`, `hasEffect`/`removeEffect`/`effects`, `doPresetDistances` → `primeDistances`, `mode` removed, `opacity` preset range), the 3.0-alpha features under Added (`jitterX/Y`, `jitterMethod`, coords methods, `FPS`), a fix (2.1.19's classic script also leaked a global `Utils`), an **Upgrading from 2.x** checklist (the migration guide, kept in the changelog as wrap-chars does), and short 2.1.19/2.1.16/2.1.11 entries with npm links. Session 10 turns `[Unreleased]` into 4.0.0 and updates its link.
+- Demos moved to `demos/` with an `index.html`, shared `demo.css` and `demo.js` (pause button, `window.pe`). Kept and tidied: `bubbles` (1), `depth` (2), `flip` (3), `reveal` (4), `lens` (5), `scatter` (6 and 7 merged, with letter/word and direction controls), `pulse` (x2), `playground` (div-grid, controls now wired), `a11y`. Removed: `video`, `video2`, `x1` (relied on lab site files), `frame-seq_grid` (duplicate, five keyframes), `gooffscreen` (old `addEffect` API). `WrapChars.min.js` replaced by the wrap-chars 3.0 module (accessible by default). Changes to the art: `lens` now magnifies near the pointer and stays readable at rest (it was blurred 5px at rest), the 3D stages in `flip` and `playground` have no background (turned tiles went behind it), and `pulse` rests visible.
+- `npm run a11y` checks every demo by default (`--page` can be repeated), and takes the test point from the node's `center` (a `translateZ` box can be anywhere). All nine pass. `tests/` now only holds tests, `bench.html` and the type checks.
+- `docs/v3.*` were already removed in Session 1. Issue templates updated (version, load method, input, reduced motion), plus `config.yml` pointing security reports to private reporting. `CONTRIBUTING.md` added.
+- Tests: 160 pass on Node 24. Lint, typecheck, build and a11y clean.
+- **Live site (user's decision):** recommended to publish `demos/` as it is. Its pages import `../src/ProximityEffect.js`, so either upload `src/` beside it, or change the imports to the published UNPKG module at release.
+- For Session 10: the cross-browser pass can use `demos/` (the playground covers most properties); check the quick start's URLs once published; the Session 0 manual demo baseline is moot now the demos are rewritten.
 
 ## Session 10: Release
 
