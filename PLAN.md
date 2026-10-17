@@ -275,6 +275,7 @@ Measure first, then change. Build a small benchmark page (for example 1,000 and 
 - No further alphas: the next published version is `4.0.0`, straight from `4.0.0-alpha1`. Set it in `package.json`, the lockfile, the README header and the `@version` tag in `src/ProximityEffect.js`, and turn `[Unreleased]` in the CHANGELOG into the 4.0.0 entry.
 - Review remaining TODOs and open issues, and note anything deferred to 4.1.
 - Consider an explicit posterise option (quantised steps), replacing what low `accuracy` did by accident. Discuss the design first; it can be added earlier if that turns out simpler.
+- Optional (user's choice at the time): npm trusted publishing with provenance. Before anything else, confirm that two-factor authentication is on for the npm account. If going ahead: add a `.github/workflows/publish.yml` that runs on a GitHub release (or a `v*` tag). It needs `id-token: write`, actions pinned by SHA as in `ci.yml`, Node from `.nvmrc`, and `npm ci`, lint, test and typecheck before `npm publish`. Then the user registers the workflow as a trusted publisher in the package settings on npmjs.com. With trusted publishing, no `NPM_TOKEN` secret is needed and provenance is added automatically; check this against current npm docs. Do the same for wrap-chars to keep the two consistent. Otherwise, the user publishes 4.0.0 by hand as planned.
 
 **Handoff:** _(fill in)_
 
