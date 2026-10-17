@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+A big tidy-up: fixed, hardened, made faster and accessible, and documented. The 3.0 alphas were never published to npm, so their changes are included here, as changes since the last published version, 2.1.19. See [Upgrading from 2.x](#upgrading-from-2x) for a checklist.
+
 ### Security
 
 - Previous versions (including the published 2.1.x) wrote a custom style's `rule` and `unit` into inline styles unchecked. A style object such as `{ rule: "cssText", unit: "; background: url(https://example.com/)" }` could therefore set any inline CSS on the animated elements, including declarations that make network requests. Script execution was not possible. This only mattered if a page built style objects from untrusted input. Custom styles are now validated: `rule` must be a CSS property name, `func` a plain CSS function name (not `url()` or another function that loads resources), and `unit` a known CSS unit. See `SECURITY.md`.
@@ -11,10 +13,14 @@ All notable changes to this project are documented here. The format is based on 
 
 ### Breaking changes
 
+- `addEffect(name, near, far, [params])` is replaced by `addStyle(property, keyframes, [params])`, which takes the near and far values as an array. A custom style is now described by an object passed in place of the name, rather than by a made-up name plus a params object, and the third argument holds per-style parameters such as `id`.
+- `hasEffect()`, `removeEffect()` and `effects` are renamed `hasStyleProp()`, `removeStyleProp()` and `styles`, and the `effects` field of the node data is renamed `styles`.
+- The `opacity` preset is now the `filter: opacity()` function, from 0 to 100 (it was the CSS `opacity` property, from 0 to 1). Use the custom style `{ rule: "opacity" }` for the property.
+- The `doPresetDistances` parameter is renamed `primeDistances`.
+- The `mode` property is removed. The effect always runs on animation frames, as the default `"redraw"` mode did; the `"mousemove"` and `"enterframe"` modes had already stopped working.
 - The package is now an ES module, built with esbuild for ES2022. The ES5 build and the `@babel/polyfill` and `event-target` dependencies have been removed.
 - Build files are renamed: `dist/proximity-effect.mjs` (ES module) and `dist/proximity-effect.min.js` (classic script, adds a global `ProximityEffect`). The bare `https://unpkg.com/proximity-effect` URL still points at the classic script.
 - `dist/ProximityEffect.js` and `dist/ProximityEffect.min.js` no longer exist, and `dist/` is no longer committed to the repository (it is built when the package is packed). Pages that hot-link the old files from GitHub (raw or jsDelivr `gh` URLs on `master`) will break when 4.0 reaches `master`; pin a tag instead, such as `https://cdn.jsdelivr.net/gh/Adasha/proximity-effect@2.1.14/dist/ProximityEffect.min.js`. npm CDN URLs that name a 2.x version keep working. The bare `https://unpkg.com/proximity-effect` and `https://cdn.jsdelivr.net/npm/proximity-effect` URLs work again: the published 2.1.19 package contained no `dist` folder, so they returned 404.
-
 - The multi-argument preset styles `color`, `backgroundColor` and `scale3D` are removed. They were defined but never worked, and the README listed them as unsupported. Multi-value properties are planned for 4.1.
 - `random()` and the jitter and scatter methods are now `"uniform"` (default) or `"normal"`; `"gaussian"` is accepted as an alias. Any other method name throws a `RangeError` instead of silently falling back to uniform.
 - `constrain()` throws a `TypeError` for non-numbers instead of returning `NaN`.
@@ -50,6 +56,7 @@ All notable changes to this project are documented here. The format is based on 
 
 ### Fixed
 
+- The classic script only adds the global `ProximityEffect`. 2.1.19 also added a global `Utils` class, which could clash with a page's own.
 - `addStyle()` was unusable: `Style` never exposed its `near`/`far` values or rules. It now does.
 - `Style` no longer mutates the caller's keyframes array or objects, and clamps object keyframe values to the preset's range (previously only plain numbers were clamped).
 - `xor()` returns a real boolean.
@@ -86,6 +93,10 @@ Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styl
 
 ### Added
 
+- `jitterX` and `jitterY`, for jitter on one axis, and `jitterMethod`.
+- `setCoords()`, `getCoords()` and `clearCoords()`, to track a fixed point instead of the pointer or a target.
+- `FPS` works: it limits the frame rate. (In 2.1.19 it only applied to the broken `"enterframe"` mode.)
+- A complete API reference in [`docs/API.md`](docs/API.md), replacing the unfinished wiki page, and a rewritten README.
 - Automated test suite, linting and continuous integration.
 - `demos/a11y.html`, an accessible demo with a pause control, keyboard focus as the target and a reduced-motion setting, and `npm run a11y`, which checks every demo in headless Chrome with axe-core plus checks axe can't make (text contrast under `filter: opacity()`, reduced motion, focus following).
 - The demos are rewritten and moved to `demos/`, with an index page. Each has a pause button, a real title and description, and respects reduced motion. Demos that depended on files outside the repository, or duplicated another, are removed.
@@ -102,3 +113,34 @@ Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styl
 - A TypeScript declaration for the classic script's global `ProximityEffect`: add `/// <reference types="proximity-effect/global" />` to code that uses the global instead of importing the module.
 - `hasStyleProp()` and `removeStyleProp()` also find a style by the `id` given in its params, and `Style` has an `id` getter.
 - Documentation for `totalNodes`, `update()` and the events. Events are plain `Event` objects that don't bubble, can't be cancelled and carry no detail.
+
+## Upgrading from 2.x
+
+1. Update script URLs or import paths to the new build file names (see [Installation](README.md#installation)). If you load `https://unpkg.com/proximity-effect` without a version, pin it to `proximity-effect@4`. Remove any `event-target` polyfill.
+2. Replace each `addEffect(name, near, far)` with `addStyle(name, [near, far])`. For a custom effect, pass its definition as the first argument instead of a name, and give the name as an `id` if you need it: `addEffect("positionleft", 100, 50, { rule: "left", unit: "em" })` becomes `addStyle({ rule: "left", unit: "em" }, [100, 50], { id: "positionleft" })`.
+3. Rename `hasEffect()`, `removeEffect()` and `effects` to `hasStyleProp()`, `removeStyleProp()` and `styles`, and read node data's `styles` field instead of `effects`.
+4. Multiply `opacity` preset values by 100 (`[1, 0.5]` becomes `[100, 50]`), or use `{ rule: "opacity" }` to keep animating the CSS property.
+5. Rename `doPresetDistances` to `primeDistances`, and remove `mode` and `accuracy`.
+6. If you relied on the nearest elements sitting on top, add `zIndex: true`.
+7. Check your parameters are the right type, since bad values now throw instead of being ignored. For example, `invert: 1` must be `invert: true`, and an unknown `direction` is an error.
+8. If you drove the effect by dispatching `mousemove` events, call `setCoords()` instead, or dispatch `pointermove` events with `isPrimary: true`. If you called `updatePointer()` or `reflowEvent()`, use `setCoords()` or `setCenterPoints()`.
+9. Remove any workarounds for instances created after the page loaded (such as calling `setCenterPoints()` on `load`); they now start by themselves.
+10. Call `destroy()` when you've finished with an instance, for example before removing its elements in a single-page app.
+11. The effect now stays at rest for users who prefer reduced motion. If your effect doesn't move anything, consider `reducedMotion: "snap"`; see [Accessibility](README.md#accessibility).
+
+## [2.1.19] - 2020-08-12
+
+- Private class members.
+
+## [2.1.16] - 2019-01-05
+
+- Started on `scatterMethod` for keyframe scatter.
+
+## [2.1.11] - 2018-08-12
+
+- First release on npm without a pre-release tag. Earlier versions weren't recorded in a changelog.
+
+[Unreleased]: https://github.com/Adasha/proximity-effect/tree/4.0
+[2.1.19]: https://www.npmjs.com/package/proximity-effect/v/2.1.19
+[2.1.16]: https://www.npmjs.com/package/proximity-effect/v/2.1.16
+[2.1.11]: https://www.npmjs.com/package/proximity-effect/v/2.1.11
