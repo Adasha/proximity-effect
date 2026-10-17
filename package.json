@@ -67,6 +67,7 @@
   "license": "MPL-2.0",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "axe-core": "^4.14.0",
     "esbuild": "^0.28.2",
     "eslint": "^10.8.0",
     "globals": "^17.13.0",
@@ -74,6 +75,7 @@
     "vitest": "^5.0.3"
   },
   "scripts": {
+    "a11y": "node scripts/a11y.js",
     "bench": "node scripts/bench.js",
     "build": "node scripts/build.js",
     "lint": "eslint .",

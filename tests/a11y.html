@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProximityEffect accessibility demo</title>
+<style>
+    :root { --text: #1a1a1a; --bg: #fff; --accent: #0b57d0; }
+    body { margin: 0 auto; max-width: 60rem; padding: 1rem; font: 1rem/1.5 system-ui, sans-serif; color: var(--text); background: var(--bg); }
+    .controls { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; align-items: center; margin: 1rem 0; }
+    button, select { font: inherit; }
+    #pause[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+    #grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr)); gap: 1rem; padding: 1rem; margin: 0; }
+    #grid a { display: block; padding: 1rem 0.5rem; text-align: center; color: var(--text); text-decoration: underline; border-radius: 0.25rem; }
+    /* the effect's scale is no substitute for a visible focus indicator (WCAG 2.4.7) */
+    #grid a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+    <h1>ProximityEffect accessibility demo</h1>
+    <p>Links grow and darken as the pointer, or keyboard focus, comes near. The effect only changes how they look: every link stays readable at rest, can be reached with the keyboard, and reads the same to a screen reader.</p>
+
+    <div class="controls">
+        <!-- WCAG 2.2.2: a visible way to pause the movement -->
+        <button type="button" id="pause" aria-pressed="false">Pause effect</button>
+
+        <label><input type="checkbox" id="follow-focus" checked> Follow keyboard focus</label>
+
+        <label>When reduced motion is preferred:
+            <select id="reduced-motion">
+                <option value="rest">stay at rest</option>
+                <option value="snap">follow without easing</option>
+                <option value="ignore">animate as normal</option>
+            </select>
+        </label>
+
+        <p id="motion-status" role="status"></p>
+    </div>
+
+    <ul id="grid"></ul>
+</main>
+
+<script type="module">
+import ProximityEffect from "../src/ProximityEffect.js";
+
+const grid = document.getElementById("grid");
+for (let i=1; i<=24; i++)
+{
+    const li = document.createElement("li"),
+          a  = document.createElement("a");
+    a.href = `#item-${i}`;
+    a.textContent = `Item ${i}`;
+    li.append(a);
+    grid.append(li);
+}
+
+const links = grid.querySelectorAll("a");
+const pe = new ProximityEffect(links, { threshold: 20, runoff: 200, attack: 0.3, decay: 0.2 });
+pe.addStyle("scale", [1.25, 1]);
+// 70% at rest keeps #1a1a1a text above 4.5:1 on white (WCAG 1.4.3)
+pe.addStyle("opacity", [100, 70]);
+window.pe = pe;
+
+
+// pause control
+const pause = document.getElementById("pause");
+pause.addEventListener("click", () =>
+{
+    const paused = !pe.paused;
+    paused ? pe.pause() : pe.resume();
+    pause.setAttribute("aria-pressed", String(paused));
+});
+
+
+// keyboard focus as the target: only for keyboard focus (:focus-visible), so a
+// mouse click doesn't take over from the pointer
+const followFocus = document.getElementById("follow-focus");
+grid.addEventListener("focusin", (evt) =>
+{
+    if (followFocus.checked && evt.target.matches(":focus-visible"))
+    {
+        pe.target = evt.target;
+    }
+});
+grid.addEventListener("focusout", (evt) =>
+{
+    if (!grid.contains(evt.relatedTarget))
+    {
+        pe.clearTarget();
+    }
+});
+followFocus.addEventListener("change", () =>
+{
+    if (!followFocus.checked)
+    {
+        pe.clearTarget();
+    }
+});
+
+
+// reduced motion
+const mode   = document.getElementById("reduced-motion"),
+      status = document.getElementById("motion-status"),
+      query  = matchMedia("(prefers-reduced-motion: reduce)");
+
+function showStatus()
+{
+    status.textContent = query.matches
+        ? `You prefer reduced motion: ${pe.motionReduced ? "the effect is reduced" : "the effect animates as normal"}.`
+        : "You haven't asked for reduced motion.";
+}
+mode.addEventListener("change", () =>
+{
+    pe.reducedMotion = mode.value;
+    showStatus();
+});
+// after the instance has heard about the change too
+query.addEventListener("change", () => setTimeout(showStatus));
+showStatus();
+</script>
+</body>
+</html>

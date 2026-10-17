@@ -81,6 +81,7 @@ Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styl
 ### Added
 
 - Automated test suite, linting and continuous integration.
+- `tests/a11y.html`, an accessible demo with a pause control, keyboard focus as the target and a reduced-motion setting, and `npm run a11y`, which checks a demo in headless Chrome with axe-core plus checks axe can't make (text contrast under `filter: opacity()`, reduced motion, focus following).
 - `destroy()`: removes every listener, stops the animation loop and restores each node's original inline style (removing the `style` attribute from nodes that had none). `destroyed` reports whether it has been called.
 - `pause()`, `resume()` and `paused`.
 - `nodes` accepts a `NodeList`, an `HTMLCollection`, an array of Elements or a single Element.
