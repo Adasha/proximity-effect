@@ -59,6 +59,7 @@ A big tidy-up: fixed, hardened, made faster and accessible, and documented. The 
 - The classic script only adds the global `ProximityEffect`. 2.1.19 also added a global `Utils` class, which could clash with a page's own.
 - `addStyle()` was unusable: `Style` never exposed its `near`/`far` values or rules. It now does.
 - `Style` no longer mutates the caller's keyframes array or objects, and clamps object keyframe values to the preset's range (previously only plain numbers were clamped).
+- The `saturate` preset was clamped to 100%, but CSS `saturate()` accepts larger values to over-saturate. It now accepts any value of 0 or more, like `brightness` and `contrast`.
 - `xor()` returns a real boolean.
 - Instances created after the page had loaded never initialised (`readyState` was compared with `"completed"`).
 - `distanceFrom()` and `getNodeData()` always threw (an undefined variable). They now throw a `RangeError` only for a node the instance doesn't control.

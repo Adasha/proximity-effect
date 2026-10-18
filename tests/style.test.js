@@ -41,6 +41,8 @@ describe("Style", () =>
         const s = new Style("opacity", [150, -20]);
         expect(s.near.value).toBe(100);
         expect(s.far.value).toBe(0);
+        // CSS allows over-saturating
+        expect(new Style("saturate", [300, -20]).near.value).toBe(300);
     });
 
     it("clamps object keyframes too and keeps their extra properties", () =>

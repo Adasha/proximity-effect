@@ -224,9 +224,8 @@ Each preset writes one function into the `transform` or `filter` property. Value
 | `scale`, `scaleX`, `scaleY`, `scaleZ` | `transform` | | | 1 |
 | `skewX`, `skewY` | `transform` | `deg` | | 0 |
 | `blur` | `filter` | `px` | 0 or more | 0 |
-| `brightness`, `contrast` | `filter` | `%` | 0 or more | 100 |
+| `brightness`, `contrast`, `saturate` | `filter` | `%` | 0 or more | 100 |
 | `grayscale`, `invert`, `sepia` | `filter` | `%` | 0 to 100 | 0 |
-| `saturate` | `filter` | `%` | 0 to 100 | 100 |
 | `hueRotate` | `filter` | `deg` | | 0 |
 | `opacity` | `filter` | `%` | 0 to 100 | 100 |
 

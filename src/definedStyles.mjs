@@ -28,7 +28,7 @@ const defined = {
 	hueRotate:  { rule: "filter", func: "hue-rotate", unit: "deg",                  default:   0 },
 	invert:     { rule: "filter", func: "invert",     unit: "%",  min: 0, max: 100, default:   0 },
 	opacity:    { rule: "filter", func: "opacity",    unit: "%",  min: 0, max: 100, default: 100 },
-	saturate:   { rule: "filter", func: "saturate",   unit: "%",  min: 0, max: 100, default: 100 },
+	saturate:   { rule: "filter", func: "saturate",   unit: "%",  min: 0,           default: 100 },
 	sepia:      { rule: "filter", func: "sepia",      unit: "%",  min: 0, max: 100, default:   0 },
 };
 
