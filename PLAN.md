@@ -16,7 +16,7 @@ Each session below is meant to run as its own conversation. To start one, say "R
 - [x] 7. Public API, events and types
 - [x] 8. Build and packaging
 - [x] 9. Documentation and demos
-- [ ] 10. Release
+- [x] 10. Release (Claude's part; publishing and the manual browser checks are left for the user)
 
 Sessions 2 to 7 are ordered by dependency: tests first, then fix, then harden, then optimise. Don't optimise before the tests exist.
 
@@ -288,7 +288,14 @@ Measure first, then change. Build a small benchmark page (for example 1,000 and 
 - Consider an explicit posterise option (quantised steps), replacing what low `accuracy` did by accident. Discuss the design first; it can be added earlier if that turns out simpler.
 - Optional (user's choice at the time): npm trusted publishing with provenance. Before anything else, confirm that two-factor authentication is on for the npm account. If going ahead: add a `.github/workflows/publish.yml` that runs on a GitHub release (or a `v*` tag). It needs `id-token: write`, actions pinned by SHA as in `ci.yml`, Node from `.nvmrc`, and `npm ci`, lint, test and typecheck before `npm publish`. Then the user registers the workflow as a trusted publisher in the package settings on npmjs.com. With trusted publishing, no `NPM_TOKEN` secret is needed and provenance is added automatically; check this against current npm docs. Do the same for wrap-chars to keep the two consistent. Otherwise, the user publishes 4.0.0 by hand as planned.
 
-**Handoff:** _(fill in)_
+**Handoff (2026-10-18):**
+- Full pass on Node 24: lint, 175 tests, typecheck, build, `npm audit` (0 vulnerabilities), `npm pack --dry-run` (9 files, 77.9 kB packed; the classic script is 22.6 kB min, 7.8 kB gzipped, so the README now says "around 8KB"), and `npm run a11y` on all ten demos. All clean.
+- Tarball installed into a scratch project: TypeScript consumers resolve `proximity-effect` and `/// <reference types="proximity-effect/global" />` by package name under `nodenext` (including `@ts-expect-error` checks); in headless Chrome the ESM build works and adds no global, and the classic script sets `window.ProximityEffect`; both respond to the pointer.
+- Cross-browser: every demo responds to the pointer in headless Chrome and headless Firefox 155 (driven over WebDriver BiDi), with no console errors. **Not checked here:** Safari, a real phone (touch), and Session 6's `pointerout` with a null `relatedTarget` when the pointer leaves the window in Firefox and Safari. These need a manual look.
+- Version is `4.0.0` in `package.json`, the lockfile, the README header and `@version`; the build banners follow. CHANGELOG `[Unreleased]` became `[4.0.0] - 2026-10-18` (npm link), with an empty `[Unreleased]` comparing `v4.0.0...HEAD`, so **the tag should be `v4.0.0`**.
+- Decisions: posterise is deferred to 4.1 (proposed design: a global integer `steps` param, 0 = off, snapping the eased distance to N even steps so all styles step together; per-style steps come with 4.2's per-style params). Added to the README roadmap. No trusted publishing: the user publishes by hand. The AI usage disclosure and licence paragraph are confirmed as written.
+- No TODO/FIXME left in `src`, `scripts`, `demos` or docs. Open issues all go past 4.0: #13 (multi-part values) is 4.1; #12 (read the missing value from the element's own style) and #14 (stacked faders with their own params, partly 4.2's per-style params; separate instances already work) are for later. Dependabot PRs #22 and #23 target `master` and bump packages that 4.0's lockfile no longer contains, so they can be closed once 4.0 is merged.
+- Left for the user: push `4.0`, merge to `master`, tag `v4.0.0`, `npm publish` from a clean checkout on Node 24 (`prepack` builds `dist/`), then check the README quick start's `@4` UNPKG/jsDelivr URLs and the bare unpkg URL. Update the live site with `demos/` (its pages import `../src/ProximityEffect.js`, so upload `src/` beside it or point the imports at the published module). Optionally create a GitHub release from the CHANGELOG entry.
 
 ## Notes for every session
 
