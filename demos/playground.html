@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playground: ProximityEffect demo</title>
+<link rel="stylesheet" href="demo.css">
+<style>
+    /* no background: tiles turning in 3D would pass behind it */
+    #stage { position: relative; width: 600px; height: 600px; margin: 1rem auto; perspective: 200px; transform-style: preserve-3d; }
+    .tile { position: absolute; width: 30px; height: 30px; transform-style: preserve-3d; }
+    .tile > div { position: absolute; inset: 0; backface-visibility: hidden; }
+    .tile > div:first-child { background: #6730e7; }
+    .tile > div:last-child  { background: #f60; transform: rotateX(180deg); }
+    .controls label { display: flex; gap: 0.5rem; align-items: center; }
+    .controls input[type="number"] { width: 5em; }
+    output { min-width: 2.5em; }
+</style>
+</head>
+<body>
+<nav><a href="index.html">All demos</a></nav>
+<main>
+    <h1>Playground</h1>
+    <p>Tiles turn over near the pointer. Change the effect's properties below to see what each one does. Every control sets the property of the same name on the running instance.</p>
+    <p>The stage has its own <code>perspective</code>, seen from its centre, so tiles near its edges turn at an angle. Set <code>perspective</code> above 0 to give each tile its own instead, seen from the tile's centre, and the stage's is turned off so the two don't stack.</p>
+
+    <div class="controls">
+        <button type="button" id="pause" aria-pressed="false">Pause effect</button>
+        <label>threshold <input type="number" id="threshold" min="0" step="10"></label>
+        <label>runoff <input type="number" id="runoff" min="0" step="10"></label>
+        <label>jitter <input type="number" id="jitter" min="0" step="10"></label>
+        <label>direction
+            <select id="direction">
+                <option value="both">both</option>
+                <option value="horizontal">horizontal</option>
+                <option value="vertical">vertical</option>
+            </select>
+        </label>
+        <label>attack <input type="range" id="attack" min="0.01" max="1" step="0.01"> <output for="attack"></output></label>
+        <label>decay <input type="range" id="decay" min="0.01" max="1" step="0.01"> <output for="decay"></output></label>
+        <label>perspective <input type="number" id="perspective" min="0" step="50"></label>
+        <label><input type="checkbox" id="invert"> invert</label>
+    </div>
+
+    <div id="stage" aria-hidden="true"></div>
+</main>
+
+<script type="module">
+import ProximityEffect from "../src/ProximityEffect.js";
+import { demo } from "./demo.js";
+
+const stage = document.getElementById("stage"),
+      size  = 30;
+
+for (let col=0; col<20; col++)
+{
+    for (let row=0; row<20; row++)
+    {
+        const tile = document.createElement("div");
+        tile.className = "tile";
+        tile.style.left = `${col*size}px`;
+        tile.style.top  = `${row*size}px`;
+        tile.append(document.createElement("div"), document.createElement("div"));
+        stage.append(tile);
+    }
+}
+
+const pe = new ProximityEffect(stage.children, {
+    threshold: 100,
+    runoff:    100,
+    attack:      0.5,
+    decay:       0.5,
+});
+pe.addStyle("rotateX", [180, 0]);
+
+
+// each control reads its starting value from the instance, and sets it on change
+for (const input of document.querySelectorAll(".controls input, .controls select"))
+{
+    const name   = input.id,
+          output = document.querySelector(`output[for="${name}"]`),
+          show   = () => { if (output) { output.textContent = input.value; } };
+
+    if (input.type==="checkbox")
+    {
+        input.checked = pe[name];
+        input.addEventListener("change", () => { pe[name] = input.checked; });
+    }
+    else
+    {
+        // a perspective of null is shown as 0, which also turns it off
+        input.value = pe[name] ?? 0;
+        show();
+        input.addEventListener("input", () =>
+        {
+            const value = input.type==="select-one" ? input.value : input.valueAsNumber;
+            // an empty or partly typed number is NaN, which the effect rejects
+            if (!Number.isNaN(value))
+            {
+                pe[name] = value;
+                show();
+            }
+        });
+    }
+}
+
+// the stage's own perspective would stack with the tiles'
+document.getElementById("perspective").addEventListener("input", () =>
+{
+    stage.style.perspective = pe.perspective ? "none" : "";
+});
+
+demo(pe);
+</script>
+</body>
+</html>

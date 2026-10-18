@@ -1,15 +1,52 @@
-﻿/*
+﻿import * as AdashaUtils from './AdashaUtils.mjs';
+import Style from './StyleClass.mjs';
+import * as Validate from './validate.mjs';
+
+/*
  * ProximityEffect class by Adasha
+ * Mass animate CSS properties based on mouse or arbitrary target's position.
+ *
  * Licensed under MPL-2.0
  * Repository: https://github.com/Adasha/proximity-effect
- * Demos: http://lab.adasha.com/proximity-effect
+ * Demos: http://lab.adasha.com/components/proximity-effect
  */
+
+
+// A custom style's rule can be camelCase or kebab-case, so rules are compared
+// by their camelCase form: "letter-spacing" and "letterSpacing" are one
+// property, as are "-webkit-filter" and "webkitFilter". Styles are still
+// written with the spelling they were given.
+const ruleKey = (rule) => rule.replace(/^-/, "").replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
+
+// properties that don't move or resize an element's box, so nodes can be
+// measured without taking them off first (as rule keys)
+const PAINT_ONLY_RULES = new Set(["filter", "webkitFilter", "backdropFilter", "webkitBackdropFilter", "opacity", "zIndex"]);
+
+// properties that can't change an element's size, so writing them never
+// makes the ResizeObserver report (as rule keys)
+const SIZE_NEUTRAL_RULES = new Set([...PAINT_ONLY_RULES, "transform", "webkitTransform", "translate", "rotate", "scale"]);
+
+// the transform spellings a perspective() is put in front of (as rule keys)
+const TRANSFORM_RULES = new Set(["transform", "webkitTransform"]);
+
+// the public node data fields, each read as a copy (see getNodeData)
+const point = (p) => p && { x: p.x, y: p.y };
+const NODE_DATA = Object.freeze({
+    __proto__: null,
+    node:      (data) => data.node,
+    measured:  (data) => point(data.measured),
+    center:    (data) => point(data.center),
+    jitter:    (data) => point(data.jitter),
+    distance:  (data) => data.distance,
+    lastDelta: (data) => data.lastDelta,
+    styles:    (data) => data.styles.map(({ near, far }) => ({ near, far })),
+});
 
 
 
 /**
- * Class representing a ProximityEffect.
- * @version 4.0.0-alpha1
+ * Animates CSS properties of many elements by their distance from the pointer or a target.
+ * @version 4.0.0
  * @author Adam Shailer <adasha76@outlook.com>
  * @class
  * @extends EventTarget
@@ -17,57 +54,62 @@
  * @fires ProximityEffect#redraw
  * @fires ProximityEffect#reflow
  */
-class ProximityEffect extends EventTarget
+export default class ProximityEffect extends EventTarget
 {
 
     #VALID_DIRECTIONS       = new Set(["both", "horizontal", "vertical"]);
+    #VALID_REDUCED_MOTION   = new Set(["rest", "snap", "ignore"]);
     #DEFAULT_DIRECTION      = "both";
-    #DEFAULT_ACCURACY       =   5;
+    #DEFAULT_TOLERANCE      = 0.0001;
     #DEFAULT_RUNOFF         = 100;
-    #VALID_RANDOM_METHODS   = new Set(["normal", "uniform"]);
     #DEFAULT_SCATTER_METHOD = "uniform";
     #DEFAULT_JITTER_METHOD  = "uniform";
 
 
-    #DEFINED_STYLES          = {
-        translateX:      {                  default:       0, rule: "transform",       func: "translateX",  unit: "px"},
-        translateY:      {                  default:       0, rule: "transform",       func: "translateY",  unit: "px"},
-        translateZ:      {                  default:       0, rule: "transform",       func: "translateZ",  unit: "px"},
-        rotate:          {                  default:       0, rule: "transform",       func: "rotate",      unit: "deg"},
-        rotateX:         {                  default:       0, rule: "transform",       func: "rotateX",     unit: "deg"},
-        rotateY:         {                  default:       0, rule: "transform",       func: "rotateY",     unit: "deg"},
-        rotateZ:         {                  default:       0, rule: "transform",       func: "rotateZ",     unit: "deg"},
-        scale:           {                  default:       1, rule: "transform",       func: "scale"},
-        scaleX:          {                  default:       1, rule: "transform",       func: "scaleX"},
-        scaleY:          {                  default:       1, rule: "transform",       func: "scaleY"},
-        scaleZ:          {                  default:       1, rule: "transform",       func: "scaleZ"},
-        skewX:           {                  default:       0, rule: "transform",       func: "skewX",       unit: "deg"},
-        skewY:           {                  default:       0, rule: "transform",       func: "skewY",       unit: "deg"},
-        
-        blur:            {min: 0,           default:       0, rule: "filter",          func: "blur",        unit: "px"},
-        brightness:      {min: 0,           default:     100, rule: "filter",          func: "brightness",  unit: "%"},
-        contrast:        {min: 0,           default:     100, rule: "filter",          func: "contrast",    unit: "%"},
-        grayscale:       {min: 0, max: 100, default:       0, rule: "filter",          func: "grayscale",   unit: "%"},
-        hueRotate:       {                  default:       0, rule: "filter",          func: "hue-rotate",  unit: "deg"},
-        invert:          {min: 0, max: 100, default:       0, rule: "filter",          func: "invert",      unit: "%"},
-        opacity:         {min: 0, max: 100, default:     100, rule: "filter",          func: "opacity",     unit: "%"},
-        saturate:        {min: 0, max: 100, default:     100, rule: "filter",          func: "saturate",    unit: "%"},
-        sepia:           {min: 0, max: 100, default:       0, rule: "filter",          func: "sepia",       unit: "%"},
+    #globalParams = {};
+    #pointer = null;
+    #coords = null;
+    #stylesStack = [];
+    #styleGroups = [];
+    #nodes = [];
+    #nodeData = [];
 
-        color:           {min: 0, max: 255, default: [0,0,0], rule: "color",           func: "rgb",                      args: 3},
-        backgroundColor: {min: 0, max: 255, default: [0,0,0], rule: "backgroundColor", func: "rgb",                      args: 3},
-        scale3D:         {                  default: [1,1,1], rule: "transform",       func: "scale3D",                  args: 3}
-    };
+    // lifecycle
+    #ready = false;
+    #paused = false;
+    #destroyed = false;
+    #abort = new AbortController();
+    #shadowRoots = new Map();
+    #resizeObserver = null;
+    #frameId = null;
+    #lastFrameTime;
+    #needsMeasure = false;
+    #needsPinnedMeasure = false;
+    #measureWhenSettled = false;
+    #ownResizes = new Set();
+    #sizeReported = new WeakSet();
+    #scrollX = 0;
+    #scrollY = 0;
+    #needsRewrite = true;
+    #awake = false;
+    #lastTargetPoint = null;
+    #changed = false;
+    #scratchStyle;
+    #prefersReducedMotion = false;
+    // the parent whose perspective-origin is set, and its own inline value
+    #originParent = null;
+    #originParentValue = "";
 
-
-    #globalParams;
-    #pointer = {};
-    #coords;
-    #styles;
-    #properties;
-    #nodes;
-    #nodeData;
-    #fpsTimerRef;
+    // stable listener references, so they can all be removed
+    #onPointerMove  = (evt) => this.#pointerMove(evt);
+    #onPointerOut   = (evt) => this.#pointerOut(evt);
+    #onBlur         = () => this.#pointerLeft();
+    #onMotionPref   = (evt) => this.#motionPreference(evt.matches);
+    #onReflow       = () => this.#reflow();
+    #onResize       = (entries) => this.#resized(entries);
+    #onScroll       = (evt) => this.#scrolled(evt);
+    #onVisibility   = () => this.#visibilityChange();
+    #onFrame        = (timestamp) => this.#frame(timestamp);
 
 
 
@@ -76,67 +118,91 @@ class ProximityEffect extends EventTarget
     /**
      * Create a ProximityEffect instance.
      * @constructor
-     * @param {NodeList} nodes - A list of nodes to control.
+     * @param {NodeList|HTMLCollection|Array<Element>|Element} nodes - The nodes to control.
      * @param {Object}  [params={}] - An object containing effect parameters.
      * @param {number}  [params.threshold=0] - The global effect threshold, in pixels.
-     * @param {number}  [params.runoff] - The global effect runoff, in pixels.
+     * @param {number}  [params.runoff=100] - The global effect runoff, in pixels.
      * @param {boolean} [params.invert=false] - Invert distances globally.
      * @param {string}  [params.direction="both"] - The effect direction, one of "both", "horizontal" or "vertical".
-     * @param {number}  [params.attack=1] - The global effect attack.
-     * @param {number}  [params.decay=1] - The global effect decay.
-     * @param {number}  [params.offsetX=0] - The global horizontal offset, in pixels.
-     * @param {number}  [params.offsetY=0] - The global vertical offset, in pixels.
-     * @param {number}  [params.jitter=0] - The effect jitter, in pixels. Affects X and Y.
+     * @param {number}  [params.attack=1] - The easing rate (0 to 1) as the target approaches. 1 is no easing.
+     * @param {number}  [params.decay=1] - The easing rate (0 to 1) as the target moves away. 1 is no easing.
+     * @param {number}  [params.offsetX=0] - The global horizontal offset, in pixels. A positive value moves each node's centre left.
+     * @param {number}  [params.offsetY=0] - The global vertical offset, in pixels. A positive value moves each node's centre up.
+     * @param {number}  [params.jitter=0] - The size of a random offset to each node's centre, in pixels. Affects X and Y.
      * @param {number}  [params.jitterX=0] - The effect jitter for the X axis only, in pixels.
      * @param {number}  [params.jitterY=0] - The effect jitter for the Y axis only, in pixels.
-     * @param {string}  [params.jitterMethod] - The random method for generating jitter values. 
-     * @param {number}  [params.accuracy] - The effect accuracy.
-     * @param {number|Falsy} [params.FPS] - The frame rate of the effect, either the number specified or with the screen refresh.
-     * @param {Element} [params.target] - The effect tracker target.
+     * @param {string}  [params.jitterMethod="uniform"] - The random method for generating jitter values, "uniform" or "normal" ("gaussian" is an alias).
+     * @param {number}  [params.tolerance=0.0001] - How close (0 to 1) eased distances must get to their target before snapping to it.
+     * @param {number|null|false} [params.FPS] - A frame rate limit, or null, false or 0 to follow the screen refresh.
+     * @param {Element} [params.target] - An element to track instead of the pointer.
      * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
+     * @param {boolean} [params.zIndex=false] - Set each node's z-index from its distance, so the nearest nodes sit on top.
+     * @param {boolean} [params.perspectiveOrigin=false] - Set the nodes' parent's perspective-origin to the centre of the nodes at rest. The nodes must share a parent.
+     * @param {number|null|false} [params.perspective] - A perspective distance in pixels to give each node's transform, viewed from the centre of the node at rest, or null, false or 0 to leave perspective to the parent.
+     * @param {string}  [params.reducedMotion="rest"] - What to do when the user prefers reduced motion: "rest" (nodes stay at rest and ignore the pointer), "snap" (nodes follow without easing) or "ignore".
+     * @throws {TypeError} If an argument or parameter is the wrong type.
+     * @throws {RangeError} If a parameter value is not allowed (NaN, Infinity, an unknown name).
      */
     constructor(nodes, params = {})
     {
         super();
 
-        if (!nodes) {
-            throw new Error(`ProximityEffect: nodes argument is required.`);
+        if (typeof document==="undefined")
+        {
+            throw new Error("ProximityEffect: a browser DOM is required (document is not defined).");
+        }
+        if (!nodes)
+        {
+            throw new TypeError("ProximityEffect: nodes argument is required.");
+        }
+        if (params==null)
+        {
+            params = {};
+        }
+        if (!AdashaUtils.isObject(params))
+        {
+            throw new TypeError("ProximityEffect: params must be an object.");
         }
 
-        // turn off centre calculations during setup to avoid calling repeatedly
-        this.preventCenterCalculations = true;
+        // read own properties only; the caller's object is never stored or changed
+        const param = (key, fallback) => Object.hasOwn(params, key) && params[key]!=null ? params[key] : fallback;
 
+        this.#globalParams.primeDistances = Validate.boolean(param("primeDistances", false), "primeDistances");
 
-        this.#globalParams = params;
+        // set global parameter values (nodes come last, so their data is built once)
+        this.threshold    = param("threshold", 0);
+        this.runoff       = param("runoff", this.#DEFAULT_RUNOFF);
+        this.attack       = param("attack", 1);
+        this.decay        = param("decay", 1);
+        this.tolerance    = param("tolerance", this.#DEFAULT_TOLERANCE);
+        this.invert       = param("invert", false);
+        this.zIndex       = param("zIndex", false);
+        this.perspective  = param("perspective", null);
+        this.reducedMotion = param("reducedMotion", "rest");
+        this.offsetX      = param("offsetX", 0);
+        this.offsetY      = param("offsetY", 0);
+        this.jitterMethod = param("jitterMethod", this.#DEFAULT_JITTER_METHOD);
+        this.jitter       = param("jitter", 0);
+        this.jitterX      = param("jitterX", 0);
+        this.jitterY      = param("jitterY", 0);
+        this.direction    = param("direction", this.#DEFAULT_DIRECTION);
+        this.FPS          = param("FPS", null);
+        this.target       = param("target", null);
+
         this.nodes = nodes;
+        // after the nodes, since it needs their parent
+        this.perspectiveOrigin = param("perspectiveOrigin", false);
 
 
-        // set global parameter values
-        this.threshold = this.#globalParams.hasOwnProperty("threshold") ? this.#globalParams.threshold : 0;
-        this.runoff    = this.#globalParams.hasOwnProperty("runoff")    ? this.#globalParams.runoff    : this.#DEFAULT_RUNOFF;
-        this.attack    = this.#globalParams.hasOwnProperty("attack")    ? this.#globalParams.attack    : 1;
-        this.decay     = this.#globalParams.hasOwnProperty("decay")     ? this.#globalParams.decay     : 1;
-        this.accuracy  = this.#globalParams.hasOwnProperty("accuracy")  ? this.#globalParams.accuracy  : this.#DEFAULT_ACCURACY;
-        //this.reverse   = this.#globalParams.reverse   || false;
-        this.invert    = this.#globalParams.invert    || false;
-        this.offsetX   = this.#globalParams.offsetX   || 0;
-        this.offsetY   = this.#globalParams.offsetY   || 0;
-        this.jitter    = this.#globalParams.jitter    || 0;
-        this.jitterX   = this.#globalParams.jitterX   || 0;
-        this.jitterY   = this.#globalParams.jitterY   || 0;
-        this.direction = this.#globalParams.direction || this.#DEFAULT_DIRECTION;
-        //this.FPS       = this.#globalParams.FPS;
-        this.target    = this.#globalParams.target;
-
-
-        // finish setup once the document is ready
-        if (document.readyState==="completed")
+        // finish setup once the document has loaded. Deferred even when it
+        // already has, so listeners added after construction see 'ready'.
+        if (document.readyState==="complete")
         {
-            this.#init();
+            queueMicrotask(() => this.#init());
         }
         else
         {
-            window.addEventListener("load", () => this.#init());
+            window.addEventListener("load", () => this.#init(), { once: true, signal: this.#abort.signal });
         }
     }
 
@@ -154,7 +220,7 @@ class ProximityEffect extends EventTarget
 
     /**
      * Get the currently tracked target.
-     * @return {Element|Falsy} The current target.
+     * @return {Element|null} The current target.
      */
     get target()
     {
@@ -167,12 +233,19 @@ class ProximityEffect extends EventTarget
      */
     set target(target)
     {
-        if (!target || target.getBoundingClientRect()) {
+        if (!target)
+        {
+            this.#globalParams.target = null;
+        }
+        else if (target instanceof Element)
+        {
             this.#globalParams.target = target;
         }
-        else {
-            throw new Error(`ProximityEffect: ${target} is not a valid target.`);
+        else
+        {
+            throw new TypeError(`ProximityEffect: ${target} is not a valid target.`);
         }
+        this.#start();
     }
 
 
@@ -181,54 +254,71 @@ class ProximityEffect extends EventTarget
 
     /**
      * Get the list of nodes.
-     * @return {Array<Element>} The node array.
+     * @return {Array<Element>} A copy of the node array.
      */
     get nodes()
     {
-        return this.#nodes;
+        return [...this.#nodes];
     }
 
     /**
-     * Set the list of nodes to animate.
-     * @param {NodeList<Element>} list - The list of nodes.
+     * Set the nodes to animate. Nodes that are no longer in the list get their original inline style back.
+     * @param {NodeList|HTMLCollection|Array<Element>|Element} list - The nodes.
+     * @throws {Error} If the instance has been destroyed.
      */
     set nodes(list)
     {
-        if (!(list instanceof NodeList))
+        this.#assertAlive("change the nodes of");
+        const nodes   = this.#toElementArray(list),
+              keeping = new Set(nodes),
+              kept    = new Map(this.#nodeData.map(data => [data.node, data]));
+
+        for (const data of this.#nodeData)
         {
-            throw new Error(`ProximityEffect: ${list} is not a node list.`);
+            if (!keeping.has(data.node))
+            {
+                this.#restoreInlineStyle(data);
+                this.#resizeObserver?.unobserve(data.node);
+                this.#sizeReported.delete(data.node);
+            }
         }
-        if (list.length<1)
+
+        this.#nodes    = nodes;
+        this.#nodeData = nodes.map(node => kept.get(node) ?? this.#createNodeData(node));
+        if (this.perspectiveOrigin)
         {
-            throw new Error(`ProximityEffect: No nodes found in ${list}.`);
+            this.#claimOriginParent();
         }
 
-
-        this.#nodes = [].slice.call(list);  // convert to array boilerplate
-        this.#nodeData = this.#nodes.map(i => ({
-            node:      i,
-            style:     i.style.cssText,
-            lastDelta: this.#globalParams.primeDistances ? 1 : null
-        }));
-
-
-        if (this.#globalParams && !this.preventCenterCalculations)
+        if (this.#ready)
         {
-            this.setCenterPoints();
+            // observing a node again would queue another initial size report
+            this.#observe(nodes.filter(node => !kept.has(node)));
+            this.#listenInShadowRoots();
+            this.#requestMeasure();
         }
     }
 
 
+
+    /**
+     * Get the number of nodes.
+     * @return {number} The number of nodes being animated.
+     */
+    get totalNodes()
+    {
+        return this.#nodes.length;
+    }
 
 
 
     /**
      * Get the list of styles.
-     * @return {Array<Object>} The styles array.
+     * @return {Array<Style>} A copy of the styles array.
      */
     get styles()
     {
-        return this.#styles;
+        return [...this.#stylesStack];
     }
 
 
@@ -250,7 +340,8 @@ class ProximityEffect extends EventTarget
      */
     set threshold(value)
     {
-    	this.#globalParams.threshold = Adasha_Utils.constrain(value, 0);
+    	this.#globalParams.threshold = Math.max(Validate.finite(value, "threshold"), 0);
+    	this.#start();
     }
 
 
@@ -267,13 +358,13 @@ class ProximityEffect extends EventTarget
     }
 
     /**
-     * Set the effect runoff.
+     * Set the effect runoff. A runoff of 0 gives a hard edge at the threshold.
      * @param {number} value - The new runoff radius, in pixels.
      */
     set runoff(value)
     {
-    	this.#globalParams.runoff = Adasha_Utils.constrain(value, 0);
-        this.#globalParams.invRunoff = 1/this.#globalParams.runoff;
+    	this.#globalParams.runoff = Math.max(Validate.finite(value, "runoff"), 0);
+    	this.#start();
     }
 
 
@@ -281,8 +372,8 @@ class ProximityEffect extends EventTarget
 
 
     /**
-     * Get the effect boundary.
-     * @return {number} The boundary radius, in pixels.
+     * Get the effect boundary: the distance beyond which styles are at their far value.
+     * @return {number} threshold + runoff, in pixels.
      */
     get boundary()
     {
@@ -308,7 +399,8 @@ class ProximityEffect extends EventTarget
      */
     set invert(flag)
     {
-        this.#globalParams.invert = !!flag;
+        this.#globalParams.invert = Validate.boolean(flag, "invert");
+        this.#start();
     }
 
 
@@ -316,8 +408,115 @@ class ProximityEffect extends EventTarget
 
 
     /**
-     * Get the effect attack.
-     * @return {number} The attack value.
+     * Get whether the effect sets each node's z-index.
+     * @return {boolean} The zIndex value.
+     */
+    get zIndex()
+    {
+        return this.#globalParams.zIndex;
+    }
+
+    /**
+     * Set whether the effect sets each node's z-index from its distance, so the
+     * nearest nodes sit on top. Turning it off gives the nodes their original z-index back.
+     * @param {boolean} flag - The new zIndex value.
+     */
+    set zIndex(flag)
+    {
+        const was = this.#globalParams.zIndex;
+        this.#globalParams.zIndex = Validate.boolean(flag, "zIndex");
+        if (was && !flag && !this.#destroyed)
+        {
+            for (const data of this.#nodeData)
+            {
+                this.#restoreProperty(data, "zIndex");
+            }
+        }
+        this.#invalidate();
+    }
+
+
+
+
+
+    /**
+     * Get whether the effect sets the parent's perspective-origin.
+     * @return {boolean} The perspectiveOrigin value.
+     */
+    get perspectiveOrigin()
+    {
+        return this.#globalParams.perspectiveOrigin;
+    }
+
+    /**
+     * Set whether the effect sets the nodes' parent's perspective-origin to
+     * the centre of the nodes at rest, so a perspective on the parent is
+     * viewed from the middle of the nodes rather than the middle of the
+     * parent. It follows the nodes when they're measured again. The nodes
+     * must share a parent; if they don't, it warns and sets nothing. Turning
+     * it off gives the parent its original perspective-origin back.
+     * @param {boolean} flag - The new perspectiveOrigin value.
+     */
+    set perspectiveOrigin(flag)
+    {
+        const was = this.#globalParams.perspectiveOrigin;
+        this.#globalParams.perspectiveOrigin = Validate.boolean(flag, "perspectiveOrigin");
+        if (this.#destroyed || flag===was)
+        {
+            return;
+        }
+        if (flag)
+        {
+            this.#claimOriginParent();
+        }
+        else
+        {
+            this.#releaseOriginParent();
+        }
+    }
+
+
+
+
+
+    /**
+     * Get the perspective distance given to each node's transform.
+     * @return {number|null} The distance, in pixels, or null if there is none.
+     */
+    get perspective()
+    {
+        return this.#globalParams.perspective;
+    }
+
+    /**
+     * Set a perspective distance for each node's transform. A parent's
+     * perspective is viewed from the parent's perspective-origin, so nodes far
+     * from it are seen at an angle; this views each node from the centre of
+     * its own box at rest instead, wherever it sits on the page. It's put in
+     * front of the transform styles, so it does nothing without one. Use it
+     * instead of a perspective on the parent, not as well, or the two stack.
+     * @param {number|null|undefined|false} num - A positive distance in pixels, or null, undefined, false or 0 for none.
+     * @throws {TypeError} If the value is any other non-number (including "").
+     * @throws {RangeError} If the value is negative, NaN or infinite.
+     */
+    set perspective(num)
+    {
+        const off = num==null || num===false || num===0;
+        if (!off && Validate.finite(num, "perspective")<0)
+        {
+            throw new RangeError(`ProximityEffect: perspective must be positive (received ${num}).`);
+        }
+        this.#globalParams.perspective = off ? null : num;
+        this.#invalidate();
+    }
+
+
+
+
+
+    /**
+     * Get the easing rate as the target approaches.
+     * @return {number} The attack value, from 0 to 1.
      */
     get attack()
     {
@@ -325,20 +524,22 @@ class ProximityEffect extends EventTarget
     }
 
     /**
-     * Set the effect attack.
-     * @param {number} value - The new attack value.
+     * Set the easing rate as the target approaches: 1 follows straight away,
+     * smaller values ease in more slowly, and 0 doesn't move at all.
+     * @param {number} value - The new attack value, from 0 to 1 (clamped).
      */
     set attack(value)
     {
-    	this.#globalParams.attack = Adasha_Utils.constrain(value, 0, 1);
+    	this.#globalParams.attack = AdashaUtils.constrain(Validate.finite(value, "attack"), 0, 1);
+    	this.#start();
     }
 
 
 
 
     /**
-     * Get the effect decay.
-     * @return {number} The decay value.
+     * Get the easing rate as the target moves away.
+     * @return {number} The decay value, from 0 to 1.
      */
     get decay()
     {
@@ -346,12 +547,14 @@ class ProximityEffect extends EventTarget
     }
 
     /**
-     * Set the effect decay.
-     * @param {number} value - The new decay value.
+     * Set the easing rate as the target moves away: 1 follows straight away,
+     * smaller values ease out more slowly, and 0 doesn't move at all.
+     * @param {number} value - The new decay value, from 0 to 1 (clamped).
      */
     set decay(value)
     {
-    	this.#globalParams.decay = Adasha_Utils.constrain(value, 0, 1);
+    	this.#globalParams.decay = AdashaUtils.constrain(Validate.finite(value, "decay"), 0, 1);
+    	this.#start();
     }
 
 
@@ -384,23 +587,18 @@ class ProximityEffect extends EventTarget
      */
     set offsetX(value)
     {
-        this.#globalParams.offsetX = value;
-        if (!this.preventCenterCalculations) {
-            this.setCenterPoints();
-        }
+        this.#globalParams.offsetX = Validate.finite(value, "offsetX");
+        this.#applyOffsets();
   	}
 
     /**
-     * Set the global vertical offset, in pixels.
-     * @param {number} value - The new offset value.
+     * Set the global vertical offset.
+     * @param {number} value - The new offset value, in pixels.
      */
     set offsetY(value)
     {
-        this.#globalParams.offsetY = value;
-        if (!this.preventCenterCalculations)
-        {
-            this.setCenterPoints();
-        }
+        this.#globalParams.offsetY = Validate.finite(value, "offsetY");
+        this.#applyOffsets();
   	}
 
 
@@ -442,7 +640,7 @@ class ProximityEffect extends EventTarget
      */
     set jitter(num)
     {
-        this.#globalParams.jitter = Adasha_Utils.constrain(num, 0);
+        this.#globalParams.jitter = Math.max(Validate.finite(num, "jitter"), 0);
         this.#calculateJitters();
   	}
 
@@ -452,7 +650,7 @@ class ProximityEffect extends EventTarget
      */
     set jitterX(num)
     {
-        this.#globalParams.jitterX = Adasha_Utils.constrain(num, 0);
+        this.#globalParams.jitterX = Math.max(Validate.finite(num, "jitterX"), 0);
         this.#calculateJitters();
   	}
 
@@ -462,15 +660,12 @@ class ProximityEffect extends EventTarget
      */
     set jitterY(num)
     {
-        this.#globalParams.jitterY = Adasha_Utils.constrain(num, 0);
+        this.#globalParams.jitterY = Math.max(Validate.finite(num, "jitterY"), 0);
         this.#calculateJitters();
   	}
 
 
-    
 
-    
-    
     /**
      * Get the jitter method.
      * @returns {string} The random jitter method.
@@ -480,21 +675,15 @@ class ProximityEffect extends EventTarget
         return this.#globalParams.jitterMethod;
     }
 
-
-
     /**
-     * Set the jitter method.
-     * @params {string} method - The random string method to use.
+     * Set the jitter method, and recalculate the jitter.
+     * @param {string} method - "uniform" or "normal" ("gaussian" is an alias).
      */
     set jitterMethod(method)
     {
-        this.#globalParams.jitterMethod = method;
+        this.#globalParams.jitterMethod = Validate.randomMethod(method, "jitter method");
         this.#calculateJitters();
     }
-
-
-
-
 
 
 
@@ -518,10 +707,11 @@ class ProximityEffect extends EventTarget
         if (this.#VALID_DIRECTIONS.has(str))
         {
         	this.#globalParams.direction = str;
+        	this.#start();
         }
         else
         {
-            return void console.log(`ProximityEffect: '${str}' is not a valid direction.`);
+            throw new RangeError(`ProximityEffect: '${String(str)}' is not a valid direction. Use "both", "horizontal" or "vertical".`);
         }
     }
 
@@ -529,54 +719,55 @@ class ProximityEffect extends EventTarget
 
 
 
-    // FPS [Number>0]
-
+    /**
+     * Get the frame rate limit.
+     * @return {number|null} The frame rate, or null to follow the screen refresh.
+     */
     get FPS()
     {
     	return this.#globalParams.FPS;
     }
 
+    /**
+     * Set the frame rate limit.
+     * @param {number|null|undefined|false} num - A positive frame rate, or null, undefined, false or 0 to follow the screen refresh.
+     * @throws {TypeError} If the value is any other non-number (including "").
+     * @throws {RangeError} If the value is negative, NaN or infinite.
+     */
     set FPS(num)
     {
-        if(this.#fpsTimerRef)
+        const off = num==null || num===false || num===0;
+        if (!off && Validate.finite(num, "FPS")<0)
         {
-            window.clearInterval(this.#fpsTimerRef);
-            this.#fpsTimerRef = null;
+            throw new RangeError(`ProximityEffect: FPS must be positive (received ${num}).`);
         }
-
-
-        if (typeof num==='number' && num>0)
-        {
-            this.#globalParams.FPS = Adasha_Utils.constrain(num, 0);
-            this.#runFrames();
-        }
-        else
-        {
-            this.#globalParams.FPS = null;
-        }
+        this.#globalParams.FPS = off ? null : num;
+        this.#lastFrameTime = undefined;
     }
 
 
 
 
 
-
     /**
-     * Get the effect accuracy.
-     * @return {number} The accuracy value.
+     * Get the easing tolerance.
+     * @return {number} The tolerance value.
      */
-    get accuracy()
+    get tolerance()
     {
-        return this.#globalParams.accuracy;
+        return this.#globalParams.tolerance;
     }
 
     /**
-     * Set the effect accuracy.
-     * @param {number} num - The new accuracy value.
+     * Set the easing tolerance: once an eased distance is within this amount
+     * of its target it snaps to the target, letting the animation come to rest.
+     * Larger values settle sooner but end with a bigger final step.
+     * @param {number} num - The new tolerance, from 0 to 1 (clamped).
      */
-    set accuracy(num)
+    set tolerance(num)
     {
-        this.#globalParams.accuracy = Math.floor(Adasha_Utils.constrain(num, 0));
+        this.#globalParams.tolerance = AdashaUtils.constrain(Validate.finite(num, "tolerance"), 0, 1);
+        this.#start();
     }
 
 
@@ -584,18 +775,76 @@ class ProximityEffect extends EventTarget
 
 
     /**
-     * Get the last known mouse pointer coordinates, relative to the viewport, in pixels.
-     * @return {Object} An object containing x and y properties.
+     * Get what the effect does when the user prefers reduced motion.
+     * @return {string} "rest", "snap" or "ignore".
+     */
+    get reducedMotion()
+    {
+        return this.#globalParams.reducedMotion;
+    }
+
+    /**
+     * Set what the effect does when the user prefers reduced motion (the
+     * prefers-reduced-motion media query, which is followed as it changes):
+     * "rest" keeps the nodes at rest, as though nothing were being tracked;
+     * "snap" follows the pointer or target without easing; "ignore" carries on as normal.
+     * @param {string} mode - "rest", "snap" or "ignore".
+     * @throws {RangeError} If the mode is not one of those.
+     */
+    set reducedMotion(mode)
+    {
+        if (!this.#VALID_REDUCED_MOTION.has(mode))
+        {
+            throw new RangeError(`ProximityEffect: '${String(mode)}' is not a valid reducedMotion. Use "rest", "snap" or "ignore".`);
+        }
+        this.#globalParams.reducedMotion = mode;
+        this.#start();
+    }
+
+
+
+    /**
+     * Whether motion is being reduced right now: the user prefers reduced
+     * motion and reducedMotion isn't "ignore".
+     * @return {boolean} True if motion is being reduced.
+     */
+    get motionReduced()
+    {
+        return this.#prefersReducedMotion && this.reducedMotion!=="ignore";
+    }
+
+
+
+    /**
+     * Get the last known pointer coordinates, relative to the viewport, in pixels.
+     * @return {Object|null} An object containing x and y properties, or null before the pointer has moved and after it leaves the page.
      */
     get pointer()
     {
-        return {
-            x: this.#pointer.x,
-            y: this.#pointer.y
-        }
+        return this.#pointer ? { x: this.#pointer.x, y: this.#pointer.y } : null;
     }
 
 
+
+    /**
+     * Whether the effect is paused.
+     * @return {boolean} True between pause() and resume().
+     */
+    get paused()
+    {
+        return this.#paused;
+    }
+
+
+
+    /**
+     * Whether the instance has been destroyed.
+     * @return {boolean} True once destroy() has been called.
+     */
+    get destroyed()
+    {
+        return this.#destroyed;
+    }
 
 
 
@@ -618,193 +867,105 @@ class ProximityEffect extends EventTarget
      * @param {number} [property.max] - The maximum style value.
      * @param {number} [property.default] - The default style value.
      * @param {string} [property.unit] - The style rule's CSS unit.
-     * @param {number|Object} near - The style value at the closest distance, either a single number or an object containing more properties.
-     * @param {number} near.value - The style value at closest distance, as an object property.
-     * @param {number} [near.scatter] - The random distribution of the value at the closest distance.
-     * @param {string} [near.scatterMethod] - The random scatter method.
-     * @param {number|Object} far - The style value at the furthest distance, either a single number or an object containing more properties.
-     * @param {number} far.value - The style value at furthest distance, as an object property.
-     * @param {number} [far.scatter] - The random distribution of the value at the furthest distance.
-     * @param {string} [far.scatterMethod] - The random scatter method.
+     * @param {Array<number|Object>} keyframes - The near and far style values. Each is a number, or an object with a numeric value and optional scatter and scatterMethod.
+     * Keyframes in between, and a keyframe distance, are planned for 4.3; passing them throws a RangeError.
      * @param {Object} [params] - An object containing additional effect parameters.
-     * @param {string} [params.id] - A unique string to identify the style rule.
-     * @param {number} [params.threshold] - The animation distance threshold for this style, overriding the global value.
-     * @param {number} [params.runoff] - The animation runoff distance for this style, overriding the global value.
-     * @param {Boolean} [params.invert] - XXXXX, overriding the global value.
-     * @param {number} [params.attack] - , overriding the global value.
-     * @param {number} [params.decay] - , overriding the global value.
+     * @param {string} [params.id] - A name for the style, which hasStyle() and removeStyle() accept.
+     * Per-style threshold, runoff, invert, attack and decay are planned for 4.2; passing them throws a RangeError.
+     * @throws {TypeError} If an argument is the wrong type.
+     * @throws {RangeError} If a value is not allowed (see Style).
+     * @throws {Error} If the instance has been destroyed.
      */
     addStyle(property, keyframes, params)
     {
-        let cssParams;
+        this.#assertAlive("add a style to");
+        // work everything out before changing anything, so a failure leaves the stack as it was
+        const style  = new Style(property, keyframes, params),
+              values = this.#nodeData.map(() => this.#scatterValues(style));
 
-        // if specifying a preset style
-        if(typeof property==="string")
-        {
-            if (this.#DEFINED_STYLES.hasOwnProperty(property))
-            {
-                cssParams = this.#DEFINED_STYLES[property];
-            }
-            else
-            {
-                throw new Error(`ProximityEffect: Couldn't find preset '${property}'`);
-            }
-        }
-        else if(Adasha_Utils.isObject(property))
-        {
-            if(typeof property.rule==="string")
-            {
-                cssParams = property;
-            }
-            else
-            {
-                throw new Error(`ProximityEffect: '${property}' object does not define a style rule.`);
-            }
-        }
-        else
-        {
-            throw new Error(`ProximityEffect: '${property}' is not a valid style rule.`);
-        }
-
-
-
-        // convenience function for adding basic near/far values like the old version
-        for(let v=0; v<keyframes.length; v++)
-        {
-            let val = keyframes[v];
-            if (typeof val==="number")
-            {
-                keyframes[v] = Adasha_Utils.valToObj(Adasha_Utils.constrain(val, cssParams.min, cssParams.max));
-                switch(v)
-                {
-                    case 0 :
-                        keyframes[v].distance = 0;
-                        break;
-                    case keyframes.length-1 :
-                        keyframes[v].distance = 1;
-                        break;
-                }
-            }
-        }
-
-        let near = keyframes[0];
-        let far  = keyframes[keyframes.length-1];
-
-        
-
-
-        this.#styles = this.#styles || [];
-
-        let styleObj = {
-            rules:  cssParams,
-            near:   near,
-            far:    far,
-            params: params
-        };
-        this.#styles.push(styleObj);
-
-
-        for (let i=0; i<this.#nodeData.length; i++)
-        {
-            let styles = this.getNodeIndexData(i, "styles") || this.#setNodeIndexData(i, "styles", [])["styles"];
-            let nearMethod = near.scatterMethod ? near.scatterMethod : this.#DEFAULT_SCATTER_METHOD,
-                 farMethod =  far.scatterMethod ?  far.scatterMethod : this.#DEFAULT_SCATTER_METHOD;
-
-            styles.push({
-                near: near.scatter ? near.value+Adasha_Utils.random(near.scatter, nearMethod) : near.value,
-                far:   far.scatter ?  far.value+Adasha_Utils.random( far.scatter,  farMethod) :  far.value
-            });
-        }
+        this.#stylesStack.push(style);
+        this.#nodeData.forEach((data, i) => data.styles.push(values[i]));
+        this.#groupStyles();
+        this.#invalidate();
     }
 
 
 
     /**
-     * Check if a named style is already on the stack.
-     * @param {string} name - The name of the style to check for.
+     * Check if a named style is on the stack.
+     * @param {string} name - The preset name, a custom style's func (or rule if it has none), or the id given in the style's params.
      * @return {boolean} True if the style exists at least once.
+     * @throws {TypeError} If the name is not a string.
      */
     hasStyle(name)
     {
-        return this.styles.find(eff => eff["type"]===name)!==undefined;
+        Validate.string(name, "style name");
+        return this.#stylesStack.some(style => this.#styleMatches(style, name));
     }
 
 
 
     /**
-     * Remove all instances of a style from the stack.
-     * @param {string} name - The name of the style to remove.
+     * Remove all instances of a style from the stack. CSS properties no longer
+     * animated by any style get the nodes' original inline values back.
+     * @param {string} name - The preset name, a custom style's func (or rule if it has none), or the id given in the style's params.
+     * @return {boolean} True if anything was removed.
+     * @throws {TypeError} If the name is not a string.
+     * @throws {Error} If the instance has been destroyed.
      */
     removeStyle(name)
     {
-        if (this.hasStyle(name))
+        this.#assertAlive("remove a style from");
+        Validate.string(name, "style name");
+        // rule key => a spelling to restore it with
+        const rules = new Map();
+
+        // backwards, so splicing doesn't skip entries
+        for (let i=this.#stylesStack.length-1; i>=0; i--)
         {
-            for (let i=0; i<this.#styles.length; i++)
+            const style = this.#stylesStack[i];
+            if (this.#styleMatches(style, name))
             {
-                let eff = this.#styles[i];
-                if (eff["type"]===name)
+                rules.set(ruleKey(style.rule), style.rule);
+                this.#stylesStack.splice(i, 1);
+                for (const data of this.#nodeData)
                 {
-                    this.#styles.splice(i, 1);
+                    data.styles.splice(i, 1);
                 }
             }
         }
+
+        if (this.zIndex && this.#stylesStack.length===0 && rules.size>0)
+        {
+            rules.set("zIndex", "zIndex");
+        }
+        for (const [key, rule] of rules)
+        {
+            if (!this.#stylesStack.some(style => ruleKey(style.rule)===key))
+            {
+                for (const data of this.#nodeData)
+                {
+                    this.#restoreProperty(data, rule);
+                }
+            }
+        }
+
+        if (rules.size>0)
+        {
+            this.#groupStyles();
+            this.#invalidate();
+        }
+        return rules.size>0;
     }
 
 
 
 
     /**
-     * 
-     * @param {String} prop - The property name - should return a number.
-     * @param {Object} params - 
-     * @param {number} params.min - 
-     * @param {number} params.max - 
-     * @param {Function} params.callback - 
-     * @returns 
-     */
-    addProperty(name, params)
-    {
-        this.#properties = this.#properties || [];
-
-        let propertyObj = {
-            name: name,
-            params: params
-        };
-        this.#properties.push(propertyObj);
-    }
-
-    /**
-     * 
-     * @param {*} n 
-     * @returns 
-     */
-    hasProperty()
-    {
-
-    }
-
-
-
-    /**
-     * 
-     * @param {*} n 
-     * @returns 
-     */
-    removeProperty()
-    {
-
-    }
-
-
-
-
-
-
-
-
-    /**
-     * Get the distance to the current target from the given node, in pixels.
+     * Get the normalised distance (0 to 1) to the current target from the given node, as of the last frame.
      * @param {Element} n - The node to check.
+     * @return {number|undefined} The distance, or undefined before the first frame.
+     * @throws {RangeError} If the node isn't controlled by this instance.
      */
     distanceFrom(n)
     {
@@ -814,8 +975,11 @@ class ProximityEffect extends EventTarget
 
 
     /**
-     * Get the distance to the current target from the given node index, in pixels.
+     * Get the normalised distance (0 to 1) to the current target from the given node index, as of the last frame.
      * @param {number} i - The node index to check.
+     * @return {number|undefined} The distance, or undefined before the first frame.
+     * @throws {TypeError} If the index is not a number.
+     * @throws {RangeError} If the index is not a whole number within the node list.
      */
     distanceFromIndex(i)
     {
@@ -840,24 +1004,22 @@ class ProximityEffect extends EventTarget
 
     /**
      * Return an object containing manual coordinates, if specified.
+     * @return {Object|null} An object containing x and y properties, or null.
      */
     getCoords()
     {
-        return this.#coords;
+        return this.#coords ? { ...this.#coords } : null;
     }
 
     /**
-     * Manually specify coordinates
-     * @param {Number} x - 
-     * @param {Number} y - 
+     * Manually specify coordinates, which take priority over the target and pointer.
+     * @param {number} x - The horizontal coordinate, relative to the viewport, in pixels.
+     * @param {number} y - The vertical coordinate, relative to the viewport, in pixels.
      */
     setCoords(x, y)
     {
-        if(!(typeof x==='Number') || !(typeof y==='Number'))
-        {
-            this.#coords = {x:x, y:y};
-            //this.update();
-        }
+        this.#coords = { x: Validate.finite(x, "x coordinate"), y: Validate.finite(y, "y coordinate") };
+        this.#start();
     }
 
 
@@ -866,10 +1028,8 @@ class ProximityEffect extends EventTarget
      */
     clearCoords()
     {
-        if(this.#coords)
-        {
-            this.#coords = null;
-        }
+        this.#coords = null;
+        this.#start();
     }
 
 
@@ -877,31 +1037,66 @@ class ProximityEffect extends EventTarget
 
 
     /**
-     * Recalculate each node's centre point, including global offset and jitter.
+     * Measure each node's centre point now, including global offset and jitter.
+     * The instance remeasures by itself when the page scrolls or resizes, so this
+     * is only needed after moving nodes in a way it can't detect.
+     * @throws {Error} If the instance has been destroyed.
      */
     setCenterPoints()
     {
-        for (let n=0; n<this.nodes.length; n++)
+        this.#assertAlive("measure");
+        this.#measure(this.#nodeData);
+        this.#start();
+    }
+
+
+
+    /**
+     * Pause the effect. Nodes keep their current styles.
+     */
+    pause()
+    {
+        this.#paused = true;
+        this.#stop();
+    }
+
+
+
+    /**
+     * Resume a paused effect.
+     * @throws {Error} If the instance has been destroyed.
+     */
+    resume()
+    {
+        this.#assertAlive("resume");
+        this.#paused = false;
+        this.#start();
+    }
+
+
+
+    /**
+     * Stop the effect for good: remove every listener, stop the animation loop
+     * and restore each node's original inline style. Safe to call more than once.
+     */
+    destroy()
+    {
+        if (this.#destroyed)
         {
-    		let node   = this.nodes[n],
-                cssTxt = node.style.cssText;
-
-            node.style.cssText = this.getNodeIndexData(n, 'style');
-
-    		let bounds = node.getBoundingClientRect(),
-                x      = (bounds.left+bounds.right )*0.5 - this.offsetX,
-                y      = (bounds.top +bounds.bottom)*0.5 - this.offsetY,
-                jitter = this.getNodeIndexData(n, 'jitter');
-
-            if (jitter)
-            {
-                x += jitter.x;
-                y += jitter.y;
-            }
-
-            node.style.cssText = cssTxt;
-    		this.#setNodeIndexData(n, 'center', {x: x, y: y});
+            return;
         }
+        this.#destroyed = true;
+        this.#abort.abort();
+        this.#shadowRoots.forEach(abort => abort.abort());
+        this.#shadowRoots.clear();
+        this.#resizeObserver?.disconnect();
+        this.#stop();
+
+        for (const data of this.#nodeData)
+        {
+            this.#restoreInlineStyle(data);
+        }
+        this.#releaseOriginParent();
     }
 
 
@@ -909,34 +1104,48 @@ class ProximityEffect extends EventTarget
 
 
     /**
+     * A snapshot of one node's effect data. It's a copy, so changing it has no
+     * effect. Fields that have no value yet (before the node is measured or the
+     * first frame is drawn) are left out.
      * @typedef {Object} NodeData
      * @property {Element} node - A reference to the node.
-     * @property {Array<Object>} styles - An array of applied styles containing near and far values for each.
-     * @property {number} styles[].near - Did this work?.
+     * @property {Object} [measured] - The node's measured centre point (relative to the viewport, with any data-offsetx/data-offsety applied).
+     * @property {Object} [center] - The node's centre point, including global offset and jitter.
+     * @property {Object} jitter - The node's random x and y jitter.
+     * @property {number} [distance] - The normalised distance to the target as of the last frame.
+     * @property {number} [lastDelta] - The eased distance as of the last frame.
+     * @property {Array<Object>} styles - The node's near and far values for each style on the stack, in stack order.
      */
     /**
-     * Return an object containing the given node's effect data or a specific property of that data.
+     * Return a snapshot of the given node's effect data, or one property of that data.
      * @param {Element} n - The node to return data for.
      * @param {string} [prop] - The data property to return, leave out to return the entire object.
-     * @return {mixed|NodeData} The chosen property value, or an object containing the node's data.
+     * @return {*|NodeData} A copy of the chosen property's value (undefined for anything that isn't a NodeData property), or the node's data.
+     * @throws {RangeError} If the node isn't controlled by this instance.
      */
     getNodeData(n, prop)
     {
-        let data = this.#nodeData[this.nodes.findIndex(n => n===node)];
-        return prop ? data[prop] : data;
+        const index = this.#nodes.indexOf(n);
+        if (index<0)
+        {
+            throw new RangeError("ProximityEffect: that node is not controlled by this instance.");
+        }
+        return this.#readNodeData(this.#nodeData[index], prop);
     }
 
 
 
     /**
-     * Return an object containing the given node index"s effect data.
+     * Return a snapshot of the given node index's effect data, or one property of that data.
      * @param {number} i - The node index to return data for.
-     * @param {string} prop - The data property to return.
-     * @return {Object} An object containing the node's data.
+     * @param {string} [prop] - The data property to return, leave out to return the entire object.
+     * @return {*|NodeData} A copy of the chosen property's value (undefined for anything that isn't a NodeData property), or the node's data.
+     * @throws {TypeError} If the index is not a number.
+     * @throws {RangeError} If the index is not a whole number within the node list.
      */
     getNodeIndexData(i, prop)
     {
-        return this.#nodeData[i][prop];
+        return this.#readNodeData(this.#nodeData[this.#checkIndex(i)], prop);
     }
 
 
@@ -944,13 +1153,15 @@ class ProximityEffect extends EventTarget
 
     /**
      * Return a boolean determining if the given node has the given data.
-     * @param {number} i - The node index to return data for.
-     * @param {string} prop - The data property to return.
-     * @return {boolean} True if the property exists, false otherwise.
+     * @param {number} i - The node index to check.
+     * @param {string} prop - The data property to check.
+     * @return {boolean} True if the property is a NodeData property with a value, false otherwise.
+     * @throws {TypeError} If the index is not a number.
+     * @throws {RangeError} If the index is not a whole number within the node list.
      */
     hasNodeIndexData(i, prop)
     {
-        return this.#nodeData[i].hasOwnProperty(prop);
+        return this.#readNodeData(this.#nodeData[this.#checkIndex(i)], prop)!==undefined;
     }
 
 
@@ -965,80 +1176,784 @@ class ProximityEffect extends EventTarget
 
 
 
+    // calls that would touch the nodes or start listening again can't
+    // be made once destroy() has handed the nodes back
+    #assertAlive(action)
+    {
+        if (this.#destroyed)
+        {
+            throw new Error(`ProximityEffect: cannot ${action} a destroyed instance.`);
+        }
+    }
+
+
+
     #init()
     {
-        this.preventCenterCalculations = false;
-        this.setCenterPoints();
-
-        this.update = this.update.bind(this);
-
-        window.addEventListener('scroll', this.reflowEvent.bind(this));
-        window.addEventListener('resize', this.reflowEvent.bind(this));
-
-        document.addEventListener('mousemove', this.updatePointer.bind(this));
-
-        document.dispatchEvent(new MouseEvent('mousemove'));
-        this.dispatchEvent(new Event('ready'));
-        this.FPS = this.#globalParams.FPS;
-        window.requestAnimationFrame(this.update);
-    }
-
-
-
-
-
-    #setNodeIndexData(n, prop, val)
-    {
-        if (!this.#nodeData[n])
+        if (this.#ready || this.#destroyed)
         {
-            this.#nodeData[n] = {};
+            return;
         }
-        this.#nodeData[n][prop] = val;
-        return this.#nodeData[n];
+        this.#ready = true;
+        this.#measure(this.#nodeData);
+
+        const options = { signal: this.#abort.signal, passive: true };
+        // capture, so scrolling inside any container is seen as well as the page
+        document.addEventListener("scroll", this.#onScroll, { ...options, capture: true });
+        this.#listenInShadowRoots();
+        window.addEventListener("resize", this.#onReflow, options);
+        // pointerdown too, since a touch has no pointermove before it starts
+        document.addEventListener("pointermove", this.#onPointerMove, options);
+        document.addEventListener("pointerdown", this.#onPointerMove, options);
+        document.addEventListener("pointerout", this.#onPointerOut, options);
+        window.addEventListener("blur", this.#onBlur, options);
+        document.addEventListener("visibilitychange", this.#onVisibility, options);
+
+        if (typeof window.matchMedia==="function")
+        {
+            const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+            this.#prefersReducedMotion = query.matches;
+            query.addEventListener("change", this.#onMotionPref, options);
+        }
+
+        if (typeof ResizeObserver!=="undefined")
+        {
+            // nodes, or the page around them, changing size moves the centres
+            this.#resizeObserver = new ResizeObserver(this.#onResize);
+            this.#resizeObserver.observe(document.documentElement);
+            this.#observe(this.#nodes);
+        }
+
+        this.dispatchEvent(new Event("ready"));
+        this.#start();
     }
 
 
+
+    // Scroll events don't leave the shadow root they happen in, so listen in
+    // every shadow root that holds a node, or holds the host of one that does.
+    #listenInShadowRoots()
+    {
+        const roots = new Set();
+        for (const node of this.#nodes)
+        {
+            for (let root = node.getRootNode(); root instanceof ShadowRoot && !roots.has(root); root = root.host.getRootNode())
+            {
+                roots.add(root);
+            }
+        }
+
+        for (const [root, abort] of this.#shadowRoots)
+        {
+            if (!roots.has(root))
+            {
+                abort.abort();
+                this.#shadowRoots.delete(root);
+            }
+        }
+        for (const root of roots)
+        {
+            if (!this.#shadowRoots.has(root))
+            {
+                const abort = new AbortController();
+                root.addEventListener("scroll", this.#onScroll, { capture: true, passive: true, signal: abort.signal });
+                this.#shadowRoots.set(root, abort);
+            }
+        }
+    }
+
+
+
+    #observe(nodes)
+    {
+        for (const node of nodes)
+        {
+            this.#resizeObserver?.observe(node);
+        }
+    }
+
+
+
+    // the loop only runs while there's something to draw; anything that could
+    // change the output calls this to wake it
+    #start()
+    {
+        this.#awake = true;
+        this.#schedule();
+    }
+
+
+
+    // ask for the next frame without saying anything has changed
+    #schedule()
+    {
+        if (this.#ready && !this.#paused && !this.#destroyed && this.#frameId===null
+            && document.visibilityState!=="hidden")
+        {
+            this.#frameId = requestAnimationFrame(this.#onFrame);
+        }
+    }
+
+
+
+    // the styles need writing even for nodes whose distance hasn't changed
+    #invalidate()
+    {
+        this.#needsRewrite = true;
+        this.#start();
+    }
+
+
+
+    // remeasure on the next frame, so a burst of scroll or resize events costs one measurement
+    #requestMeasure()
+    {
+        this.#needsMeasure = true;
+        this.#start();
+    }
+
+
+
+    // The observer reports after layout, in the same frame as the writes that
+    // caused it. Size changes the effect made itself can't move the centres,
+    // since #measure takes its styles off first, so only other changes count.
+    // An element's first report is just its size when observing began; it was
+    // measured then (in #init, or after nodes changed), so it's skipped.
+    #resized(entries)
+    {
+        let external = false;
+        for (const { target } of entries)
+        {
+            if (!this.#sizeReported.has(target))
+            {
+                this.#sizeReported.add(target);
+            }
+            else if (!this.#ownResizes.has(target))
+            {
+                external = true;
+            }
+        }
+        this.#ownResizes.clear();
+
+        if (external && this.#ready && !this.#destroyed)
+        {
+            // sizes can change every frame (the page reflowing around nodes the
+            // effect resizes, images loading), so measure once things settle
+            this.#measureWhenSettled = true;
+            this.#start();
+        }
+    }
+
+
+
+    #visibilityChange()
+    {
+        if (document.visibilityState==="hidden")
+        {
+            this.#stop();
+        }
+        else
+        {
+            // the page may have changed while hidden
+            this.#requestMeasure();
+        }
+    }
+
+
+
+    #stop()
+    {
+        if (this.#frameId!==null)
+        {
+            cancelAnimationFrame(this.#frameId);
+            this.#frameId = null;
+        }
+    }
+
+
+
+    // the one animation clock; FPS throttles it rather than running a second timer
+    #frame(timestamp)
+    {
+        this.#frameId = null;
+
+        const fps = this.FPS;
+        const due = !fps || this.#lastFrameTime===undefined
+            // 1ms tolerance, so 30fps on a 60Hz screen draws every other frame
+            || timestamp - this.#lastFrameTime >= 1000/fps - 1;
+
+        if (!due)
+        {
+            this.#schedule();
+            return;
+        }
+
+        this.#lastFrameTime = timestamp;
+        const awake = this.#awake;
+        this.#awake = false;
+        // marks from earlier frames have already been reported, if they resized anything
+        this.#ownResizes.clear();
+
+        let moved = false;
+        if (this.#needsMeasure || (this.#measureWhenSettled && !this.#changed))
+        {
+            moved = this.#measure(this.#nodeData);
+        }
+        else if (this.#needsPinnedMeasure)
+        {
+            moved = this.#measure(this.#pinnedToMeasure());
+        }
+        if (moved)
+        {
+            this.dispatchEvent(new Event("reflow"));
+        }
+
+        // when the only reason for this frame is following the target, and it
+        // hasn't moved, there's nothing to draw
+        const idle = !awake && !moved && !this.#changed;
+        if (!(idle && this.#followingTarget() && this.#samePoint(this.#targetPoint(), this.#lastTargetPoint)))
+        {
+            this.update();
+            this.dispatchEvent(new Event("redraw"));
+        }
+
+        // keep going while nodes are still easing, or a measurement is waiting
+        // for them to stop. A target element is followed every frame, since it
+        // can move without any event to say so.
+        if (this.#changed || this.#measureWhenSettled || this.#followingTarget())
+        {
+            this.#schedule();
+        }
+    }
+
+
+
+    // set coordinates take over from the target, so it needn't be watched
+    #followingTarget()
+    {
+        return this.target!=null && this.#coords===null && !this.#resting();
+    }
+
+
+
+    // reduced motion in "rest" mode: nothing is tracked, so the nodes stay at rest
+    #resting()
+    {
+        return this.motionReduced && this.reducedMotion==="rest";
+    }
+
+
+
+    #motionPreference(reduce)
+    {
+        this.#prefersReducedMotion = reduce;
+        this.#start();
+    }
+
+
+
+    #samePoint(a, b)
+    {
+        return a!==null && b!==null && a.x===b.x && a.y===b.y;
+    }
+
+
+
+    // Measure nodes' centres without the effect's styles applied. Done in
+    // three passes (write, read, write) so the page is laid out once, not
+    // once per node. Only the properties that can move a node's box are put
+    // back to their original values, one by one: replacing the whole cssText
+    // would make the browser redo layout for every node. Returns whether any
+    // node's position changed.
+    #measure(all)
+    {
+        if (all===this.#nodeData)
+        {
+            this.#needsMeasure = false;
+            this.#measureWhenSettled = false;
+        }
+        this.#needsPinnedMeasure = false;
+        // bring every centre up to the current page scroll first, so the nodes
+        // left out of a partial measure match the ones measured now
+        this.#followScroll();
+
+        const rules = [...new Map(this.#styleGroups.map(group => [group.key, group.rule])).entries()]
+                  .filter(([key]) => !PAINT_ONLY_RULES.has(key))
+                  .map(([, rule]) => rule),
+              saved = all.map(data => rules.map(rule => data.node.style[rule]));
+
+        for (const data of all)
+        {
+            for (const rule of rules)
+            {
+                data.node.style[rule] = this.#originalValue(data, rule);
+            }
+        }
+
+        // read pass: positions, and whether each node scrolls with the page
+        const bounds = all.map(data => data.node.getBoundingClientRect()),
+              cache  = new Map(),
+              pinned = all.map(data => this.#isPinned(data.node, cache)),
+              parent = all===this.#nodeData && this.#originParent?.getBoundingClientRect();
+
+        let moved = false;
+        all.forEach((data, i) =>
+        {
+            const b    = bounds[i],
+                  node = data.node,
+                  last = data.measured;
+            rules.forEach((rule, r) =>
+            {
+                node.style[rule] = saved[i][r];
+            });
+            data.measured = {
+                x: (b.left+b.right )*0.5 - this.#dataOffset(node.dataset.offsetx),
+                y: (b.top +b.bottom)*0.5 - this.#dataOffset(node.dataset.offsety)
+            };
+            // scroll-shifted centres can be off by rounding noise, not a real move
+            moved ||= !last
+                || Math.abs(data.measured.x-last.x)>0.01
+                || Math.abs(data.measured.y-last.y)>0.01;
+            data.scrollsWithPage = !pinned[i];
+            this.#applyOffset(data);
+        });
+        if (parent)
+        {
+            this.#setOrigin(bounds, parent);
+        }
+        return moved;
+    }
+
+
+
+    // Use the nodes' parent for perspectiveOrigin, giving back any parent
+    // used before. Nodes with different parents warn, and none is used.
+    #claimOriginParent()
+    {
+        const parents = new Set(this.#nodes.map(node => this.#parentOf(node))),
+              [parent] = parents;
+        if (parents.size>1 || !parent)
+        {
+            this.#releaseOriginParent();
+            console.warn("ProximityEffect: perspectiveOrigin needs every node to share a parent element, and these don't, so it has no effect.");
+            return;
+        }
+        if (parent!==this.#originParent)
+        {
+            this.#releaseOriginParent();
+            this.#originParent = parent;
+            this.#originParentValue = parent.style.perspectiveOrigin;
+        }
+        if (this.#ready)
+        {
+            this.#requestMeasure();
+        }
+    }
+
+
+
+    #releaseOriginParent()
+    {
+        if (this.#originParent)
+        {
+            this.#originParent.style.perspectiveOrigin = this.#originParentValue;
+            this.#originParent = null;
+        }
+    }
+
+
+
+    // Put the parent's perspective-origin at the centre of the nodes' boxes,
+    // measured at rest. Percentages of the parent's box, so they still hold
+    // if the parent itself is scaled or moved.
+    #setOrigin(bounds, parent)
+    {
+        let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
+        for (const b of bounds)
+        {
+            left   = Math.min(left, b.left);
+            right  = Math.max(right, b.right);
+            top    = Math.min(top, b.top);
+            bottom = Math.max(bottom, b.bottom);
+        }
+        const share = (at, start, size) => size>0 ? `${(at-start)/size*100}%` : "50%";
+
+        this.#originParent.style.perspectiveOrigin =
+            `${share((left+right)*0.5, parent.left, parent.width)} ${share((top+bottom)*0.5, parent.top, parent.height)}`;
+    }
+
+
+
+    // The nodes to measure after a page scroll: the fixed and sticky ones, plus
+    // any node they sit inside, since its transform moves them. Layout styles
+    // (width, font size...) can move any node, so with those everything is measured.
+    #pinnedToMeasure()
+    {
+        const pinned = this.#nodeData.filter(data => data.scrollsWithPage===false);
+        if (pinned.length===0)
+        {
+            return pinned;
+        }
+        if (this.#styleGroups.some(group => group.resizes))
+        {
+            return this.#nodeData;
+        }
+
+        const byNode = new Map(this.#nodeData.map(data => [data.node, data])),
+              found  = new Set(pinned);
+        for (const data of pinned)
+        {
+            for (let el = this.#parentOf(data.node); el; el = this.#parentOf(el))
+            {
+                const ancestor = byNode.get(el);
+                if (ancestor)
+                {
+                    found.add(ancestor);
+                }
+            }
+        }
+        return [...found];
+    }
+
+
+
+    // the element's parent, or the host of the shadow root it's at the top of
+    #parentOf(el)
+    {
+        return el.parentElement ?? el.getRootNode().host;
+    }
+
+
+
+    // whether an element, or anything it sits inside, is fixed or sticky, so
+    // it doesn't simply move with the page when it scrolls. Shared ancestors
+    // are only looked up once per measurement.
+    #isPinned(el, cache)
+    {
+        if (!el)
+        {
+            return false;
+        }
+        if (!cache.has(el))
+        {
+            const position = getComputedStyle(el).position;
+            cache.set(el, position==="fixed" || position==="sticky"
+                || this.#isPinned(this.#parentOf(el), cache));
+        }
+        return cache.get(el);
+    }
+
+
+
+    // A page scroll moves every node that isn't fixed or sticky by exactly the
+    // scroll distance, so their centres are shifted rather than remeasured.
+    #followScroll()
+    {
+        const dx = window.scrollX - this.#scrollX,
+              dy = window.scrollY - this.#scrollY;
+
+        if (dx===0 && dy===0)
+        {
+            return;
+        }
+        this.#scrollX += dx;
+        this.#scrollY += dy;
+        for (const data of this.#nodeData)
+        {
+            if (data.scrollsWithPage && data.measured)
+            {
+                data.measured.x -= dx;
+                data.measured.y -= dy;
+                this.#applyOffset(data);
+            }
+        }
+    }
+
+
+
+    #scrolled(evt)
+    {
+        const target = evt.target;
+        if (target===document)
+        {
+            // update() moves the nodes that scroll with the page; the rest need measuring
+            if (this.#nodeData.some(data => data.scrollsWithPage===false))
+            {
+                this.#needsPinnedMeasure = true;
+            }
+            this.#start();
+        }
+        else if (!this.#needsMeasure && target instanceof Node
+            && this.#nodes.some(node => this.#isInside(node, target)))
+        {
+            this.#requestMeasure();
+        }
+    }
+
+
+
+    // like container.contains(el), but also looking out of shadow roots to their hosts
+    #isInside(el, container)
+    {
+        for (let parent = el; parent; parent = parent.parentNode ?? parent.host)
+        {
+            if (parent===container)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+
+    // a node's centre is where it was measured, moved by the global offset and its jitter
+    #applyOffset(data)
+    {
+        if (data.measured)
+        {
+            data.center ??= {};
+            data.center.x = data.measured.x - this.offsetX + data.jitter.x;
+            data.center.y = data.measured.y - this.offsetY + data.jitter.y;
+        }
+    }
+
+
+
+    #applyOffsets()
+    {
+        for (const data of this.#nodeData)
+        {
+            this.#applyOffset(data);
+        }
+        this.#start();
+    }
+
+
+
+    // Group the stack by CSS property, so functions that share one (transform,
+    // filter) are written together, with the first style's spelling. Plain
+    // properties come first, in stack order.
+    #groupStyles()
+    {
+        const plain = [],
+              funcs = new Map();
+
+        this.#stylesStack.forEach((style, index) =>
+        {
+            const item    = { index, func: style.func, unit: style.unit || "" },
+                  key     = ruleKey(style.rule),
+                  resizes = !SIZE_NEUTRAL_RULES.has(key);
+            if (!style.func)
+            {
+                plain.push({ rule: style.rule, key, resizes, items: [item] });
+            }
+            else
+            {
+                if (!funcs.has(key))
+                {
+                    funcs.set(key, { rule: style.rule, key, resizes, transform: TRANSFORM_RULES.has(key), items: [] });
+                }
+                funcs.get(key).items.push(item);
+            }
+        });
+
+        this.#styleGroups = [...plain, ...funcs.values()];
+    }
+
+
+
+    #toElementArray(list)
+    {
+        let nodes;
+        if (list instanceof Element)
+        {
+            nodes = [list];
+        }
+        else if (list instanceof NodeList || list instanceof HTMLCollection || Array.isArray(list))
+        {
+            nodes = [...new Set(list)];
+        }
+        else
+        {
+            throw new TypeError(`ProximityEffect: ${list} is not an Element, NodeList, HTMLCollection or array of Elements.`);
+        }
+
+        if (nodes.length<1)
+        {
+            throw new RangeError("ProximityEffect: no nodes were given.");
+        }
+        if (!nodes.every(node => node instanceof Element))
+        {
+            throw new TypeError("ProximityEffect: every node must be an Element.");
+        }
+        return nodes;
+    }
+
+
+
+    #createNodeData(node)
+    {
+        return {
+            node:      node,
+            style:     node.style.cssText,
+            hadStyle:  node.hasAttribute("style"),
+            lastDelta: this.#globalParams.primeDistances ? 1 : undefined,
+            jitter:    this.#randomJitter(),
+            styles:    this.#stylesStack.map(style => this.#scatterValues(style))
+        };
+    }
+
+
+
+    #scatterValues(style)
+    {
+        const value = (frame) => frame.scatter
+            ? AdashaUtils.constrain(frame.value + AdashaUtils.random(frame.scatter, frame.scatterMethod ?? this.#DEFAULT_SCATTER_METHOD), style.min, style.max)
+            : frame.value;
+
+        return {
+            near: value(style.near),
+            far:  value(style.far)
+        };
+    }
+
+
+
+    // the constructor sets the jitter parameters before any node data is built
+    #randomJitter()
+    {
+        const { jitter, jitterX, jitterY, jitterMethod } = this.#globalParams;
+        return {
+            x: AdashaUtils.random(jitter + jitterX, jitterMethod),
+            y: AdashaUtils.random(jitter + jitterY, jitterMethod)
+        };
+    }
 
 
 
     #calculateJitters()
     {
-        let method = this.jitterMethod ? this.jitterMethod : this.#DEFAULT_JITTER_METHOD;
-        for (let i=0; i<this.nodes.length; i++) {
-            this.#setNodeIndexData(i, 'jitter', {
-                x: Adasha_Utils.random(this.jitter + this.jitterX, method),
-                y: Adasha_Utils.random(this.jitter + this.jitterY, method)
-            });
+        for (const data of this.#nodeData)
+        {
+            data.jitter = this.#randomJitter();
         }
-        if (!this.preventCenterCalculations) {
-            this.setCenterPoints();
+        this.#applyOffsets();
+    }
+
+
+
+    #checkIndex(i)
+    {
+        Validate.finite(i, "node index");
+        if (!Number.isInteger(i) || i<0 || i>=this.#nodeData.length)
+        {
+            throw new RangeError(`ProximityEffect: node index ${i} is out of range (0 to ${this.#nodeData.length-1}).`);
+        }
+        return i;
+    }
+
+
+
+    // copies of the public fields only, so callers can't change the running
+    // effect, and internal bookkeeping stays free to change
+    #readNodeData(data, prop)
+    {
+        if (prop===undefined)
+        {
+            const snapshot = {};
+            for (const key in NODE_DATA)
+            {
+                const value = NODE_DATA[key](data);
+                if (value!==undefined)
+                {
+                    snapshot[key] = value;
+                }
+            }
+            return snapshot;
+        }
+        // own properties only, so a name like "constructor" doesn't reach the prototype
+        return Object.hasOwn(NODE_DATA, prop) ? NODE_DATA[prop](data) : undefined;
+    }
+
+
+
+    #styleMatches(style, name)
+    {
+        return style.name===name || style.func===name || (style.id!==undefined && style.id===name);
+    }
+
+
+
+    // a node's original inline value for one CSS property, parsed once and kept
+    #originalValue(data, rule)
+    {
+        data.originals ??= new Map();
+        if (!data.originals.has(rule))
+        {
+            this.#scratchStyle ??= document.createElement("div").style;
+            this.#scratchStyle.cssText = data.style;
+            data.originals.set(rule, this.#scratchStyle[rule]);
+        }
+        return data.originals.get(rule);
+    }
+
+
+
+    // put back a node's whole original inline style, and no empty style
+    // attribute if it didn't have one
+    #restoreInlineStyle(data)
+    {
+        if (data.hadStyle)
+        {
+            data.node.style.cssText = data.style;
+        }
+        else
+        {
+            data.node.removeAttribute("style");
         }
     }
 
 
 
-
-
-    #runFrames()
+    // put back a node's original inline value for one CSS property
+    #restoreProperty(data, rule)
     {
-        let ms = Math.round(1000/this.FPS);
-        this.#fpsTimerRef = window.setInterval(this.update, ms);
+        data.node.style[rule] = this.#originalValue(data, rule);
     }
 
 
 
-
-
-    #refresh()
+    // a data-offsetx/data-offsety attribute as a number; anything unusable counts as 0
+    #dataOffset(attr)
     {
-        window.requestAnimationFrame(this.update);
-        this.dispatchEvent(new Event("redraw"));
+        const n = Number(attr);
+        return Number.isFinite(n) ? n : 0;
     }
 
 
 
-
-
+    // the point being tracked: manual coords, then target, then pointer
+    #targetPoint()
+    {
+        if (this.#resting())
+        {
+            return null;
+        }
+        if (this.#coords)
+        {
+            return this.#coords;
+        }
+        if (this.target)
+        {
+            const b = this.target.getBoundingClientRect();
+            return {
+                x: (b.left + b.right)*0.5,
+                y: (b.top + b.bottom)*0.5
+            };
+        }
+        return this.#pointer;
+    }
 
 
 
@@ -1050,29 +1965,73 @@ class ProximityEffect extends EventTarget
     //                //
     ////////////////////
 
+    /*
+     * Events are plain Event objects dispatched on the instance. They don't
+     * bubble (an instance has no parent), can't be cancelled and carry no
+     * detail; read what's needed from the instance itself.
+     */
+
+    /**
+     * The instance has measured its nodes and started listening, once the
+     * document has loaded. Always dispatched asynchronously, so a listener
+     * added straight after construction hears it.
+     * @event ProximityEffect#ready
+     * @type {Event}
+     */
+
+    /**
+     * A frame was drawn by the animation loop. Only frames that are drawn
+     * dispatch it, so an idle effect dispatches nothing. Calling update()
+     * directly doesn't dispatch it.
+     * @event ProximityEffect#redraw
+     * @type {Event}
+     */
+
+    /**
+     * A remeasure found that at least one node's centre moved (after a resize,
+     * a container scroll, a change of nodes...). Dispatched before that frame
+     * is drawn.
+     * @event ProximityEffect#reflow
+     * @type {Event}
+     */
 
 
-    updatePointer(evt)
+
+    // any pointer (mouse, pen or touch); with several touches, only the first is followed
+    #pointerMove(evt)
     {
+        if (evt.isPrimary===false)
+        {
+            return;
+        }
+        this.#pointer ??= { x: 0, y: 0 };
         this.#pointer.x = evt.clientX;
         this.#pointer.y = evt.clientY;
+        this.#start();
     }
 
 
 
 
 
-    reflowEvent(evt)
+    // pointerout with no element to go to: the pointer left the page, or a
+    // touch or pen lifted off. The nodes settle back to rest.
+    #pointerOut(evt)
     {
-        if (evt.currentTarget!==this)
+        if (evt.relatedTarget===null && evt.isPrimary!==false)
         {
-            this.dispatchEvent(new Event("reflow"));
+            this.#pointerLeft();
         }
+    }
 
-        // TODO: is this a hack? or the best way to do it?
-        if (!this.preventCenterCalculations)
+
+
+    #pointerLeft()
+    {
+        if (this.#pointer!==null)
         {
-            window.setTimeout(() => this.setCenterPoints(), 1);
+            this.#pointer = null;
+            this.#start();
         }
     }
 
@@ -1080,232 +2039,143 @@ class ProximityEffect extends EventTarget
 
 
 
-    update(timestamp)
+    // the window resized: remeasure the nodes on the next frame
+    // (which dispatches "reflow" if any of them moved)
+    #reflow()
     {
-        let view = document.documentElement;
-
-        for (let n=0; n<this.nodes.length; n++)
+        if (this.#ready && !this.#destroyed)
         {
-            let node    = this.nodes[n],
-                bounds  = node.getBoundingClientRect(),
-                center  = this.getNodeIndexData(n, "center");
-
-            let centerX = center.x - (node.dataset["offsetx"]||0),
-                centerY = center.y - (node.dataset["offsety"]||0);
-
-            let tx, ty,
-                   last = this.getNodeIndexData(n, "lastDelta");
+            this.#requestMeasure();
+        }
+    }
 
 
-            if(this.#coords)
+
+
+
+    /**
+     * Draw one frame now: work out each node's distance from the target and
+     * write its styles. The animation loop calls this by itself, so it's only
+     * needed to draw while paused, or to draw straight away. It doesn't
+     * dispatch 'redraw', and does nothing once the instance is destroyed.
+     */
+    update()
+    {
+        if (this.#destroyed)
+        {
+            return;
+        }
+
+        // the layout reads (page scroll, a target's position) happen before any
+        // style is written; node centres are measured separately and cached
+        this.#followScroll();
+        const point   = this.#targetPoint(),
+              groups  = this.#styleGroups,
+              rewrite = this.#needsRewrite,
+              instant = this.motionReduced,
+              { threshold, runoff, invert, attack, decay, tolerance, direction, zIndex, perspective } = this.#globalParams;
+
+        this.#needsRewrite = false;
+        this.#lastTargetPoint = point && { x: point.x, y: point.y };
+        let changed = rewrite;
+
+        for (const data of this.#nodeData)
+        {
+            const center = data.center;
+
+            if (!center)
             {
-                let m = this.getCoords();
-                tx = m.x;
-                ty = m.y;
-            }
-            else if (this.target)
-            {
-                let b = this.target.getBoundingClientRect();
-                tx = (b.left + b.right)*0.5;
-                ty = (b.top + b.bottom)*0.5;
-            }
-            else
-            {
-                tx = this.pointer.x;
-                ty = this.pointer.y;
+                continue;
             }
 
-            let dx = tx - centerX,
-                dy = ty - centerY,
-                dd, td, d;
+            // with nothing to track yet, nodes rest as though it were infinitely far away
+            let td = 1;
 
-            // calculate distance
-            if (this.direction==="both")
+            if (point)
             {
-                dd = Adasha_Utils.pythagoras(dx, dy);
-            }
-            else
-            {
-                dd = Math.abs(this.direction==="horizontal" ? dx : dy);
+                const dx = point.x - center.x,
+                      dy = point.y - center.y;
+
+                // calculate distance
+                const dd = direction==="both"
+                    ? Math.hypot(dx, dy)
+                    : Math.abs(direction==="horizontal" ? dx : dy);
+
+                // normalise to boundaries; a runoff of 0 is a hard edge
+                td = runoff===0
+                    ? (dd>threshold ? 1 : 0)
+                    : AdashaUtils.constrain((dd-threshold) / runoff, 0, 1);
             }
 
-            // normalise to boundaries
-    		td = Adasha_Utils.constrain((dd-this.threshold) * this.#globalParams.invRunoff, 0, 1);
-            if (this.invert)
+            if (invert)
             {
                 td = 1 - td;
             }
 
-            this.#setNodeIndexData(n, "distance", td);
+            data.distance = td;
 
-            // apply easing
-            d = last+(td-last)*(Adasha_Utils.XOR(td>last, this.invert) ? this.decay : this.attack);
+            // apply easing (the first frame starts where it is, unless primed;
+            // with reduced motion there's no easing at all)
+            const last = data.lastDelta,
+                  rate = instant ? 1 : AdashaUtils.xor(td>last, invert) ? decay : attack;
+            let d = last===undefined ? td : last+(td-last)*rate;
 
-            // round value to reduce jitter
-            d = Adasha_Utils.roundTo(d, this.accuracy);
-
-            this.#setNodeIndexData(n, "lastDelta", d);
-
-
-            if (this.styles.length>0)
+            // easing only approaches its target, so snap once close enough to come to rest
+            if (rate>0 && Math.abs(td-d)<=tolerance)
             {
-                let styles = {};
+                d = td;
+            }
 
-                for (let f=0; f<this.styles.length; f++)
-                {
-      				let style   = this.styles[f],
-                        nodeVals = this.getNodeIndexData(n, "styles")[f];
+            data.lastDelta = d;
 
-                    let near     = nodeVals.near,
-                        far      = nodeVals.far,
-                        rule     = style.rules.rule,
-                        func     = style.rules.func,
-                        unit     = style.rules.unit || "",
-                        val      = Adasha_Utils.delta(d, near, far);
+            // a node that hasn't moved would get the same styles as last time
+            if (d===last && !rewrite)
+            {
+                continue;
+            }
+            changed = true;
 
-
-                    if (!func)
-                    {
-                        node.style[rule] = `${val}${unit}`;
-                    }
-                    else
-                    {
-                        if (!styles[rule])
-                        {
-                            styles[rule] = [];
-                        }
-                        styles[rule].push(func+"("+val+unit+")");
-                    }
-                }
-                
-
-                for (let rule in styles)
-                {
-                    node.style[rule] = styles[rule].join(" ");
-                }
-
-                let ix = Math.floor(d*1000);
-                node.style.zIndex = this.invert ? ix : 1000-ix;
+            if (groups.length>0)
+            {
+                this.#writeStyles(data, d, groups, zIndex, invert, perspective);
             }
         }
 
-        if (!this.FPS && !this.#coords)
-        {
-            this.#refresh();
-        }
-
-
+        this.#changed = changed;
     } // update end
 
-}
 
 
+    #writeStyles(data, d, groups, zIndex, invert, perspective)
+    {
+        const style = data.node.style;
 
+        for (const group of groups)
+        {
+            // first, so it's applied after the other functions, about the
+            // transform-origin of the untransformed box
+            let value = perspective && group.transform ? `perspective(${perspective}px)` : "";
+            for (const { index, func, unit } of group.items)
+            {
+                const vals = data.styles[index],
+                      val  = AdashaUtils.lerp(d, vals.near, vals.far);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
- * Utilities Class
- */
-
-class Adasha_Utils
-{
-
-
-
-    static constrain = (num, min, max) => {
-        if (typeof num!=="number") {
-            return NaN;
+                value += func
+                    ? `${value==="" ? "" : " "}${func}(${val}${unit})`
+                    : `${val}${unit}`;
+            }
+            style[group.rule] = value;
+            if (group.resizes)
+            {
+                this.#ownResizes.add(data.node);
+            }
         }
-        if (min!==undefined && min!==null && typeof min==="number") {
-            num = Math.max(num, min);
-        }
-        if (max!==undefined && max!==null && typeof max==="number") {
-            num = Math.min(num, max);
-        }
-        return num;
-    };
-    
 
-    static roundTo = (num, dp=0) => {
-        let mult = Math.pow(dp+1,10);
-        return Math.round(num*mult)/mult;
-    };
-    
-
-    static delta = (num, a, b) => (b - a) * Adasha_Utils.constrain(num, 0, 1) + a;
-    
-
-    static map = (num, inMin, inMax, outMin, outMax) =>
-            (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-    
-
-    static random = (v=2, m="uniform") => {
-        switch (m) {
-    
-            // intentional fall-throughs
-            case "gaussian" :
-            case "normal" :
-                let t = 0,
-                    c = 6;
-                for (let i=0; i<c; i++) {
-                    t += (Math.random()-0.5)*v;
-                }
-                return t/c;
-                break;
-    
-            case "uniform" :
-            default :
-                return (Math.random()-0.5)*v;
+        if (zIndex)
+        {
+            const ix = Math.floor(d*1000);
+            style.zIndex = invert ? ix : 1000-ix;
         }
     }
-    
-
-    static XOR = (a, b) => (a || b) && !(a && b);
-    
-
-    static pythagoras = (a, b) => Math.sqrt(a*a+b*b);
-
-
-    static isVisibleInViewport = (el) => {
-        let bounds = el.getBoundingClientRect(),
-            view   = document.documentElement;
-        return bounds.right >=0 && bounds.left<=view.clientWidth &&
-               bounds.bottom>=0 && bounds.top <=view.clientHeight;
-    };
-    
-
-    //static startTimer = (delay) =>
-    
-
-    static valToObj = (val, key="value") => {
-        let obj = {};
-        obj[key] = val;
-        return obj;
-    };
-    
-
-    static isObject = obj => obj==Object(obj);
-    
-    
 
 }
-
-
-
-
-
-

@@ -1,17 +1,18 @@
 ---
 name: Feature request
-about: Suggest an idea for this project
+about: Suggest an idea for ProximityEffect
+labels: enhancement
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+**What you're trying to do**
+The effect you want to create, or the problem you're trying to solve.
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+**What you'd like**
+How you'd like it to work, ideally with an example of the code you'd write.
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+**Alternatives**
+Anything you've tried, or other ways it could work.
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+**Anything else**
+Check the [roadmap](https://github.com/Adasha/proximity-effect#roadmap) first: multi-value properties (such as colours), per-style parameters and keyframes in between are already planned.

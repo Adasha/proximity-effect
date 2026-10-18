@@ -1,0 +1,101 @@
+﻿<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scatter: ProximityEffect demo</title>
+<link rel="stylesheet" href="demo.css">
+<style>
+    #poem { width: fit-content; max-width: 100%; box-sizing: border-box; margin: 1rem auto; padding: 2em; font: 160%/1.6 Georgia, serif; perspective: 500px; }
+    #poem [data-wrapchars="piece"] { display: inline-block; }
+    @media (max-width: 720px)
+    {
+        #poem { padding: 1em; font-size: 140%; }
+    }
+</style>
+</head>
+<body>
+<nav><a href="index.html">All demos</a></nav>
+<main>
+    <h1>Scatter</h1>
+    <p>The poem's letters (or words) are scattered in 3D, and fall into place as the pointer passes. The far keyframes use <code>scatter</code>, so each piece rests somewhere different. A <code>redraw</code> listener also blurs each piece by how far it is from where it belongs, using <code>getNodeIndexData()</code> and <code>distanceFromIndex()</code>.</p>
+    <p>This one is decorative: the poem can't be read until the pointer gathers it. Screen readers read it as normal.</p>
+
+    <div class="controls">
+        <button type="button" id="pause" aria-pressed="false">Pause effect</button>
+        <label>Split into
+            <select id="split">
+                <option value="letter">letters</option>
+                <option value="word">words</option>
+            </select>
+        </label>
+        <label>Distance
+            <select id="direction">
+                <option value="horizontal">across</option>
+                <option value="vertical">down</option>
+                <option value="both">both ways</option>
+            </select>
+        </label>
+    </div>
+
+    <blockquote id="poem" class="stage">
+        <span>’Twas brillig, and the slithy toves</span><br>
+        <span>Did gyre and gimble in the wabe:</span><br>
+        <span>All mimsy were the borogoves,</span><br>
+        <span>And the mome raths outgrabe.</span>
+    </blockquote>
+</main>
+
+<script type="module">
+import ProximityEffect from "../src/ProximityEffect.js";
+import WrapChars from "./assets/wrap-chars.mjs";
+import { demo } from "./demo.js";
+
+const poem = document.getElementById("poem");
+
+function pieces(split)
+{
+    WrapChars.unwrap(poem);
+    WrapChars.wrap(poem, { split });
+    return poem.querySelectorAll('[data-wrapchars="piece"]');
+}
+
+const pe = new ProximityEffect(pieces("letter"), {
+    threshold:  20,
+    runoff:    100,
+    jitter:     50,
+    direction: "horizontal",
+    attack:      0.3,
+    decay:       0.3,
+});
+pe.addStyle("translateX", [0, { value:  0, scatter:  50, scatterMethod: "normal" }]);
+pe.addStyle("translateY", [0, { value:  0, scatter:  50, scatterMethod: "normal" }]);
+pe.addStyle("translateZ", [0, { value: 75, scatter:  50 }]);
+pe.addStyle("rotateX",    [0, { value:  0, scatter: 270, scatterMethod: "normal" }]);
+pe.addStyle("rotateY",    [0, { value:  0, scatter: 270, scatterMethod: "normal" }]);
+pe.addStyle("rotateZ",    [{ value: 0, scatter: 30 }, { value: 0, scatter: 90 }]);
+
+// blur each piece by its depth when scattered, times how scattered it is now
+pe.addEventListener("redraw", () =>
+{
+    pe.nodes.forEach((node, i) =>
+    {
+        const depth = Math.abs(pe.getNodeIndexData(i, "styles")[2].far),
+              blur  = depth * pe.distanceFromIndex(i)**2 * 0.025;
+        node.style.filter = `blur(${blur}px)`;
+    });
+});
+
+document.getElementById("split").addEventListener("change", (evt) =>
+{
+    pe.nodes = pieces(evt.target.value);
+});
+document.getElementById("direction").addEventListener("change", (evt) =>
+{
+    pe.direction = evt.target.value;
+});
+
+demo(pe);
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+﻿<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reveal: ProximityEffect demo</title>
+<link rel="stylesheet" href="demo.css">
+<style>
+    #stage { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 10px; min-height: 600px; padding: 10px; background: radial-gradient(ellipse at center, #eaeaea 1%, #a8a8a8 100%); perspective: 1000px; transform-style: preserve-3d; }
+    #stage div { width: 50px; height: 50px; border-radius: 50%; background: #666; box-shadow: 0 0 50px #000 inset; }
+</style>
+</head>
+<body>
+<nav><a href="index.html">All demos</a></nav>
+<main>
+    <h1>Reveal</h1>
+    <p>At rest, every bubble sits at the viewer's eye (<code>translateZ</code> equal to the <code>perspective</code>), so it can't be seen. Bubbles near the pointer drop back into place, revealing them in a small pool. If you've asked your system for reduced motion, they stay hidden.</p>
+
+    <div class="controls">
+        <button type="button" id="pause" aria-pressed="false">Pause effect</button>
+    </div>
+
+    <div id="stage" class="stage" aria-hidden="true"></div>
+</main>
+
+<script type="module">
+import ProximityEffect from "../src/ProximityEffect.js";
+import { demo } from "./demo.js";
+
+const stage = document.getElementById("stage");
+for (let i=0; i<100; i++)
+{
+    stage.append(document.createElement("div"));
+}
+
+const pe = new ProximityEffect(stage.children, {
+    threshold: 80,
+    runoff:    20,
+    attack:     0.4,
+    decay:      0.4,
+});
+pe.addStyle("translateZ", [0, 1000]);
+pe.addStyle("blur",       [0,   20]);
+
+demo(pe);
+</script>
+</body>
+</html>

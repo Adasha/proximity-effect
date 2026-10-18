@@ -1,0 +1,50 @@
+﻿<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bubbles: ProximityEffect demo</title>
+<link rel="stylesheet" href="demo.css">
+<style>
+    #stage { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 10px; min-height: 600px; padding: 10px; }
+    #stage div { width: 50px; height: 50px; border-radius: 50%; background: #666; box-shadow: 0 0 50px #000 inset; }
+</style>
+</head>
+<body>
+<nav><a href="index.html">All demos</a></nav>
+<main>
+    <h1>Bubbles</h1>
+    <p>Bubbles light up and grow as the pointer comes near. <code>invert</code> swaps the near and far values, <code>runoff: 0</code> gives a hard edge, and <code>jitter</code> moves each bubble's centre a random amount, so the edge is ragged. A slow <code>decay</code> leaves a trail.</p>
+
+    <div class="controls">
+        <button type="button" id="pause" aria-pressed="false">Pause effect</button>
+    </div>
+
+    <div id="stage" class="stage" aria-hidden="true"></div>
+</main>
+
+<script type="module">
+import ProximityEffect from "../src/ProximityEffect.js";
+import { demo } from "./demo.js";
+
+const stage = document.getElementById("stage");
+for (let i=0; i<100; i++)
+{
+    stage.append(document.createElement("div"));
+}
+
+const pe = new ProximityEffect(stage.children, {
+    threshold: 100,
+    runoff:      0,
+    jitter:    120,
+    attack:      0.6,
+    decay:       0.06,
+    invert:   true,
+});
+pe.addStyle("scale",      [0.2,   1]);
+pe.addStyle("brightness", [  0, 650]);
+
+demo(pe);
+</script>
+</body>
+</html>
