@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vanishing point: ProximityEffect demo</title>
+<link rel="stylesheet" href="demo.css">
+<style>
+    /* the tiles' parent: a long column with a perspective, as a page might have */
+    #column { position: relative; perspective: 400px; padding: 1rem; }
+    .tile { display: inline-block; width: 80px; height: 80px; margin: 4px; background: linear-gradient(135deg, #0b57d0, #6730e7); vertical-align: top; }
+    /* where the column's perspective-origin is */
+    #origin { position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; pointer-events: none; z-index: 1;
+              background: linear-gradient(#c00, #c00) center / 2px 100% no-repeat, linear-gradient(#c00, #c00) center / 100% 2px no-repeat; }
+    #column p { max-width: 40rem; }
+</style>
+</head>
+<body>
+<nav><a href="index.html">All demos</a></nav>
+<main>
+    <h1>Vanishing point</h1>
+    <p>The tiles tip back near the pointer. They sit at the top of a long column with a <code>perspective</code>, and the red cross marks the column's <code>perspective-origin</code>: the point the 3D is seen from. With <code>perspectiveOrigin</code> on, the effect puts it at the centre of the tiles. Turn it off to see the browser's default, the middle of the column, far down the page, so the tiles are seen steeply from below.</p>
+
+    <div class="controls">
+        <button type="button" id="pause" aria-pressed="false">Pause effect</button>
+        <label><input type="checkbox" id="perspectiveOrigin" checked> perspectiveOrigin</label>
+    </div>
+
+    <div id="column" class="stage">
+        <div id="origin" aria-hidden="true"></div>
+
+        <p>A <code>perspective</code> on an element gives its children's 3D transforms depth, seen from a single point: the <code>perspective-origin</code>, which is the middle of the element unless it's set. On a small stage that wraps the animated elements closely, the middle is where you'd want it.</p>
+
+        <p>When the element with the perspective is much bigger than the animated ones, such as a long column like this one, or the page itself, its middle can be a long way from them. Elements near the top are then seen from far below, and stretch and lean towards a point you can't see. Elements further down the page look different again.</p>
+
+        <p>Setting <code>perspectiveOrigin: true</code> moves the origin to the centre of the animated elements, measured as they are at rest, and keeps it there when the page reflows. The elements need to share a parent, since that's the element whose origin is set; if they don't, the effect logs a warning and leaves the origins alone.</p>
+
+        <p>Another option is <code>perspective</code>, which gives each element a perspective of its own, seen from its own centre, in place of the parent's. Then every element looks the same wherever it is, rather than all of them sharing one vanishing point.</p>
+
+        <p>The rest of this column is only here to make it long.</p>
+
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+
+        <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+
+        <p>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit.</p>
+
+        <p>Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur.</p>
+
+        <p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga.</p>
+
+        <p>Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus.</p>
+
+        <p>Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.</p>
+    </div>
+</main>
+
+<script type="module">
+import ProximityEffect from "../src/ProximityEffect.js";
+import { demo } from "./demo.js";
+
+const column = document.getElementById("column"),
+      marker = document.getElementById("origin"),
+      toggle = document.getElementById("perspectiveOrigin"),
+      first  = column.querySelector("p");
+
+// the tiles go in the column itself, since perspectiveOrigin sets their parent's origin
+for (let i=0; i<24; i++)
+{
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    tile.setAttribute("aria-hidden", "true");
+    column.insertBefore(tile, first);
+}
+
+const pe = new ProximityEffect(column.querySelectorAll(".tile"), {
+    threshold:         80,
+    runoff:           160,
+    attack:             0.3,
+    decay:              0.2,
+    perspectiveOrigin: toggle.checked,
+});
+pe.addStyle("rotateX",    [60, 0]);
+pe.addStyle("translateZ", [-60, 0]);
+
+
+// move the cross to wherever the column's perspective-origin is now
+function showOrigin()
+{
+    const [x, y] = getComputedStyle(column).perspectiveOrigin.split(" ");
+    marker.style.left = x;
+    marker.style.top  = y;
+}
+
+toggle.addEventListener("change", () =>
+{
+    pe.perspectiveOrigin = toggle.checked;
+    // turning it on sets the origin when the tiles are next measured
+    requestAnimationFrame(() => requestAnimationFrame(showOrigin));
+});
+pe.addEventListener("ready", showOrigin);
+pe.addEventListener("reflow", showOrigin);
+
+demo(pe);
+</script>
+</body>
+</html>
