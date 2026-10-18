@@ -222,9 +222,11 @@ export default class Style
 
 		// the caller's array is never touched: build a normalised copy from own properties only.
 		// Every key is set, even when undefined, so lookups never reach the prototype.
-		const frames = keyframes.map((val, v) =>
+		// Both indices are read, so a hole in a sparse array is an error like any other.
+		const frames = [0, 1].map(v =>
 		{
-			const name = `keyframe ${v}`;
+			const val  = own(keyframes, v),
+				  name = `keyframe ${v}`;
 			let frame;
 
 			if (typeof val==="number")

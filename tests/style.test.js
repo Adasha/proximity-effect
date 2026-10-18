@@ -126,6 +126,11 @@ describe("Style", () =>
         expect(() => new Style("blur", [0, "5"])).toThrow(TypeError);
         expect(() => new Style("blur", [0, {}])).toThrow(TypeError);
         expect(() => new Style("blur", "01")).toThrow(TypeError);
+        // sparse arrays have the right length but a missing keyframe
+        /* eslint-disable no-sparse-arrays */
+        expect(() => new Style("blur", [, 5])).toThrow(TypeError);
+        expect(() => new Style("blur", [5, ,])).toThrow(TypeError);
+        /* eslint-enable no-sparse-arrays */
     });
 
     it("rejects NaN and infinite keyframe values", () =>
