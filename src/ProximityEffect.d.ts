@@ -74,6 +74,8 @@ export interface ProximityEffectParams
     primeDistances?: boolean | null;
     /** Set each node's z-index from its distance. Default false. */
     zIndex?: boolean | null;
+    /** Set the nodes' parent's perspective-origin to the centre of the nodes at rest. The nodes must share a parent, or it warns and does nothing. Default false. */
+    perspectiveOrigin?: boolean | null;
     /** A perspective distance for each node's transform, in pixels, viewed from the centre of the node at rest. Use instead of a parent's perspective. A falsy value means none. Default null. */
     perspective?: number | false | null;
     /** What to do when the user prefers reduced motion: stay at rest, follow without easing, or ignore it. Default "rest". */
@@ -203,6 +205,8 @@ export default class ProximityEffect extends EventTarget
     set invert(flag: boolean);
     get zIndex(): boolean;
     set zIndex(flag: boolean);
+    get perspectiveOrigin(): boolean;
+    set perspectiveOrigin(flag: boolean);
     get perspective(): number | null;
     set perspective(value: number | false | null | undefined);
     get attack(): number;

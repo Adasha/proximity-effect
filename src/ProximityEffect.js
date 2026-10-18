@@ -96,6 +96,9 @@ export default class ProximityEffect extends EventTarget
     #changed = false;
     #scratchStyle;
     #prefersReducedMotion = false;
+    // the parent whose perspective-origin is set, and its own inline value
+    #originParent = null;
+    #originParentValue = "";
 
     // stable listener references, so they can all be removed
     #onPointerMove  = (evt) => this.#pointerMove(evt);
@@ -134,6 +137,7 @@ export default class ProximityEffect extends EventTarget
      * @param {Element} [params.target] - An element to track instead of the pointer.
      * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
      * @param {boolean} [params.zIndex=false] - Set each node's z-index from its distance, so the nearest nodes sit on top.
+     * @param {boolean} [params.perspectiveOrigin=false] - Set the nodes' parent's perspective-origin to the centre of the nodes at rest. The nodes must share a parent.
      * @param {number|null|false} [params.perspective] - A perspective distance in pixels to give each node's transform, viewed from the centre of the node at rest, or null, false or 0 to leave perspective to the parent.
      * @param {string}  [params.reducedMotion="rest"] - What to do when the user prefers reduced motion: "rest" (nodes stay at rest and ignore the pointer), "snap" (nodes follow without easing) or "ignore".
      * @throws {TypeError} If an argument or parameter is the wrong type.
@@ -186,6 +190,8 @@ export default class ProximityEffect extends EventTarget
         this.target       = param("target", null);
 
         this.nodes = nodes;
+        // after the nodes, since it needs their parent
+        this.perspectiveOrigin = param("perspectiveOrigin", false);
 
 
         // finish setup once the document has loaded. Deferred even when it
@@ -279,6 +285,10 @@ export default class ProximityEffect extends EventTarget
 
         this.#nodes    = nodes;
         this.#nodeData = nodes.map(node => kept.get(node) ?? this.#createNodeData(node));
+        if (this.perspectiveOrigin)
+        {
+            this.#claimOriginParent();
+        }
 
         if (this.#ready)
         {
@@ -423,6 +433,46 @@ export default class ProximityEffect extends EventTarget
             }
         }
         this.#invalidate();
+    }
+
+
+
+
+
+    /**
+     * Get whether the effect sets the parent's perspective-origin.
+     * @return {boolean} The perspectiveOrigin value.
+     */
+    get perspectiveOrigin()
+    {
+        return this.#globalParams.perspectiveOrigin;
+    }
+
+    /**
+     * Set whether the effect sets the nodes' parent's perspective-origin to
+     * the centre of the nodes at rest, so a perspective on the parent is
+     * viewed from the middle of the nodes rather than the middle of the
+     * parent. It follows the nodes when they're measured again. The nodes
+     * must share a parent; if they don't, it warns and sets nothing. Turning
+     * it off gives the parent its original perspective-origin back.
+     * @param {boolean} flag - The new perspectiveOrigin value.
+     */
+    set perspectiveOrigin(flag)
+    {
+        const was = this.#globalParams.perspectiveOrigin;
+        this.#globalParams.perspectiveOrigin = Validate.boolean(flag, "perspectiveOrigin");
+        if (this.#destroyed || flag===was)
+        {
+            return;
+        }
+        if (flag)
+        {
+            this.#claimOriginParent();
+        }
+        else
+        {
+            this.#releaseOriginParent();
+        }
     }
 
 
@@ -1046,6 +1096,7 @@ export default class ProximityEffect extends EventTarget
         {
             this.#restoreInlineStyle(data);
         }
+        this.#releaseOriginParent();
     }
 
 
@@ -1442,7 +1493,8 @@ export default class ProximityEffect extends EventTarget
         // read pass: positions, and whether each node scrolls with the page
         const bounds = all.map(data => data.node.getBoundingClientRect()),
               cache  = new Map(),
-              pinned = all.map(data => this.#isPinned(data.node, cache));
+              pinned = all.map(data => this.#isPinned(data.node, cache)),
+              parent = all===this.#nodeData && this.#originParent?.getBoundingClientRect();
 
         let moved = false;
         all.forEach((data, i) =>
@@ -1465,7 +1517,69 @@ export default class ProximityEffect extends EventTarget
             data.scrollsWithPage = !pinned[i];
             this.#applyOffset(data);
         });
+        if (parent)
+        {
+            this.#setOrigin(bounds, parent);
+        }
         return moved;
+    }
+
+
+
+    // Use the nodes' parent for perspectiveOrigin, giving back any parent
+    // used before. Nodes with different parents warn, and none is used.
+    #claimOriginParent()
+    {
+        const parents = new Set(this.#nodes.map(node => this.#parentOf(node))),
+              [parent] = parents;
+        if (parents.size>1 || !parent)
+        {
+            this.#releaseOriginParent();
+            console.warn("ProximityEffect: perspectiveOrigin needs every node to share a parent element, and these don't, so it has no effect.");
+            return;
+        }
+        if (parent!==this.#originParent)
+        {
+            this.#releaseOriginParent();
+            this.#originParent = parent;
+            this.#originParentValue = parent.style.perspectiveOrigin;
+        }
+        if (this.#ready)
+        {
+            this.#requestMeasure();
+        }
+    }
+
+
+
+    #releaseOriginParent()
+    {
+        if (this.#originParent)
+        {
+            this.#originParent.style.perspectiveOrigin = this.#originParentValue;
+            this.#originParent = null;
+        }
+    }
+
+
+
+    // Put the parent's perspective-origin at the centre of the nodes' boxes,
+    // measured at rest. Percentages of the parent's box, so they still hold
+    // if the parent itself is scaled or moved.
+    #setOrigin(bounds, parent)
+    {
+        let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
+        for (const b of bounds)
+        {
+            left   = Math.min(left, b.left);
+            right  = Math.max(right, b.right);
+            top    = Math.min(top, b.top);
+            bottom = Math.max(bottom, b.bottom);
+        }
+        const share = (at, start, size) => size>0 ? `${(at-start)/size*100}%` : "50%";
+
+        this.#originParent.style.perspectiveOrigin =
+            `${share((left+right)*0.5, parent.left, parent.width)} ${share((top+bottom)*0.5, parent.top, parent.height)}`;
     }
 
 

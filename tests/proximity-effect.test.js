@@ -875,6 +875,97 @@ describe("perspective", () =>
 
 
 
+describe("perspectiveOrigin", () =>
+{
+    // a parent at (left, top), size w x h, holding nodes centred on the given points
+    function group(left, top, w, h, points)
+    {
+        const parent = document.createElement("div");
+        parent.getBoundingClientRect = () => ({ left, top, right: left+w, bottom: top+h, width: w, height: h, x: left, y: top });
+        document.body.append(parent);
+        const nodes = points.map(([x, y]) => { const el = makeNode(x, y); parent.append(el); return el; });
+        return { parent, nodes };
+    }
+
+    it("puts the parent's perspective-origin at the centre of the nodes", async () =>
+    {
+        // nodes span 0-100 x 0-50, in the top-left of a 400 x 1000 parent
+        const { parent, nodes } = group(0, 0, 400, 1000, [[5, 5], [95, 45]]);
+        parent.style.perspectiveOrigin = "10px 20px";
+        const pe = create(nodes, { perspectiveOrigin: true });
+        expect(parent.style.perspectiveOrigin).toBe("10px 20px");
+        await settle();
+        expect(pe.perspectiveOrigin).toBe(true);
+        expect(parent.style.perspectiveOrigin).toBe("12.5% 2.5%");
+
+        pe.perspectiveOrigin = false;
+        expect(parent.style.perspectiveOrigin).toBe("10px 20px");
+    });
+
+    it("follows the nodes when they're measured again", async () =>
+    {
+        const { parent, nodes } = group(0, 0, 400, 400, [[100, 100]]);
+        const pe = create(nodes, { perspectiveOrigin: true });
+        await settle();
+        expect(parent.style.perspectiveOrigin).toBe("25% 25%");
+        nodes[0].getBoundingClientRect = () => boxAt(200, 300);
+        pe.setCenterPoints();
+        expect(parent.style.perspectiveOrigin).toBe("50% 75%");
+    });
+
+    it("leaves parents alone by default, and gives the parent back on destroy()", async () =>
+    {
+        const { parent, nodes } = group(0, 0, 400, 400, [[100, 100]]);
+        const pe = create(nodes);
+        await settle();
+        expect(pe.perspectiveOrigin).toBe(false);
+        expect(parent.style.perspectiveOrigin).toBe("");
+
+        pe.perspectiveOrigin = true;
+        step();
+        expect(parent.style.perspectiveOrigin).toBe("25% 25%");
+        pe.destroy();
+        expect(parent.getAttribute("style")).toBe("");
+        pe.perspectiveOrigin = false;
+        pe.perspectiveOrigin = true;
+        expect(parent.style.perspectiveOrigin).toBe("");
+    });
+
+    it("warns and sets nothing when the nodes have different parents", async () =>
+    {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const a = group(0, 0, 400, 400, [[100, 100]]),
+              b = group(0, 0, 400, 400, [[300, 300]]);
+        const pe = create([...a.nodes, ...b.nodes], { perspectiveOrigin: true });
+        await settle();
+        step();
+        expect(warn).toHaveBeenCalledOnce();
+        expect(warn.mock.calls[0][0]).toMatch(/perspectiveOrigin/);
+        expect(a.parent.style.perspectiveOrigin).toBe("");
+        expect(b.parent.style.perspectiveOrigin).toBe("");
+
+        // narrowing the nodes to one parent starts using it
+        pe.nodes = b.nodes;
+        step();
+        expect(b.parent.style.perspectiveOrigin).toBe("75% 75%");
+        // and moving to another gives the first one back
+        pe.nodes = a.nodes;
+        expect(b.parent.style.perspectiveOrigin).toBe("");
+        step();
+        expect(a.parent.style.perspectiveOrigin).toBe("25% 25%");
+        expect(warn).toHaveBeenCalledOnce();
+    });
+
+    it("requires a boolean", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        expect(() => { pe.perspectiveOrigin = 1; }).toThrow(TypeError);
+        expect(pe.perspectiveOrigin).toBe(false);
+    });
+});
+
+
+
 describe("performance", () =>
 {
     // settle the loop: draw frames until it stops asking for more
