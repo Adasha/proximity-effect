@@ -478,6 +478,33 @@ describe("styles", () =>
         expect(el.style.zIndex).toBe("3");
     });
 
+    it("treats camelCase and kebab-case spellings of a property as one", async () =>
+    {
+        const el = makeNode(0, 0);
+        el.style.letterSpacing = "1px";
+        const pe = create(el);
+        pe.addStyle({ rule: "letter-spacing", unit: "px" }, [0, 4], { id: "a" });
+        pe.addStyle({ rule: "letterSpacing", unit: "px" }, [0, 2]);
+        await settle();
+        step();
+        expect(el.style.letterSpacing).toBe("2px");
+        // the other spelling still animates it, so it isn't restored
+        pe.removeStyle("a");
+        expect(el.style.letterSpacing).toBe("2px");
+    });
+
+    it("combines functions written to one property under different spellings", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el);
+        pe.addStyle({ rule: "-webkit-filter", func: "blur", unit: "px" }, [0, 3]);
+        pe.addStyle({ rule: "webkitFilter", func: "brightness", unit: "%" }, [100, 50]);
+        await settle();
+        step();
+        // written with the first style's spelling
+        expect(el.style["-webkit-filter"]).toBe("blur(3px) brightness(50%)");
+    });
+
     it("clamps scattered values to the style's range", () =>
     {
         vi.spyOn(Math, "random").mockReturnValue(1);
@@ -1088,6 +1115,21 @@ describe("performance", () =>
         document.dispatchEvent(new Event("scroll"));
         step();
         expect(measured.map(spy => spy.mock.calls.length)).toEqual([1, 1]);
+    });
+
+    it("knows any spelling of a paint-only property can't move the pinned nodes", async () =>
+    {
+        const sticky = makeNode(0, 0), flow = makeNode(0, 0);
+        sticky.style.position = "sticky";
+        const pe = create([sticky, flow]);
+        pe.addStyle({ rule: "-webkit-filter", func: "blur", unit: "px" }, [0, 2]);
+        pe.addStyle({ rule: "backdrop-filter", func: "blur", unit: "px" }, [0, 2]);
+        await settle();
+        const measured = [sticky, flow].map(el => vi.spyOn(el, "getBoundingClientRect"));
+        vi.spyOn(window, "scrollY", "get").mockReturnValue(30);
+        document.dispatchEvent(new Event("scroll"));
+        step();
+        expect(measured.map(spy => spy.mock.calls.length)).toEqual([1, 0]);
     });
 
     it("ignores scrolling in containers that hold none of its nodes", async () =>

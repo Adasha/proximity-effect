@@ -239,7 +239,7 @@ Instead of a preset name, pass an object describing the CSS to write:
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `rule` | String | Required. The CSS property to write to, in camelCase (`"letterSpacing"`) or kebab-case (`"letter-spacing"`). |
+| `rule` | String | Required. The CSS property to write to, in camelCase (`"letterSpacing"`) or kebab-case (`"letter-spacing"`). Both spellings name the same property, so styles using either are combined and restored together. |
 | `func` | String | (optional) A CSS function to wrap the value in, such as `"perspective"`. Styles with a `func` and the same `rule` are combined, as the presets are. |
 | `unit` | String | (optional) A CSS unit to add to the value, such as `"px"`, `"em"`, `"%"` or `"deg"`. |
 | `min` and `max` | Number | (optional) Keyframe and scattered values are clamped to this range. |

@@ -12,13 +12,19 @@ import * as Validate from './validate.mjs';
  */
 
 
+// A custom style's rule can be camelCase or kebab-case, so rules are compared
+// by their camelCase form: "letter-spacing" and "letterSpacing" are one
+// property, as are "-webkit-filter" and "webkitFilter". Styles are still
+// written with the spelling they were given.
+const ruleKey = (rule) => rule.replace(/^-/, "").replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
+
 // properties that don't move or resize an element's box, so nodes can be
-// measured without taking them off first
-const PAINT_ONLY_RULES = new Set(["filter", "backdropFilter", "backdrop-filter", "opacity", "zIndex", "z-index"]);
+// measured without taking them off first (as rule keys)
+const PAINT_ONLY_RULES = new Set(["filter", "webkitFilter", "backdropFilter", "webkitBackdropFilter", "opacity", "zIndex"]);
 
 // properties that can't change an element's size, so writing them never
-// makes the ResizeObserver report
-const SIZE_NEUTRAL_RULES = new Set([...PAINT_ONLY_RULES, "transform", "translate", "rotate", "scale"]);
+// makes the ResizeObserver report (as rule keys)
+const SIZE_NEUTRAL_RULES = new Set([...PAINT_ONLY_RULES, "transform", "webkitTransform", "translate", "rotate", "scale"]);
 
 // the public node data fields, each read as a copy (see getNodeData)
 const point = (p) => p && { x: p.x, y: p.y };
@@ -821,7 +827,8 @@ export default class ProximityEffect extends EventTarget
     {
         this.#assertAlive("remove a style from");
         Validate.string(name, "style name");
-        const rules = new Set();
+        // rule key => a spelling to restore it with
+        const rules = new Map();
 
         // backwards, so splicing doesn't skip entries
         for (let i=this.#stylesStack.length-1; i>=0; i--)
@@ -829,7 +836,7 @@ export default class ProximityEffect extends EventTarget
             const style = this.#stylesStack[i];
             if (this.#styleMatches(style, name))
             {
-                rules.add(style.rule);
+                rules.set(ruleKey(style.rule), style.rule);
                 this.#stylesStack.splice(i, 1);
                 for (const data of this.#nodeData)
                 {
@@ -840,11 +847,11 @@ export default class ProximityEffect extends EventTarget
 
         if (this.zIndex && this.#stylesStack.length===0 && rules.size>0)
         {
-            rules.add("zIndex");
+            rules.set("zIndex", "zIndex");
         }
-        for (const rule of rules)
+        for (const [key, rule] of rules)
         {
-            if (!this.#stylesStack.some(style => style.rule===rule))
+            if (!this.#stylesStack.some(style => ruleKey(style.rule)===key))
             {
                 for (const data of this.#nodeData)
                 {
@@ -1379,8 +1386,9 @@ export default class ProximityEffect extends EventTarget
         // left out of a partial measure match the ones measured now
         this.#followScroll();
 
-        const rules = [...new Set(this.#styleGroups.map(group => group.rule))]
-                  .filter(rule => !PAINT_ONLY_RULES.has(rule)),
+        const rules = [...new Map(this.#styleGroups.map(group => [group.key, group.rule])).entries()]
+                  .filter(([key]) => !PAINT_ONLY_RULES.has(key))
+                  .map(([, rule]) => rule),
               saved = all.map(data => rules.map(rule => data.node.style[rule]));
 
         for (const data of all)
@@ -1570,7 +1578,8 @@ export default class ProximityEffect extends EventTarget
 
 
     // Group the stack by CSS property, so functions that share one (transform,
-    // filter) are written together. Plain properties come first, in stack order.
+    // filter) are written together, with the first style's spelling. Plain
+    // properties come first, in stack order.
     #groupStyles()
     {
         const plain = [],
@@ -1579,18 +1588,19 @@ export default class ProximityEffect extends EventTarget
         this.#stylesStack.forEach((style, index) =>
         {
             const item    = { index, func: style.func, unit: style.unit || "" },
-                  resizes = !SIZE_NEUTRAL_RULES.has(style.rule);
+                  key     = ruleKey(style.rule),
+                  resizes = !SIZE_NEUTRAL_RULES.has(key);
             if (!style.func)
             {
-                plain.push({ rule: style.rule, resizes, items: [item] });
+                plain.push({ rule: style.rule, key, resizes, items: [item] });
             }
             else
             {
-                if (!funcs.has(style.rule))
+                if (!funcs.has(key))
                 {
-                    funcs.set(style.rule, { rule: style.rule, resizes, items: [] });
+                    funcs.set(key, { rule: style.rule, key, resizes, items: [] });
                 }
-                funcs.get(style.rule).items.push(item);
+                funcs.get(key).items.push(item);
             }
         });
 

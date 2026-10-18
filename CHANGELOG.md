@@ -105,7 +105,7 @@ Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styl
 - `pause()`, `resume()` and `paused`.
 - `nodes` accepts a `NodeList`, an `HTMLCollection`, an array of Elements or a single Element.
 - `zIndex` parameter and property, to opt in to distance-based stacking. Turning it off restores the nodes' original `z-index`.
-- Custom style `rule` can be written in kebab-case (`"letter-spacing"`) as well as camelCase.
+- Custom style `rule` can be written in kebab-case (`"letter-spacing"`) as well as camelCase. Both spellings are treated as the same property.
 - `SECURITY.md`, and an updated CodeQL workflow that also scans the `4.0` branch and pull requests.
 - The module can be imported without a DOM (for example during server-side rendering); constructing an instance there throws a clear error.
 - `reducedMotion` parameter and property: what to do when the user prefers reduced motion (the `prefers-reduced-motion` media query, followed live). `"rest"` (default) keeps the nodes at rest; `"snap"` follows without easing; `"ignore"` carries on as normal. The read-only `motionReduced` reports whether motion is being reduced right now.
