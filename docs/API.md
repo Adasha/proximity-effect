@@ -147,7 +147,7 @@ The same style can be added more than once. Styles with a CSS function that writ
 
 #### `hasStyle(name)`
 
-Returns `true` if a matching style has been added. `name` can be a preset name (`"hueRotate"`), a custom style's `func` (or its `rule`, if it has no `func`), or the `id` given in its params.
+Returns `true` if a matching style has been added. `name` can be a preset name (`"hueRotate"`), a custom style's `func` (or its `rule`, if it has no `func`), or the `id` given in its params. Throws a `TypeError` if `name` isn't a string.
 
 #### `removeStyle(name)`
 

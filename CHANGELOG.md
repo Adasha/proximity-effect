@@ -24,7 +24,7 @@ A big tidy-up: fixed, hardened, made faster and accessible, and documented. The 
 - The multi-argument preset styles `color`, `backgroundColor` and `scale3D` are removed. They were defined but never worked, and the README listed them as unsupported. Multi-value properties are planned for 4.1.
 - `random()` and the jitter and scatter methods are now `"uniform"` (default) or `"normal"`; `"gaussian"` is accepted as an alias. Any other method name throws a `RangeError` instead of silently falling back to uniform.
 - `constrain()` throws a `TypeError` for non-numbers instead of returning `NaN`.
-- `addStyle()` throws `RangeError` for an unknown preset and `TypeError` for a malformed style object or for fewer than two keyframes.
+- `addStyle()` throws `RangeError` for an unknown preset and `TypeError` for a malformed style object or for fewer than two keyframes. `hasStyle()` and `removeStyle()` throw `TypeError` for a name that isn't a string.
 - Before the pointer first moves (and with no target or coordinates), nodes rest at their far value. Previously the instance dispatched a synthetic `mousemove` to the whole document, which acted as if the pointer were at the top-left corner. `pointer` is `null` until the pointer moves.
 - `direction`, `jitterMethod`, `target`, `setCoords()` and `nodes` throw `TypeError` or `RangeError` for invalid values instead of logging or silently misbehaving.
 - `ready` fires asynchronously (in a microtask) even when the page has already loaded, so listeners added straight after construction receive it.

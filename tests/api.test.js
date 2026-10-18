@@ -230,6 +230,16 @@ describe("style ids", () =>
         expect(pe.hasStyle("soft")).toBe(false);
         expect(pe.removeStyle("soft")).toBe(false);
     });
+
+    it("hasStyle and removeStyle reject a missing name instead of matching every unnamed style", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle({ rule: "opacity" }, [1, 0]);
+        expect(() => pe.hasStyle()).toThrow(TypeError);
+        expect(() => pe.removeStyle()).toThrow(TypeError);
+        expect(() => pe.removeStyle(null)).toThrow(TypeError);
+        expect(pe.styles).toHaveLength(1);
+    });
 });
 
 

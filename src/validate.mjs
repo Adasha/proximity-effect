@@ -61,3 +61,19 @@ export const randomMethod = (value, name) => {
 	}
 	return value;
 };
+
+
+
+/**
+ * Check that a value is a string.
+ * @param {*} value The value to check.
+ * @param {string} name The name to use in the error message.
+ * @returns {string} The value.
+ * @throws {TypeError} If the value is not a string.
+ */
+export const string = (value, name) => {
+	if (typeof value!=="string") {
+		throw new TypeError(`ProximityEffect: ${name} must be a string (received ${typeof value}).`);
+	}
+	return value;
+};

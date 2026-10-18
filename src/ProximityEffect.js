@@ -795,9 +795,11 @@ export default class ProximityEffect extends EventTarget
      * Check if a named style is on the stack.
      * @param {string} name - The preset name, a custom style's func (or rule if it has none), or the id given in the style's params.
      * @return {boolean} True if the style exists at least once.
+     * @throws {TypeError} If the name is not a string.
      */
     hasStyle(name)
     {
+        Validate.string(name, "style name");
         return this.#stylesStack.some(style => this.#styleMatches(style, name));
     }
 
@@ -808,9 +810,11 @@ export default class ProximityEffect extends EventTarget
      * animated by any style get the nodes' original inline values back.
      * @param {string} name - The preset name, a custom style's func (or rule if it has none), or the id given in the style's params.
      * @return {boolean} True if anything was removed.
+     * @throws {TypeError} If the name is not a string.
      */
     removeStyle(name)
     {
+        Validate.string(name, "style name");
         const rules = new Set();
 
         // backwards, so splicing doesn't skip entries
