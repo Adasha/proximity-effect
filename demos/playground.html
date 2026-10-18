@@ -22,6 +22,7 @@
 <main>
     <h1>Playground</h1>
     <p>Tiles turn over near the pointer. Change the effect's properties below to see what each one does. Every control sets the property of the same name on the running instance.</p>
+    <p>The stage has its own <code>perspective</code>, seen from its centre, so tiles near its edges turn at an angle. Set <code>perspective</code> above 0 to give each tile its own instead, seen from the tile's centre, and the stage's is turned off so the two don't stack.</p>
 
     <div class="controls">
         <button type="button" id="pause" aria-pressed="false">Pause effect</button>
@@ -37,6 +38,7 @@
         </label>
         <label>attack <input type="range" id="attack" min="0.01" max="1" step="0.01"> <output for="attack"></output></label>
         <label>decay <input type="range" id="decay" min="0.01" max="1" step="0.01"> <output for="decay"></output></label>
+        <label>perspective <input type="number" id="perspective" min="0" step="50"></label>
         <label><input type="checkbox" id="invert"> invert</label>
     </div>
 
@@ -86,7 +88,8 @@ for (const input of document.querySelectorAll(".controls input, .controls select
     }
     else
     {
-        input.value = pe[name];
+        // a perspective of null is shown as 0, which also turns it off
+        input.value = pe[name] ?? 0;
         show();
         input.addEventListener("input", () =>
         {
@@ -100,6 +103,12 @@ for (const input of document.querySelectorAll(".controls input, .controls select
         });
     }
 }
+
+// the stage's own perspective would stack with the tiles'
+document.getElementById("perspective").addEventListener("input", () =>
+{
+    stage.style.perspective = pe.perspective ? "none" : "";
+});
 
 demo(pe);
 </script>
