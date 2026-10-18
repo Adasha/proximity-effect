@@ -1353,6 +1353,9 @@ export default class ProximityEffect extends EventTarget
             this.#measureWhenSettled = false;
         }
         this.#needsPinnedMeasure = false;
+        // bring every centre up to the current page scroll first, so the nodes
+        // left out of a partial measure match the ones measured now
+        this.#followScroll();
 
         const rules = [...new Set(this.#styleGroups.map(group => group.rule))]
                   .filter(rule => !PAINT_ONLY_RULES.has(rule)),
@@ -1370,13 +1373,6 @@ export default class ProximityEffect extends EventTarget
         const bounds = all.map(data => data.node.getBoundingClientRect()),
               cache  = new Map(),
               pinned = all.map(data => this.#isPinned(data.node, cache));
-
-        // the page scroll these measurements belong to (see #followScroll)
-        if (all===this.#nodeData)
-        {
-            this.#scrollX = window.scrollX;
-            this.#scrollY = window.scrollY;
-        }
 
         let moved = false;
         all.forEach((data, i) =>

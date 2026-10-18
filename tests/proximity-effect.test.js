@@ -1051,6 +1051,8 @@ describe("performance", () =>
         step();
         expect(measured.map(spy => spy.mock.calls.length)).toEqual([1, 1]);
         expect(pe.getNodeData(sticky, "center").x).toBe(0);
+        // the card was measured at the new scroll, so it isn't shifted by it again
+        expect(pe.getNodeData(card, "center").y).toBe(0);
         expect(translateOf(card)).toBe(100);
     });
 
