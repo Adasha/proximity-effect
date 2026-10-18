@@ -52,3 +52,6 @@ dist/
 
 # Claude Code
 .claude/
+
+# Internal development docs
+PLAN.md

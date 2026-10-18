@@ -65,7 +65,7 @@
   "homepage": "http://lab.adasha.com/components/proximity-effect",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Adasha/proximity-effect"
+    "url": "git+https://github.com/Adasha/proximity-effect.git"
   },
   "bugs": {
     "url": "https://github.com/Adasha/proximity-effect/issues",
