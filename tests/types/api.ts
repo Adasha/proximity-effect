@@ -25,7 +25,7 @@ new ProximityEffect(el, null);
 const params: ProximityEffectParams = {
     threshold: 10, runoff: 200, invert: true, direction: "horizontal", attack: 0.5, decay: 0.2,
     offsetX: 1, offsetY: 2, jitter: 3, jitterX: 4, jitterY: 5, jitterMethod: "gaussian",
-    tolerance: 0.01, FPS: 30, target: el, primeDistances: true, zIndex: true, reducedMotion: "snap",
+    tolerance: 0.01, FPS: 30, target: el, primeDistances: true, zIndex: true, perspective: 500, reducedMotion: "snap",
 };
 const pe = new ProximityEffect(el, params);
 new ProximityEffect(el, { FPS: false, target: null, threshold: null });
@@ -58,6 +58,9 @@ pe.threshold = 1;
 pe.runoff = 1;
 pe.invert = false;
 pe.zIndex = false;
+pe.perspective = 800;
+pe.perspective = false;
+assert<number | null>(pe.perspective);
 pe.attack = 1;
 pe.decay = 1;
 pe.offsetX = 1;

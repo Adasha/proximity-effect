@@ -105,6 +105,7 @@ Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styl
 - `pause()`, `resume()` and `paused`.
 - `nodes` accepts a `NodeList`, an `HTMLCollection`, an array of Elements or a single Element.
 - `zIndex` parameter and property, to opt in to distance-based stacking. Turning it off restores the nodes' original `z-index`.
+- `perspective` parameter and property: a perspective distance put at the front of each node's transform, so 3D transforms are viewed from the centre of each node at rest instead of from the parent's `perspective-origin`.
 - Custom style `rule` can be written in kebab-case (`"letter-spacing"`) as well as camelCase. Both spellings are treated as the same property.
 - `SECURITY.md`, and an updated CodeQL workflow that also scans the `4.0` branch and pull requests.
 - The module can be imported without a DOM (for example during server-side rendering); constructing an instance there throws a clear error.

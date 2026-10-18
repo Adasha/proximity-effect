@@ -74,6 +74,8 @@ export interface ProximityEffectParams
     primeDistances?: boolean | null;
     /** Set each node's z-index from its distance. Default false. */
     zIndex?: boolean | null;
+    /** A perspective distance for each node's transform, in pixels, viewed from the centre of the node at rest. Use instead of a parent's perspective. A falsy value means none. Default null. */
+    perspective?: number | false | null;
     /** What to do when the user prefers reduced motion: stay at rest, follow without easing, or ignore it. Default "rest". */
     reducedMotion?: ReducedMotion | null;
 }
@@ -201,6 +203,8 @@ export default class ProximityEffect extends EventTarget
     set invert(flag: boolean);
     get zIndex(): boolean;
     set zIndex(flag: boolean);
+    get perspective(): number | null;
+    set perspective(value: number | false | null | undefined);
     get attack(): number;
     set attack(value: number);
     get decay(): number;

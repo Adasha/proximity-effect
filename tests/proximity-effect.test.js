@@ -805,6 +805,76 @@ describe("zIndex", () =>
 
 
 
+describe("perspective", () =>
+{
+    it("puts perspective() in front of the transform functions", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el, { perspective: 500 });
+        pe.addStyle("rotateX", [45, 0]);
+        pe.addStyle("translateZ", [20, 0]);
+        await settle();
+        pe.setCoords(0, 0);
+        step();
+        expect(pe.perspective).toBe(500);
+        expect(el.style.transform).toBe("perspective(500px) rotateX(45deg) translateZ(20px)");
+    });
+
+    it("is left out of other properties, and off by default", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el, { perspective: 500 });
+        pe.addStyle("blur", [4, 0]);
+        await settle();
+        step();
+        expect(el.style.filter).toBe("blur(0px)");
+        expect(el.style.transform).toBe("");
+
+        const other = makeNode(0, 0);
+        const plain = create(other);
+        plain.addStyle("translateZ", [20, 0]);
+        await settle();
+        step();
+        expect(plain.perspective).toBeNull();
+        expect(other.style.transform).toBe("translateZ(0px)");
+    });
+
+    it("rewrites resting nodes when it changes, and turns off for falsy values", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el);
+        pe.addStyle("translateZ", [20, 0]);
+        await settle();
+        step();
+        pe.perspective = 300;
+        step();
+        expect(el.style.transform).toBe("perspective(300px) translateZ(0px)");
+
+        for (const value of [null, undefined, false, 0])
+        {
+            pe.perspective = 300;
+            pe.perspective = value;
+            expect(pe.perspective).toBeNull();
+        }
+        step();
+        expect(el.style.transform).toBe("translateZ(0px)");
+    });
+
+    it("rejects invalid values and keeps the old one", () =>
+    {
+        const pe = create(makeNode(0, 0), { perspective: 400 });
+        expect(() => { pe.perspective = "400"; }).toThrow(TypeError);
+        for (const value of [-1, NaN, Infinity])
+        {
+            expect(() => { pe.perspective = value; }).toThrow(RangeError);
+        }
+        expect(pe.perspective).toBe(400);
+        expect(() => create(makeNode(0, 0), { perspective: -5 })).toThrow(RangeError);
+    });
+});
+
+
+
 describe("performance", () =>
 {
     // settle the loop: draw frames until it stops asking for more

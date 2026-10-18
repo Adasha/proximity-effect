@@ -117,6 +117,7 @@ Setting any of the jitter properties picks new random amounts for every node. Of
 | --- | --- | --- | --- |
 | `FPS` | Number or `null` | `null` | A frame rate limit. `null`, `undefined`, `false` or 0 follows the screen's refresh rate. Frames can't be drawn faster than the screen refreshes. |
 | `zIndex` | Boolean | `false` | Sets each node's `z-index` from its distance, so the nearest nodes sit on top. Turning it off gives the nodes their original `z-index` back. |
+| `perspective` | Number or `null` | `null` | A perspective distance in pixels, put at the front of each node's transform as `perspective()`. A `perspective` on the parent is viewed from the parent's `perspective-origin`, so 3D transforms on nodes far from it are seen at an angle; this views every node from the centre of its own box at rest instead, wherever it sits on the page. Use it instead of a perspective on the parent, not as well, or the two stack. It does nothing without a transform style, and moves with `transform-origin` if you change that. `null`, `undefined`, `false` or 0 turns it off. |
 | `reducedMotion` | String | `"rest"` | What to do when the user prefers reduced motion (the `prefers-reduced-motion` media query, which is followed as it changes): `"rest"` keeps the nodes at rest, `"snap"` follows the tracked point without easing, and `"ignore"` animates as normal. See the README's [Accessibility](../README.md#accessibility) section. |
 | `motionReduced` | Boolean | | Read-only. Whether motion is being reduced right now: the user prefers reduced motion, and `reducedMotion` isn't `"ignore"`. |
 
@@ -349,7 +350,7 @@ Every argument and value is checked before anything changes, so a call that thro
 | Error | Thrown when |
 | --- | --- |
 | `TypeError` | A value is the wrong type: `nodes` isn't an Element or list of Elements, `params` isn't an object, a number or boolean property is set to something else, `target` isn't an Element, or a style or keyframe is malformed. |
-| `RangeError` | A value isn't allowed: `NaN` or `Infinity`, an empty node list, an unknown name for `direction`, `jitterMethod`, `reducedMotion` or a preset, an unsafe custom style, a negative `FPS`, a node or index the instance doesn't have, or a feature that isn't supported yet (more than two keyframes, per-style parameters). |
+| `RangeError` | A value isn't allowed: `NaN` or `Infinity`, an empty node list, an unknown name for `direction`, `jitterMethod`, `reducedMotion` or a preset, an unsafe custom style, a negative `FPS` or `perspective`, a node or index the instance doesn't have, or a feature that isn't supported yet (more than two keyframes, per-style parameters). |
 | `Error` | Constructing without a DOM, or, after `destroy()`, calling `resume()`, `addStyle()`, `removeStyle()` or `setCenterPoints()`, or setting `nodes`. |
 
 Numbers in range are clamped rather than rejected: a negative `threshold` becomes 0, and an `attack` above 1 becomes 1.

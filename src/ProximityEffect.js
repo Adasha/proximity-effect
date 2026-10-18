@@ -26,6 +26,9 @@ const PAINT_ONLY_RULES = new Set(["filter", "webkitFilter", "backdropFilter", "w
 // makes the ResizeObserver report (as rule keys)
 const SIZE_NEUTRAL_RULES = new Set([...PAINT_ONLY_RULES, "transform", "webkitTransform", "translate", "rotate", "scale"]);
 
+// the transform spellings a perspective() is put in front of (as rule keys)
+const TRANSFORM_RULES = new Set(["transform", "webkitTransform"]);
+
 // the public node data fields, each read as a copy (see getNodeData)
 const point = (p) => p && { x: p.x, y: p.y };
 const NODE_DATA = Object.freeze({
@@ -131,6 +134,7 @@ export default class ProximityEffect extends EventTarget
      * @param {Element} [params.target] - An element to track instead of the pointer.
      * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
      * @param {boolean} [params.zIndex=false] - Set each node's z-index from its distance, so the nearest nodes sit on top.
+     * @param {number|null|false} [params.perspective] - A perspective distance in pixels to give each node's transform, viewed from the centre of the node at rest, or null, false or 0 to leave perspective to the parent.
      * @param {string}  [params.reducedMotion="rest"] - What to do when the user prefers reduced motion: "rest" (nodes stay at rest and ignore the pointer), "snap" (nodes follow without easing) or "ignore".
      * @throws {TypeError} If an argument or parameter is the wrong type.
      * @throws {RangeError} If a parameter value is not allowed (NaN, Infinity, an unknown name).
@@ -169,6 +173,7 @@ export default class ProximityEffect extends EventTarget
         this.tolerance    = param("tolerance", this.#DEFAULT_TOLERANCE);
         this.invert       = param("invert", false);
         this.zIndex       = param("zIndex", false);
+        this.perspective  = param("perspective", null);
         this.reducedMotion = param("reducedMotion", "rest");
         this.offsetX      = param("offsetX", 0);
         this.offsetY      = param("offsetY", 0);
@@ -417,6 +422,41 @@ export default class ProximityEffect extends EventTarget
                 this.#restoreProperty(data, "zIndex");
             }
         }
+        this.#invalidate();
+    }
+
+
+
+
+
+    /**
+     * Get the perspective distance given to each node's transform.
+     * @return {number|null} The distance, in pixels, or null if there is none.
+     */
+    get perspective()
+    {
+        return this.#globalParams.perspective;
+    }
+
+    /**
+     * Set a perspective distance for each node's transform. A parent's
+     * perspective is viewed from the parent's perspective-origin, so nodes far
+     * from it are seen at an angle; this views each node from the centre of
+     * its own box at rest instead, wherever it sits on the page. It's put in
+     * front of the transform styles, so it does nothing without one. Use it
+     * instead of a perspective on the parent, not as well, or the two stack.
+     * @param {number|null|undefined|false} num - A positive distance in pixels, or null, undefined, false or 0 for none.
+     * @throws {TypeError} If the value is any other non-number (including "").
+     * @throws {RangeError} If the value is negative, NaN or infinite.
+     */
+    set perspective(num)
+    {
+        const off = num==null || num===false || num===0;
+        if (!off && Validate.finite(num, "perspective")<0)
+        {
+            throw new RangeError(`ProximityEffect: perspective must be positive (received ${num}).`);
+        }
+        this.#globalParams.perspective = off ? null : num;
         this.#invalidate();
     }
 
@@ -1598,7 +1638,7 @@ export default class ProximityEffect extends EventTarget
             {
                 if (!funcs.has(key))
                 {
-                    funcs.set(key, { rule: style.rule, key, resizes, items: [] });
+                    funcs.set(key, { rule: style.rule, key, resizes, transform: TRANSFORM_RULES.has(key), items: [] });
                 }
                 funcs.get(key).items.push(item);
             }
@@ -1919,7 +1959,7 @@ export default class ProximityEffect extends EventTarget
               groups  = this.#styleGroups,
               rewrite = this.#needsRewrite,
               instant = this.motionReduced,
-              { threshold, runoff, invert, attack, decay, tolerance, direction, zIndex } = this.#globalParams;
+              { threshold, runoff, invert, attack, decay, tolerance, direction, zIndex, perspective } = this.#globalParams;
 
         this.#needsRewrite = false;
         this.#lastTargetPoint = point && { x: point.x, y: point.y };
@@ -1983,7 +2023,7 @@ export default class ProximityEffect extends EventTarget
 
             if (groups.length>0)
             {
-                this.#writeStyles(data, d, groups, zIndex, invert);
+                this.#writeStyles(data, d, groups, zIndex, invert, perspective);
             }
         }
 
@@ -1992,13 +2032,15 @@ export default class ProximityEffect extends EventTarget
 
 
 
-    #writeStyles(data, d, groups, zIndex, invert)
+    #writeStyles(data, d, groups, zIndex, invert, perspective)
     {
         const style = data.node.style;
 
         for (const group of groups)
         {
-            let value = "";
+            // first, so it's applied after the other functions, about the
+            // transform-origin of the untransformed box
+            let value = perspective && group.transform ? `perspective(${perspective}px)` : "";
             for (const { index, func, unit } of group.items)
             {
                 const vals = data.styles[index],

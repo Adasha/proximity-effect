@@ -149,6 +149,7 @@ Next, define the effect parameters in an object. All parameters are optional. Ev
 | `target` | Element | An element to track instead of the pointer. Default is `null` (the pointer). |
 | `FPS` | Number | A frame rate limit. `null`, `false` or 0 follows the screen's refresh rate. Default is `null`. |
 | `zIndex` | Boolean | Sets each element's `z-index` from its distance, so the nearest sit on top. Default is `false`. |
+| `perspective` | Number | Gives each element's 3D transforms their own perspective, in pixels, viewed from the element's centre, so elements look the same wherever they are on the page. Use it instead of setting `perspective` on the parent. Default is `null` (none). |
 | `reducedMotion` | String | What to do when the user prefers reduced motion: `"rest"` keeps the elements at rest, `"snap"` follows the pointer without easing, and `"ignore"` animates as normal. Default is `"rest"`. See [Accessibility](#accessibility). |
 | `primeDistances` | Boolean | If `true`, every element starts at its far value and eases into place, so the effect appears to spring into its starting position. Only available here, not as a property. Default is `false`. |
 
