@@ -247,9 +247,11 @@ export default class ProximityEffect extends EventTarget
     /**
      * Set the nodes to animate. Nodes that are no longer in the list get their original inline style back.
      * @param {NodeList|HTMLCollection|Array<Element>|Element} list - The nodes.
+     * @throws {Error} If the instance has been destroyed.
      */
     set nodes(list)
     {
+        this.#assertAlive("change the nodes of");
         const nodes   = this.#toElementArray(list),
               keeping = new Set(nodes),
               kept    = new Map(this.#nodeData.map(data => [data.node, data]));
@@ -402,7 +404,7 @@ export default class ProximityEffect extends EventTarget
     {
         const was = this.#globalParams.zIndex;
         this.#globalParams.zIndex = Validate.boolean(flag, "zIndex");
-        if (was && !flag)
+        if (was && !flag && !this.#destroyed)
         {
             for (const data of this.#nodeData)
             {
@@ -776,9 +778,11 @@ export default class ProximityEffect extends EventTarget
      * Per-style threshold, runoff, invert, attack and decay are planned for 4.2; passing them throws a RangeError.
      * @throws {TypeError} If an argument is the wrong type.
      * @throws {RangeError} If a value is not allowed (see Style).
+     * @throws {Error} If the instance has been destroyed.
      */
     addStyle(property, keyframes, params)
     {
+        this.#assertAlive("add a style to");
         // work everything out before changing anything, so a failure leaves the stack as it was
         const style  = new Style(property, keyframes, params),
               values = this.#nodeData.map(() => this.#scatterValues(style));
@@ -811,9 +815,11 @@ export default class ProximityEffect extends EventTarget
      * @param {string} name - The preset name, a custom style's func (or rule if it has none), or the id given in the style's params.
      * @return {boolean} True if anything was removed.
      * @throws {TypeError} If the name is not a string.
+     * @throws {Error} If the instance has been destroyed.
      */
     removeStyle(name)
     {
+        this.#assertAlive("remove a style from");
         Validate.string(name, "style name");
         const rules = new Set();
 
@@ -937,9 +943,11 @@ export default class ProximityEffect extends EventTarget
      * Measure each node's centre point now, including global offset and jitter.
      * The instance remeasures by itself when the page scrolls or resizes, so this
      * is only needed after moving nodes in a way it can't detect.
+     * @throws {Error} If the instance has been destroyed.
      */
     setCenterPoints()
     {
+        this.#assertAlive("measure");
         this.#measure(this.#nodeData);
         this.#start();
     }
@@ -963,10 +971,7 @@ export default class ProximityEffect extends EventTarget
      */
     resume()
     {
-        if (this.#destroyed)
-        {
-            throw new Error("ProximityEffect: cannot resume a destroyed instance.");
-        }
+        this.#assertAlive("resume");
         this.#paused = false;
         this.#start();
     }
@@ -1070,6 +1075,18 @@ export default class ProximityEffect extends EventTarget
 	//      PRIVATE METHODS      //
     //                           //
 	///////////////////////////////
+
+
+
+    // calls that would touch the nodes or start listening again can't
+    // be made once destroy() has handed the nodes back
+    #assertAlive(action)
+    {
+        if (this.#destroyed)
+        {
+            throw new Error(`ProximityEffect: cannot ${action} a destroyed instance.`);
+        }
+    }
 
 
 

@@ -183,7 +183,7 @@ Restarts a paused animation. Throws an `Error` if the instance has been destroye
 
 #### `destroy()`
 
-Stops the effect for good: removes every event listener and observer, stops the animation loop, and gives each node back the inline style it had when the instance was created (removing the `style` attribute from nodes that had none). Any inline styles your own code set on the nodes since then are lost, so set them again afterwards if you need them. Safe to call more than once.
+Stops the effect for good: removes every event listener and observer, stops the animation loop, and gives each node back the inline style it had when the instance was created (removing the `style` attribute from nodes that had none). Any inline styles your own code set on the nodes since then are lost, so set them again afterwards if you need them. Safe to call more than once. Afterwards, anything that would touch the nodes again (`nodes`, `addStyle()`, `removeStyle()`, `setCenterPoints()`, `resume()`) throws an `Error`.
 
 #### `update()`
 
@@ -350,7 +350,7 @@ Every argument and value is checked before anything changes, so a call that thro
 | --- | --- |
 | `TypeError` | A value is the wrong type: `nodes` isn't an Element or list of Elements, `params` isn't an object, a number or boolean property is set to something else, `target` isn't an Element, or a style or keyframe is malformed. |
 | `RangeError` | A value isn't allowed: `NaN` or `Infinity`, an empty node list, an unknown name for `direction`, `jitterMethod`, `reducedMotion` or a preset, an unsafe custom style, a negative `FPS`, a node or index the instance doesn't have, or a feature that isn't supported yet (more than two keyframes, per-style parameters). |
-| `Error` | Constructing without a DOM, or calling `resume()` after `destroy()`. |
+| `Error` | Constructing without a DOM, or, after `destroy()`, calling `resume()`, `addStyle()`, `removeStyle()` or `setCenterPoints()`, or setting `nodes`. |
 
 Numbers in range are clamped rather than rejected: a negative `threshold` becomes 0, and an `attack` above 1 becomes 1.
 

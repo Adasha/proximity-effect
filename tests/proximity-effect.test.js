@@ -518,6 +518,13 @@ describe("lifecycle", () =>
 
         expect(() => pe.destroy()).not.toThrow();
         expect(() => pe.resume()).toThrow(Error);
+        // nothing can touch the nodes or start listening again
+        expect(() => { pe.nodes = [el, makeNode(0, 0)]; }).toThrow(Error);
+        expect(() => pe.addStyle("blur", [0, 1])).toThrow(Error);
+        expect(() => pe.removeStyle("translateX")).toThrow(Error);
+        expect(() => pe.setCenterPoints()).toThrow(Error);
+        expect(pe.nodes).toEqual([el]);
+        expect(pe.styles).toHaveLength(1);
         pe.update();
         expect(el.style.cssText).toBe("color: blue;");
     });
@@ -719,6 +726,19 @@ describe("zIndex", () =>
         step();
         expect(pe.zIndex).toBe(false);
         expect(el.style.zIndex).toBe("7");
+    });
+
+    it("doesn't touch the nodes when turned off after destroy()", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el, { zIndex: true });
+        pe.addStyle("translateX", [0, 10]);
+        await settle();
+        step();
+        pe.destroy();
+        el.style.zIndex = "5";
+        pe.zIndex = false;
+        expect(el.style.zIndex).toBe("5");
     });
 
     it("sets z-index from distance when enabled, and restores it when turned off", async () =>
