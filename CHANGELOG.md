@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-10-18
+
 A big tidy-up: fixed, hardened, made faster and accessible, and documented. The 3.0 alphas were never published to npm, so their changes are included here, as changes since the last published version, 2.1.19. See [Upgrading from 2.x](#upgrading-from-2x) for a checklist.
 
 ### Security
@@ -143,7 +145,8 @@ Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styl
 
 - First release on npm without a pre-release tag. Earlier versions weren't recorded in a changelog.
 
-[Unreleased]: https://github.com/Adasha/proximity-effect/tree/4.0
+[Unreleased]: https://github.com/Adasha/proximity-effect/compare/v4.0.0...HEAD
+[4.0.0]: https://www.npmjs.com/package/proximity-effect/v/4.0.0
 [2.1.19]: https://www.npmjs.com/package/proximity-effect/v/2.1.19
 [2.1.16]: https://www.npmjs.com/package/proximity-effect/v/2.1.16
 [2.1.11]: https://www.npmjs.com/package/proximity-effect/v/2.1.11

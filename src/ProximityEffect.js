@@ -46,7 +46,7 @@ const NODE_DATA = Object.freeze({
 
 /**
  * Animates CSS properties of many elements by their distance from the pointer or a target.
- * @version 4.0.0-alpha1
+ * @version 4.0.0
  * @author Adam Shailer <adasha76@outlook.com>
  * @class
  * @extends EventTarget
