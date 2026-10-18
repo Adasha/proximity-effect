@@ -121,7 +121,7 @@ export default class ProximityEffect extends EventTarget
      * @param {number}  [params.jitterY=0] - The effect jitter for the Y axis only, in pixels.
      * @param {string}  [params.jitterMethod="uniform"] - The random method for generating jitter values, "uniform" or "normal" ("gaussian" is an alias).
      * @param {number}  [params.tolerance=0.0001] - How close (0 to 1) eased distances must get to their target before snapping to it.
-     * @param {number|Falsy} [params.FPS] - A frame rate limit, or falsy to follow the screen refresh.
+     * @param {number|null|false} [params.FPS] - A frame rate limit, or null, false or 0 to follow the screen refresh.
      * @param {Element} [params.target] - An element to track instead of the pointer.
      * @param {boolean} [params.primeDistances=false] - Prime the initial distances to create a transition on load. Only available through params argument in constructor.
      * @param {boolean} [params.zIndex=false] - Set each node's z-index from its distance, so the nearest nodes sit on top.
@@ -634,8 +634,8 @@ export default class ProximityEffect extends EventTarget
 
     /**
      * Set the frame rate limit.
-     * @param {number|Falsy} num - A positive frame rate, or falsy (null, undefined, false or 0) to follow the screen refresh.
-     * @throws {TypeError} If the value is truthy but not a number.
+     * @param {number|null|undefined|false} num - A positive frame rate, or null, undefined, false or 0 to follow the screen refresh.
+     * @throws {TypeError} If the value is any other non-number (including "").
      * @throws {RangeError} If the value is negative, NaN or infinite.
      */
     set FPS(num)
