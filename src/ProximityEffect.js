@@ -269,7 +269,8 @@ export default class ProximityEffect extends EventTarget
 
         if (this.#ready)
         {
-            this.#observe(nodes);
+            // observing a node again would queue another initial size report
+            this.#observe(nodes.filter(node => !kept.has(node)));
             this.#listenInShadowRoots();
             this.#requestMeasure();
         }

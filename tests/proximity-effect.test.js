@@ -1244,6 +1244,16 @@ describe("performance", () =>
             expect(observer.disconnected).toBe(true);
         });
 
+        it("only starts observing the nodes that are new to the list", async () =>
+        {
+            const a = makeNode(0, 0), b = makeNode(10, 0);
+            const pe = create(a);
+            await settle();
+            const observe = vi.spyOn(observer, "observe");
+            pe.nodes = [a, b];
+            expect(observe.mock.calls).toEqual([[b]]);
+        });
+
         it("remeasures after an outside size change, dispatching reflow only if a node moved", async () =>
         {
             const el = makeNode(0, 0);
