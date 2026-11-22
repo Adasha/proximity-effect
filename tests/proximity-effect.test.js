@@ -255,6 +255,63 @@ describe("jitter", () =>
         await settle();
         expect(pe.getNodeIndexData(0, "center")).toEqual({ x: 105, y: 105 });
     });
+
+    it("scales each node's roll when the size changes, without rolling again", () =>
+    {
+        const pe = create([makeNode(0, 0), makeNode(0, 0), makeNode(0, 0)], { jitter: 10 }),
+              before = [0, 1, 2].map(i => pe.getNodeIndexData(i, "jitter")),
+              random = vi.spyOn(Math, "random");
+        pe.jitter = 20;
+        expect(random).not.toHaveBeenCalled();
+        before.forEach((j, i) =>
+        {
+            const after = pe.getNodeIndexData(i, "jitter");
+            expect(after.x).toBeCloseTo(j.x*2);
+            expect(after.y).toBeCloseTo(j.y*2);
+        });
+    });
+
+    it("keeps the roll while jitter is 0, and uses it when jitter is turned on", () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(0.75);
+        const pe = create(makeNode(0, 0));
+        expect(pe.getNodeIndexData(0, "jitter")).toEqual({ x: 0, y: 0 });
+        Math.random.mockReturnValue(0);
+        pe.jitterX = 8;
+        pe.jitterY = 4;
+        expect(pe.getNodeIndexData(0, "jitter")).toEqual({ x: 2, y: 1 });
+    });
+
+    it("moves the node centres when the size changes, without remeasuring", async () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const el = makeNode(100, 100),
+              pe = create(el, { jitter: 10 });
+        await settle();
+        const measure = vi.spyOn(el, "getBoundingClientRect");
+        pe.jitter = 30;
+        expect(pe.getNodeIndexData(0, "center")).toEqual({ x: 115, y: 115 });
+        expect(measure).not.toHaveBeenCalled();
+    });
+
+    it("picks new jitter when the method changes", () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const pe = create(makeNode(0, 0), { jitter: 10 });
+        Math.random.mockReturnValue(0);
+        pe.jitterMethod = "normal";
+        expect(pe.getNodeIndexData(0, "jitter")).toEqual({ x: -5, y: -5 });
+    });
+
+    it("gives a node added later jitter at the current size", () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const pe = create(makeNode(0, 0), { jitter: 10 });
+        pe.jitter = 40;
+        const el = makeNode(0, 0);
+        pe.nodes = [el];
+        expect(pe.getNodeData(el, "jitter")).toEqual({ x: 20, y: 20 });
+    });
 });
 
 
@@ -511,6 +568,21 @@ describe("styles", () =>
         const pe = create(makeNode(0, 0));
         pe.addStyle("opacity", [{ value: 100, scatter: 50 }, 0]);
         expect(pe.getNodeIndexData(0, "styles")[0].near).toBe(100);
+    });
+
+    it("scatters by the frame's own amount and method", () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(0);
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("translateX", [{ value: 10, scatter: 4 }, { value: 50, scatter: 10, scatterMethod: "normal" }]);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 8, far: 45 }]);
+    });
+
+    it("reports only the resolved near and far values", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("translateX", [0, { value: 50, scatter: 10 }]);
+        expect(Object.keys(pe.getNodeIndexData(0, "styles")[0])).toEqual(["near", "far"]);
     });
 });
 

@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+### Changed
+
+- Changing `jitter`, `jitterX` or `jitterY` no longer picks new random amounts. Each node keeps the random amount it was given, and moves further or less far in the same direction, so the jitter can be resized smoothly. Changing `jitterMethod` still picks new amounts. Scatter is kept the same way, ready for `updateStyle()`.
+
 ## [4.0.0] - 2026-10-18
 
 A big tidy-up: fixed, hardened, made faster and accessible, and documented. The 3.0 alphas were never published to npm, so their changes are included here, as changes since the last published version, 2.1.19. See [Upgrading from 2.x](#upgrading-from-2x) for a checklist.
