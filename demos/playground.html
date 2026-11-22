@@ -23,6 +23,7 @@
     <h1>Playground</h1>
     <p>Tiles turn over near the pointer. Change the effect's properties below to see what each one does. Every control sets the property of the same name on the running instance.</p>
     <p>The stage has its own <code>perspective</code>, seen from its centre, so tiles near its edges turn at an angle. Set <code>perspective</code> above 0 to give each tile its own instead, seen from the tile's centre, and the stage's is turned off so the two don't stack.</p>
+    <p>On a touch screen, set <code>pointerLeave</code> to <code>hold</code> and tap: the tiles stay turned where your finger was, and stay with the page as it scrolls. Dragging over the stage moves the point, since <code>touchDrag</code> is set to the stage; scroll the page from outside it.</p>
 
     <div class="controls">
         <button type="button" id="pause" aria-pressed="false">Pause effect</button>
@@ -34,6 +35,12 @@
                 <option value="both">both</option>
                 <option value="horizontal">horizontal</option>
                 <option value="vertical">vertical</option>
+            </select>
+        </label>
+        <label>pointerLeave
+            <select id="pointerLeave">
+                <option value="rest">rest</option>
+                <option value="hold">hold</option>
             </select>
         </label>
         <label>attack <input type="range" id="attack" min="0.01" max="1" step="0.01"> <output for="attack"></output></label>
@@ -70,6 +77,8 @@ const pe = new ProximityEffect(stage.children, {
     runoff:    100,
     attack:      0.5,
     decay:       0.5,
+    // a finger dragging over the stage moves the point instead of scrolling
+    touchDrag: stage,
 });
 pe.addStyle("rotateX", [180, 0]);
 

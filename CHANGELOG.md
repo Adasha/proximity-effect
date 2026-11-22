@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format is based on 
 
 - `updateStyle(name, keyframes)` gives matching styles new keyframes, keeping their place in the stack, their params and each node's scatter.
 - `scaleEffect`, a multiplier for the effect's pixel distances (`threshold`, `runoff`, offsets, jitter and px style values), applied when the effect is drawn, so an effect can grow or shrink with its container.
+- `pointerLeave`, what to do when a touch or pen lifts: `"rest"` (default, as before) or `"hold"`, which keeps the last point on the same spot on the page until the next pointer event, so a tap on a touch screen no longer just flickers. A mouse leaving the page, or the window losing focus, still rests.
+- `touchDrag`, which keeps a touch dragging over the effect for the effect instead of scrolling the page, so the point follows the finger. It sets `touch-action: pinch-zoom` (zooming still works): `true` on each node, or on an element you pass, such as the nodes' container, so the gaps between them count too. Turning it off or `destroy()` gives the original `touch-action` back.
 
 ### Changed
 

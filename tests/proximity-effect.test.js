@@ -2066,6 +2066,258 @@ describe("accessibility", () =>
     });
 
 
+    describe("pointerLeave", () =>
+    {
+        // a touch or pen lifting off: pointerout with nowhere to go
+        const lift = (pointerType = "touch") =>
+            document.dispatchEvent(new PointerEvent("pointerout", { isPrimary: true, pointerType, relatedTarget: null }));
+
+        it("defaults to 'rest' and validates the mode", () =>
+        {
+            const pe = create(makeNode(0, 0));
+            expect(pe.pointerLeave).toBe("rest");
+            pe.pointerLeave = "hold";
+            expect(pe.pointerLeave).toBe("hold");
+            expect(create(makeNode(0, 0), { pointerLeave: "hold" }).pointerLeave).toBe("hold");
+            for (const bad of ["Hold", "keep", "", null, 1])
+            {
+                expect(() => { pe.pointerLeave = bad; }).toThrow(RangeError);
+            }
+            expect(pe.pointerLeave).toBe("hold");
+            expect(() => create(makeNode(0, 0), { pointerLeave: "keep" })).toThrow(RangeError);
+        });
+
+        it("keeps the point when a touch or pen lifts", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { runoff: 100, pointerLeave: "hold" });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            movePointer(50, 0, { pointerType: "touch" });
+            step();
+            lift("touch");
+            expect(pe.pointer).toEqual({ x: 50, y: 0 });
+            for (let i=0; i<5; i++) step();
+            expect(pe.distanceFrom(el)).toBe(0.5);
+            expect(translateOf(el)).toBe(50);
+
+            movePointer(0, 25, { pointerType: "pen" });
+            lift("pen");
+            step();
+            expect(pe.pointer).toEqual({ x: 0, y: 25 });
+            expect(pe.distanceFrom(el)).toBe(0.25);
+        });
+
+        it("keeps the held point on the same spot on the page as it scrolls", async () =>
+        {
+            const flow = makeNode(0, 100);
+            const bar = document.createElement("nav");
+            bar.style.position = "fixed";
+            document.body.append(bar);
+            const pinned = makeNode(0, 100);
+            bar.append(pinned);
+            const pe = create([flow, pinned], { runoff: 100, pointerLeave: "hold" });
+            await settle();
+            movePointer(0, 100, { pointerType: "touch" });
+            lift();
+            step();
+            expect(pe.distanceFrom(flow)).toBe(0);
+            expect(pe.distanceFrom(pinned)).toBe(0);
+
+            vi.spyOn(window, "scrollY", "get").mockReturnValue(50);
+            document.dispatchEvent(new Event("scroll"));
+            expect(frames.size).toBe(1);
+            step();
+            expect(pe.pointer).toEqual({ x: 0, y: 50 });
+            // the held point and the page both moved up, the fixed node didn't
+            expect(pe.distanceFrom(flow)).toBe(0);
+            expect(pe.distanceFrom(pinned)).toBe(0.5);
+        });
+
+        it("still rests when a mouse leaves the page", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { pointerLeave: "hold" });
+            await settle();
+            movePointer(10, 10);
+            lift("mouse");
+            expect(pe.pointer).toBeNull();
+        });
+
+        it("still rests when the window loses focus", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { pointerLeave: "hold" });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            movePointer(0, 0, { pointerType: "touch" });
+            lift();
+            step();
+            expect(translateOf(el)).toBe(0);
+            window.dispatchEvent(new Event("blur"));
+            expect(pe.pointer).toBeNull();
+            step();
+            expect(translateOf(el)).toBe(100);
+        });
+
+        it("replaces the held point with the next pointer event", async () =>
+        {
+            const pe = create(makeNode(0, 0), { pointerLeave: "hold" });
+            await settle();
+            movePointer(10, 10, { pointerType: "touch" });
+            lift();
+            vi.spyOn(window, "scrollY", "get").mockReturnValue(50);
+            document.dispatchEvent(new PointerEvent("pointerdown", { clientX: 30, clientY: 30, isPrimary: true, pointerType: "touch" }));
+            expect(pe.pointer).toEqual({ x: 30, y: 30 });
+            movePointer(40, 40);
+            expect(pe.pointer).toEqual({ x: 40, y: 40 });
+        });
+
+        it("leaves 'rest' mode as it was", async () =>
+        {
+            const pe = create(makeNode(0, 0));
+            await settle();
+            movePointer(10, 10, { pointerType: "touch" });
+            lift();
+            expect(pe.pointer).toBeNull();
+        });
+
+        it("drops a held point when set back to 'rest'", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { pointerLeave: "hold" });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            movePointer(0, 0, { pointerType: "touch" });
+            lift();
+            step();
+            expect(translateOf(el)).toBe(0);
+            pe.pointerLeave = "rest";
+            expect(pe.pointer).toBeNull();
+            expect(frames.size).toBe(1);
+            step();
+            expect(translateOf(el)).toBe(100);
+        });
+
+        it("gives way to setCoords() and the target", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { runoff: 100, pointerLeave: "hold" });
+            await settle();
+            movePointer(50, 0, { pointerType: "touch" });
+            lift();
+            pe.setCoords(0, 0);
+            step();
+            expect(pe.distanceFrom(el)).toBe(0);
+            pe.clearCoords();
+            step();
+            expect(pe.distanceFrom(el)).toBe(0.5);
+        });
+
+        it("still rests under reduced motion 'rest'", async () =>
+        {
+            const query = fakeMotionQuery(false);
+            const el = makeNode(0, 0);
+            const pe = create(el, { pointerLeave: "hold" });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            movePointer(0, 0, { pointerType: "touch" });
+            lift();
+            step();
+            expect(translateOf(el)).toBe(0);
+            query.set(true);
+            step();
+            expect(translateOf(el)).toBe(100);
+        });
+    });
+
+
+    describe("touchDrag", () =>
+    {
+        it("defaults to false and validates the value", () =>
+        {
+            const pe = create(makeNode(0, 0));
+            expect(pe.touchDrag).toBe(false);
+            for (const bad of ["yes", 1, {}, document])
+            {
+                expect(() => { pe.touchDrag = bad; }).toThrow(TypeError);
+            }
+            pe.touchDrag = null;
+            expect(pe.touchDrag).toBe(false);
+            expect(() => create(makeNode(0, 0), { touchDrag: "stage" })).toThrow(TypeError);
+        });
+
+        it("leaves touch-action alone by default", () =>
+        {
+            const el = makeNode(0, 0);
+            create(el);
+            expect(el.style.touchAction).toBe("");
+        });
+
+        it("with true, claims drags on each node and gives them back", () =>
+        {
+            const a = makeNode(0, 0), b = makeNode(20, 0), c = makeNode(40, 0);
+            b.style.touchAction = "none";
+            const pe = create([a, b], { touchDrag: true });
+            expect(pe.touchDrag).toBe(true);
+            expect([a.style.touchAction, b.style.touchAction]).toEqual(["pinch-zoom", "pinch-zoom"]);
+
+            // nodes that join get it, and nodes that leave get their own back
+            pe.nodes = [a, c];
+            expect(c.style.touchAction).toBe("pinch-zoom");
+            expect(b.style.touchAction).toBe("none");
+
+            pe.touchDrag = false;
+            expect(a.style.touchAction).toBe("");
+            expect(c.style.touchAction).toBe("");
+            expect(a.hasAttribute("style")).toBe(true);
+        });
+
+        it("with an element, claims drags on it so the gaps count too", () =>
+        {
+            const stage = document.createElement("div");
+            stage.style.touchAction = "pan-y";
+            document.body.append(stage);
+            const el = makeNode(0, 0);
+            stage.append(el);
+            const pe = create(el, { touchDrag: stage });
+            expect(pe.touchDrag).toBe(stage);
+            expect(stage.style.touchAction).toBe("pinch-zoom");
+            expect(el.style.touchAction).toBe("");
+
+            // switching gives the first element back
+            const other = document.createElement("div");
+            pe.touchDrag = other;
+            expect(stage.style.touchAction).toBe("pan-y");
+            expect(other.style.touchAction).toBe("pinch-zoom");
+
+            pe.touchDrag = true;
+            expect(other.style.touchAction).toBe("");
+            expect(el.style.touchAction).toBe("pinch-zoom");
+
+            pe.touchDrag = stage;
+            expect(el.style.touchAction).toBe("");
+            expect(stage.style.touchAction).toBe("pinch-zoom");
+        });
+
+        it("gives everything back on destroy", () =>
+        {
+            const stage = document.createElement("div");
+            document.body.append(stage);
+            const a = makeNode(0, 0), b = makeNode(20, 0);
+            const onNodes = create(a, { touchDrag: true });
+            const onStage = create(b, { touchDrag: stage });
+            onNodes.destroy();
+            onStage.destroy();
+            expect(a.style.touchAction).toBe("");
+            expect(stage.style.touchAction).toBe("");
+            // and does nothing once destroyed
+            onStage.touchDrag = stage;
+            expect(stage.style.touchAction).toBe("");
+        });
+    });
+
+
     describe("reduced motion", () =>
     {
         it("defaults to 'rest' and validates the mode", () =>

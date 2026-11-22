@@ -109,13 +109,15 @@ updateStyle(name, keyframes) // → boolean, true if anything was updated
 
 **Demo:** add a "tap and hold" toggle to `demos/playground.html`, and check on a real phone (the lab's case).
 
+**Added after the phone check: `touchDrag`.** Holding works, but a finger dragging over the effect scrolls the page, and the browser then cancels the pointer, so the point can't follow. The lab sets `touch-action: pinch-zoom` on the nodes' common parent, or on the nodes when that parent is taller than 80% of the window. The library takes the element explicitly instead of guessing: `touchDrag: true` sets it on each node, an element sets it on that element (so gaps between nodes count), and `false`/`null` gives the original back, as `destroy()` does. A separate param rather than part of `"hold"`, since blocking scrolls is a separate choice from keeping the point.
+
 ## Stage 5: release
 
-- `ProximityEffect.d.ts` and `ProximityEffect.global.d.ts`: `scaleEffect`, `pointerLeave`, `updateStyle`. `tests/types/api.ts` covers each one.
+- `ProximityEffect.d.ts` and `ProximityEffect.global.d.ts`: `scaleEffect`, `pointerLeave`, `touchDrag`, `updateStyle`. `tests/types/api.ts` covers each one.
 - `docs/API.md`: new rows in the parameter tables, an `updateStyle()` section, and the jitter, scatter and `pointer` wording from stages 1 and 4.
 - `README.md`: move the four 4.1 roadmap lines into the version history (`v4.1`); keep the 4.2 and 4.3 lines.
 - `.github/ISSUE_TEMPLATE/feature_request.md`: remove the 4.1 items from its "already planned" list.
-- `CHANGELOG.md`: `[4.1.0]` with *Added* (`scaleEffect`, `pointerLeave`, `updateStyle()`) and *Changed* (jitter and scatter no longer re-roll). No breaking changes. The re-roll change is a change in behaviour, but no API changes and no documented promise is broken (the docs only described it), so a minor release fits.
+- `CHANGELOG.md`: `[4.1.0]` with *Added* (`scaleEffect`, `pointerLeave`, `touchDrag`, `updateStyle()`) and *Changed* (jitter and scatter no longer re-roll). No breaking changes. The re-roll change is a change in behaviour, but no API changes and no documented promise is broken (the docs only described it), so a minor release fits.
 - `npm run lint`, `npm test`, `npm run typecheck`, `npm run a11y` and `npm run bench`; size check against the "around 8KB gzipped" claim in the README.
 - Bump `package.json` to `4.1.0`, tag, publish.
 
