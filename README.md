@@ -22,7 +22,7 @@ v4.1.0
 
 Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Very customisable, definitely overdeveloped. A fun pet project originally from the Flash days, remade in JS for practice.
 
-Give it a set of elements and some styles, and each element moves between a "near" and a "far" value of each style as the pointer (or a touch, a pen, or another element) gets closer. Transforms and filters come built in, and you can animate any other CSS property that takes a single number. No dependencies, and around 8KB gzipped.
+Give it a set of elements and some styles, and each element moves between a "near" and a "far" value of each style as the pointer (or a touch, a pen, or another element) gets closer. Transforms and filters come built in, and you can animate any other CSS property that takes a single number. No dependencies, and about 25KB minified (8.5KB gzipped).
 
 Version 4 is a big tidy-up: lots of fixes, checks on everything you pass in, an animation loop that sleeps when nothing is moving, touch and pen support, reduced motion support, TypeScript declarations, and proper documentation. It has some breaking changes from 2.x - see the [changelog](CHANGELOG.md#upgrading-from-2x).
 
