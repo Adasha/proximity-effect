@@ -4,9 +4,13 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+### Added
+
+- `updateStyle(name, keyframes)` gives matching styles new keyframes, keeping their place in the stack, their params and each node's scatter.
+
 ### Changed
 
-- Changing `jitter`, `jitterX` or `jitterY` no longer picks new random amounts. Each node keeps the random amount it was given, and moves further or less far in the same direction, so the jitter can be resized smoothly. Changing `jitterMethod` still picks new amounts. Scatter is kept the same way, ready for `updateStyle()`.
+- Changing `jitter`, `jitterX` or `jitterY` no longer picks new random amounts. Each node keeps the random amount it was given, and moves further or less far in the same direction, so the jitter can be resized smoothly. Changing `jitterMethod` still picks new amounts. Scatter is kept the same way, so `updateStyle()` can change a keyframe's scatter without the nodes jumping about.
 
 ## [4.0.0] - 2026-10-18
 

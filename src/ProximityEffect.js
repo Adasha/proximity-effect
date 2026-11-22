@@ -870,7 +870,7 @@ export default class ProximityEffect extends EventTarget
      * @param {Array<number|Object>} keyframes - The near and far style values. Each is a number, or an object with a numeric value and optional scatter and scatterMethod.
      * Keyframes in between, and a keyframe distance, are planned for 4.3; passing them throws a RangeError.
      * @param {Object} [params] - An object containing additional effect parameters.
-     * @param {string} [params.id] - A name for the style, which hasStyle() and removeStyle() accept.
+     * @param {string} [params.id] - A name for the style, which hasStyle(), removeStyle() and updateStyle() accept.
      * Per-style threshold, runoff, invert, attack and decay are planned for 4.2; passing them throws a RangeError.
      * @throws {TypeError} If an argument is the wrong type.
      * @throws {RangeError} If a value is not allowed (see Style).
@@ -956,6 +956,52 @@ export default class ProximityEffect extends EventTarget
             this.#invalidate();
         }
         return rules.size>0;
+    }
+
+
+
+    /**
+     * Change the keyframes of every matching style, keeping its place in the
+     * stack, its params and each node's scatter. A keyframe whose scatter
+     * method changes picks new scatter, since the new method has a different
+     * spread. To change the property, remove the style and add a new one.
+     * @param {string} name - The preset name, a custom style's func (or rule if it has none), or the id given in the style's params.
+     * @param {Array<number|Object>} keyframes - The new near and far keyframes, as for addStyle(). They are checked against each matching style.
+     * @return {boolean} True if anything was updated.
+     * @throws {TypeError} If an argument is the wrong type.
+     * @throws {RangeError} If a value is not allowed for a matching style (see Style).
+     * @throws {Error} If the instance has been destroyed.
+     */
+    updateStyle(name, keyframes)
+    {
+        this.#assertAlive("update a style on");
+        Validate.string(name, "style name");
+        // build every replacement before changing anything, so a failure leaves the stack as it was
+        const updates = [];
+        this.#stylesStack.forEach((style, index) =>
+        {
+            if (this.#styleMatches(style, name))
+            {
+                updates.push({ index, style: Style.withKeyframes(style, keyframes) });
+            }
+        });
+
+        for (const { index, style } of updates)
+        {
+            const old = this.#stylesStack[index];
+            this.#stylesStack[index] = style;
+            for (const data of this.#nodeData)
+            {
+                this.#restyleValues(old, style, data.styles[index]);
+            }
+        }
+
+        // the rule and func are unchanged, so the grouping still holds
+        if (updates.length>0)
+        {
+            this.#invalidate();
+        }
+        return updates.length>0;
     }
 
 
@@ -1816,8 +1862,39 @@ export default class ProximityEffect extends EventTarget
     // resolved values #writeStyles() reads.
     #styleValues(style)
     {
-        const unit = (frame) => AdashaUtils.random(1, frame.scatterMethod ?? this.#DEFAULT_SCATTER_METHOD),
-              entry = { nearUnit: unit(style.near), farUnit: unit(style.far) };
+        const entry = { nearUnit: this.#rollScatter(style.near), farUnit: this.#rollScatter(style.far) };
+        return this.#resolveStyleValues(style, entry);
+    }
+
+
+
+    #scatterMethod(frame)
+    {
+        const method = frame.scatterMethod ?? this.#DEFAULT_SCATTER_METHOD;
+        return method==="gaussian" ? "normal" : method;
+    }
+
+
+
+    #rollScatter(frame)
+    {
+        return AdashaUtils.random(1, this.#scatterMethod(frame));
+    }
+
+
+
+    // A node's entry for a style whose keyframes have changed: keep each
+    // frame's roll unless its method changed, then resolve the new values.
+    #restyleValues(old, style, entry)
+    {
+        if (this.#scatterMethod(old.near)!==this.#scatterMethod(style.near))
+        {
+            entry.nearUnit = this.#rollScatter(style.near);
+        }
+        if (this.#scatterMethod(old.far)!==this.#scatterMethod(style.far))
+        {
+            entry.farUnit = this.#rollScatter(style.far);
+        }
         return this.#resolveStyleValues(style, entry);
     }
 

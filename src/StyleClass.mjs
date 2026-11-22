@@ -163,7 +163,7 @@ function checkParams(params)
  * @param {Array<number|Object>} keyframes - The near and far style values. Each is a number, or an object with a numeric value and optional scatter and scatterMethod.
  * Keyframes in between, and a keyframe distance, are planned for 4.3; passing them throws a RangeError.
  * @param {Object} [params] - An object containing additional effect parameters.
- * @param {string} [params.id] - A name for the style, which hasStyle() and removeStyle() accept.
+ * @param {string} [params.id] - A name for the style, which hasStyle(), removeStyle() and updateStyle() accept.
  * Per-style threshold, runoff, invert, attack and decay are planned for 4.2; passing them throws a RangeError.
  * @throws {TypeError} If an argument is the wrong type.
  * @throws {RangeError} If a value is not allowed (unknown preset, unsafe rule, func or unit, non-finite number, a feature that isn't supported yet).
@@ -181,6 +181,8 @@ export default class Style
 	#near;
 	#far;
 	#params;
+	// what the style was built from, so withKeyframes() can build it again
+	#source;
 
 
 
@@ -276,6 +278,23 @@ export default class Style
 		this.#near         = frames[0];
 		this.#far          = frames[1];
 		this.#params       = checkedParams;
+		this.#source       = typeof property==="string" ? property : cssParams;
+	}
+
+
+
+	/**
+	 * A new style with the same property and params as an existing one, and
+	 * new keyframes, checked as the constructor checks them. Static, so the
+	 * style's own members stay getters only.
+	 * @param {Style} style - The style to copy.
+	 * @param {Array<number|Object>} keyframes - The new near and far keyframes.
+	 * @return {Style} The new style.
+	 * @throws {TypeError|RangeError} As for the constructor.
+	 */
+	static withKeyframes(style, keyframes)
+	{
+		return new Style(style.#source, keyframes, style.#params);
 	}
 
 

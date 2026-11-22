@@ -114,6 +114,9 @@ pe.addStyle("blur", [0, { value: 1, distance: 1 }]);
 pe.addStyle("blur", [0, 1], { threshold: 10 });
 assert<boolean>(pe.hasStyle("hue"));
 assert<boolean>(pe.removeStyle("hue"));
+assert<boolean>(pe.updateStyle("hue", [0, { value: 90, scatter: 10 }]));
+// @ts-expect-error two keyframes only
+pe.updateStyle("blur", [0, 5, 10]);
 const style = pe.styles[0];
 assert<string>(style.name);
 assert<string>(style.rule);

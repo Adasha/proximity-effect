@@ -155,6 +155,19 @@ Returns `true` if a matching style has been added. `name` can be a preset name (
 
 Removes every style matching `name` (as for `hasStyle()`), and returns `true` if anything was removed. Any CSS property no longer animated by another style gets the nodes' original inline value back.
 
+#### `updateStyle(name, keyframes)`
+
+Gives every style matching `name` (as for `hasStyle()`) new [keyframes](#keyframes), and returns `true` if anything was updated. Each style keeps its place in the stack and its params, so it's still drawn in the same order and found by the same `id`.
+
+```javascript
+myEffect.addStyle("translateY", [0, { value: 20, scatter: 10 }], { id: "drift" });
+myEffect.updateStyle("drift", [0, { value: 40, scatter: 20 }]);
+```
+
+Each node keeps its random scatter, so with twice the `scatter` it moves twice as far in the same direction, and a keyframe that gains scatter uses the random amount the node already has. A keyframe whose `scatterMethod` changes picks new random amounts, since the new method has a different spread.
+
+The keyframes are checked against each matching style's `min` and `max`, as `addStyle()` checks them, and all of them are checked before anything changes, so a failed call leaves every style as it was. To animate a different property, remove the style and add a new one.
+
 ### Tracking methods
 
 #### `clearTarget()`
@@ -185,7 +198,7 @@ Restarts a paused animation. Throws an `Error` if the instance has been destroye
 
 #### `destroy()`
 
-Stops the effect for good: removes every event listener and observer, stops the animation loop, and gives each node back the inline style it had when the instance was created (removing the `style` attribute from nodes that had none). Any inline styles your own code set on the nodes since then are lost, so set them again afterwards if you need them. Safe to call more than once. Afterwards, anything that would touch the nodes again (`nodes`, `addStyle()`, `removeStyle()`, `setCenterPoints()`, `resume()`) throws an `Error`.
+Stops the effect for good: removes every event listener and observer, stops the animation loop, and gives each node back the inline style it had when the instance was created (removing the `style` attribute from nodes that had none). Any inline styles your own code set on the nodes since then are lost, so set them again afterwards if you need them. Safe to call more than once. Afterwards, anything that would touch the nodes again (`nodes`, `addStyle()`, `removeStyle()`, `updateStyle()`, `setCenterPoints()`, `resume()`) throws an `Error`.
 
 #### `update()`
 
@@ -275,7 +288,7 @@ myEffect.addStyle("translateX", [0, { value: 50, scatter: 15 }]);
 myEffect.addStyle("rotateZ", [{ value: 0, scatter: 30 }, { value: 0, scatter: 90, scatterMethod: "normal" }]);
 ```
 
-Each node's random scatter is picked once, when the style is added or the node is. It's kept as a share of the `scatter` amount rather than as a fixed value, so a node keeps its place in the spread if the amount changes later.
+Each node's random scatter is picked once, when the style is added or the node is, and is kept when the keyframes change with [`updateStyle()`](#updatestylename-keyframes). It's kept as a share of the `scatter` amount rather than as a fixed value, so a node keeps its place in the spread if the amount changes later.
 
 More than two keyframes, or a keyframe `distance`, throws a `RangeError` for now. Keyframes in between are planned for 4.3, and rejecting them until then means adding them won't change what existing code does.
 
@@ -283,7 +296,7 @@ More than two keyframes, or a keyframe `distance`, throws a `RangeError` for now
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `id` | String | A name for the style, which `hasStyle()` and `removeStyle()` accept. |
+| `id` | String | A name for the style, which `hasStyle()`, `removeStyle()` and `updateStyle()` accept. |
 
 Per-style `threshold`, `runoff`, `invert`, `attack` and `decay` are planned for 4.2, and throw a `RangeError` for now, for the same reason. Any other parameter is ignored.
 
@@ -352,7 +365,7 @@ Every argument and value is checked before anything changes, so a call that thro
 | --- | --- |
 | `TypeError` | A value is the wrong type: `nodes` isn't an Element or list of Elements, `params` isn't an object, a number or boolean property is set to something else, `target` isn't an Element, or a style or keyframe is malformed. |
 | `RangeError` | A value isn't allowed: `NaN` or `Infinity`, an empty node list, an unknown name for `direction`, `jitterMethod`, `reducedMotion` or a preset, an unsafe custom style, a negative `FPS` or `perspective`, a node or index the instance doesn't have, or a feature that isn't supported yet (more than two keyframes, per-style parameters). |
-| `Error` | Constructing without a DOM, or, after `destroy()`, calling `resume()`, `addStyle()`, `removeStyle()` or `setCenterPoints()`, or setting `nodes`. |
+| `Error` | Constructing without a DOM, or, after `destroy()`, calling `resume()`, `addStyle()`, `removeStyle()`, `updateStyle()` or `setCenterPoints()`, or setting `nodes`. |
 
 Numbers in range are clamped rather than rejected: a negative `threshold` becomes 0, and an `attack` above 1 becomes 1.
 
