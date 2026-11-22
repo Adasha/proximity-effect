@@ -641,7 +641,7 @@ export default class ProximityEffect extends EventTarget
     set jitter(num)
     {
         this.#globalParams.jitter = Math.max(Validate.finite(num, "jitter"), 0);
-        this.#calculateJitters();
+        this.#applyOffsets();
   	}
 
     /**
@@ -651,7 +651,7 @@ export default class ProximityEffect extends EventTarget
     set jitterX(num)
     {
         this.#globalParams.jitterX = Math.max(Validate.finite(num, "jitterX"), 0);
-        this.#calculateJitters();
+        this.#applyOffsets();
   	}
 
     /**
@@ -661,7 +661,7 @@ export default class ProximityEffect extends EventTarget
     set jitterY(num)
     {
         this.#globalParams.jitterY = Math.max(Validate.finite(num, "jitterY"), 0);
-        this.#calculateJitters();
+        this.#applyOffsets();
   	}
 
 
@@ -676,13 +676,13 @@ export default class ProximityEffect extends EventTarget
     }
 
     /**
-     * Set the jitter method, and recalculate the jitter.
+     * Set the jitter method, and pick new random jitter for every node.
      * @param {string} method - "uniform" or "normal" ("gaussian" is an alias).
      */
     set jitterMethod(method)
     {
         this.#globalParams.jitterMethod = Validate.randomMethod(method, "jitter method");
-        this.#calculateJitters();
+        this.#rollJitters();
     }
 
 
@@ -881,7 +881,7 @@ export default class ProximityEffect extends EventTarget
         this.#assertAlive("add a style to");
         // work everything out before changing anything, so a failure leaves the stack as it was
         const style  = new Style(property, keyframes, params),
-              values = this.#nodeData.map(() => this.#scatterValues(style));
+              values = this.#nodeData.map(() => this.#styleValues(style));
 
         this.#stylesStack.push(style);
         this.#nodeData.forEach((data, i) => data.styles.push(values[i]));
@@ -1710,6 +1710,7 @@ export default class ProximityEffect extends EventTarget
     // a node's centre is where it was measured, moved by the global offset and its jitter
     #applyOffset(data)
     {
+        this.#resolveJitter(data);
         if (data.measured)
         {
             data.center ??= {};
@@ -1794,49 +1795,79 @@ export default class ProximityEffect extends EventTarget
 
     #createNodeData(node)
     {
-        return {
-            node:      node,
-            style:     node.style.cssText,
-            hadStyle:  node.hasAttribute("style"),
-            lastDelta: this.#globalParams.primeDistances ? 1 : undefined,
-            jitter:    this.#randomJitter(),
-            styles:    this.#stylesStack.map(style => this.#scatterValues(style))
+        const data = {
+            node:       node,
+            style:      node.style.cssText,
+            hadStyle:   node.hasAttribute("style"),
+            lastDelta:  this.#globalParams.primeDistances ? 1 : undefined,
+            jitterUnit: this.#rollJitter(),
+            styles:     this.#stylesStack.map(style => this.#styleValues(style))
         };
+        this.#resolveJitter(data);
+        return data;
     }
 
 
 
-    #scatterValues(style)
+    // A style entry for one node. Scatter is kept as a unit roll, so a new
+    // scatter amount (updateStyle, scaleEffect) moves the node the same way
+    // without rolling again. Every frame gets a roll, even with no scatter, so
+    // one that gains scatter later has one ready. near and far are the
+    // resolved values #writeStyles() reads.
+    #styleValues(style)
     {
-        const value = (frame) => frame.scatter
-            ? AdashaUtils.constrain(frame.value + AdashaUtils.random(frame.scatter, frame.scatterMethod ?? this.#DEFAULT_SCATTER_METHOD), style.min, style.max)
+        const unit = (frame) => AdashaUtils.random(1, frame.scatterMethod ?? this.#DEFAULT_SCATTER_METHOD),
+              entry = { nearUnit: unit(style.near), farUnit: unit(style.far) };
+        return this.#resolveStyleValues(style, entry);
+    }
+
+
+
+    #resolveStyleValues(style, entry)
+    {
+        const value = (frame, roll) => frame.scatter
+            ? AdashaUtils.constrain(frame.value + roll * frame.scatter, style.min, style.max)
             : frame.value;
 
-        return {
-            near: value(style.near),
-            far:  value(style.far)
-        };
+        entry.near = value(style.near, entry.nearUnit);
+        entry.far  = value(style.far, entry.farUnit);
+        return entry;
     }
 
 
 
+    // random(v, m) scales linearly with v for both methods, so a roll of
+    // random(1, m) times the jitter size has the same spread as random(size, m).
     // the constructor sets the jitter parameters before any node data is built
-    #randomJitter()
+    #rollJitter()
     {
-        const { jitter, jitterX, jitterY, jitterMethod } = this.#globalParams;
+        const method = this.#globalParams.jitterMethod;
         return {
-            x: AdashaUtils.random(jitter + jitterX, jitterMethod),
-            y: AdashaUtils.random(jitter + jitterY, jitterMethod)
+            x: AdashaUtils.random(1, method),
+            y: AdashaUtils.random(1, method)
         };
     }
 
 
 
-    #calculateJitters()
+    // jitter in pixels, from the node's unit roll and the current jitter size
+    #resolveJitter(data)
+    {
+        const { jitter, jitterX, jitterY } = this.#globalParams;
+        data.jitter ??= {};
+        data.jitter.x = data.jitterUnit.x * (jitter + jitterX);
+        data.jitter.y = data.jitterUnit.y * (jitter + jitterY);
+        return data.jitter;
+    }
+
+
+
+    // a new method needs a roll of its own shape
+    #rollJitters()
     {
         for (const data of this.#nodeData)
         {
-            data.jitter = this.#randomJitter();
+            data.jitterUnit = this.#rollJitter();
         }
         this.#applyOffsets();
     }

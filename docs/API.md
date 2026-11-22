@@ -109,7 +109,7 @@ All read-write properties can also be set through the constructor's `params`. Se
 | `jitterX` and `jitterY` | Number | `0` | The same for one axis only. They add to `jitter`. |
 | `jitterMethod` | String | `"uniform"` | How the jitter is distributed: `"uniform"` (any amount equally likely) or `"normal"` (mostly small amounts, clustered around the centre). `"gaussian"` is accepted as another name for `"normal"`. |
 
-Setting any of the jitter properties picks new random amounts for every node. Offsets and jitter don't need the nodes to be measured again.
+Each node picks its random amount once, when it's added. Changing `jitter`, `jitterX` or `jitterY` makes every node move further or less far in the same direction, so you can grow or shrink the jitter without the nodes jumping about. Changing `jitterMethod` picks new random amounts, since the new method has a different spread. Offsets and jitter don't need the nodes to be measured again.
 
 ### Drawing
 
@@ -275,7 +275,7 @@ myEffect.addStyle("translateX", [0, { value: 50, scatter: 15 }]);
 myEffect.addStyle("rotateZ", [{ value: 0, scatter: 30 }, { value: 0, scatter: 90, scatterMethod: "normal" }]);
 ```
 
-Each node's scattered values are picked once, when the style is added or the node is.
+Each node's random scatter is picked once, when the style is added or the node is. It's kept as a share of the `scatter` amount rather than as a fixed value, so a node keeps its place in the spread if the amount changes later.
 
 More than two keyframes, or a keyframe `distance`, throws a `RangeError` for now. Keyframes in between are planned for 4.3, and rejecting them until then means adding them won't change what existing code does.
 
