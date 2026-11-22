@@ -258,7 +258,7 @@ Each frame writes exactly one number, plus the unit, to one CSS property. To kee
 - `func` must be a plain CSS function name. Functions that load resources or read values from elsewhere (`url()`, `image-set()`, `attr()`, `var()` and similar) are rejected.
 - `unit` must be a known CSS unit.
 
-Only one numeric value per property is supported, so `rgb()` and other functions taking several values can't be used yet (planned for 4.1). CSS custom properties (`--foo`) aren't supported either. Animating properties that change the layout, such as `width` or `fontSize`, works, but costs much more than transforms, since the page has to be laid out again on every frame.
+Only one numeric value per property is supported, so `rgb()` and other functions taking several values can't be used yet (planned for 4.2). CSS custom properties (`--foo`) aren't supported either. Animating properties that change the layout, such as `width` or `fontSize`, works, but costs much more than transforms, since the page has to be laid out again on every frame.
 
 ### Keyframes
 
