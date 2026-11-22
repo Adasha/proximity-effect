@@ -1,6 +1,6 @@
 # ProximityEffect.js
 
-v4.0.0
+v4.1.0
 
 ## Contents
 
@@ -362,10 +362,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report a bug or make a change.
 
 ## Roadmap
 
-- (for 4.1) An option to keep the last point when a touch or pen lifts, such as `pointerLeave: "hold" | "rest"`, kept relative to the page so it survives scrolling. Today the point is forgotten when the finger lifts, so on touch screens a tap only flickers.
-- (for 4.1) A `scaleEffect` parameter (or px values that accept CSS lengths), applied at render time to `threshold`, `runoff`, offsets, jitter and px style values, so an effect can shrink with its container.
-- (for 4.1) Jitter and scatter kept as unit random values and multiplied when used, so changing `jitter` or a style's scatter no longer re-rolls them.
-- (for 4.1) `updateStyle(name, keyframes)`, to change a style's keyframes in place instead of removing and re-adding it (which re-rolls its scatter).
 - (for 4.2) Multiple-value CSS properties, such as colours.
 - (for 4.2) A posterise option (`steps`), snapping the effect to a set number of even steps.
 - (for 4.2) Per-property parameters.
@@ -373,6 +369,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report a bug or make a change.
 
 ## Version history
 
+- v4.1   - Touch screens can hold the point (`pointerLeave`, `touchDrag`), `scaleEffect` sizes an effect to its container, `updateStyle()` changes keyframes in place, and jitter and scatter no longer re-roll. See the [changelog](CHANGELOG.md).
 - v4.0   - Fixed, hardened, made faster and accessible, and documented. Breaking changes, see the [changelog](CHANGELOG.md).
 - v3.0   - Alpha versions only, never published to npm. Keyframe arrays, per-axis jitter and manual coordinates.
 - v2.1   - First published on npm, in 2018.
