@@ -588,6 +588,134 @@ describe("styles", () =>
 
 
 
+describe("updateStyle", () =>
+{
+    it("changes the keyframes in place, keeping the style's place and params", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("scale", [1, 2]);
+        pe.addStyle("translateX", [0, 10], { id: "slide" });
+        pe.addStyle("rotate", [0, 90]);
+
+        expect(pe.updateStyle("slide", [5, 50])).toBe(true);
+        expect(pe.styles.map(s => s.name)).toEqual(["scale", "translateX", "rotate"]);
+        expect(pe.styles[1].id).toBe("slide");
+        expect(pe.styles[1].near.value).toBe(5);
+        expect(pe.styles[1].far.value).toBe(50);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 1, far: 2 }, { near: 5, far: 50 }, { near: 0, far: 90 }]);
+    });
+
+    it("keeps each node's scatter, without rolling again", () =>
+    {
+        const pe = create([makeNode(0, 0), makeNode(0, 0), makeNode(0, 0)]);
+        pe.addStyle("translateX", [0, { value: 50, scatter: 10 }]);
+        const before = [0, 1, 2].map(i => pe.getNodeIndexData(i, "styles")[0].far - 50),
+              random = vi.spyOn(Math, "random");
+
+        pe.updateStyle("translateX", [0, { value: 100, scatter: 20 }]);
+        expect(random).not.toHaveBeenCalled();
+        before.forEach((offset, i) =>
+        {
+            expect(pe.getNodeIndexData(i, "styles")[0].far - 100).toBeCloseTo(offset*2);
+        });
+    });
+
+    it("uses the roll that's already there when a keyframe gains scatter", () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("translateX", [0, 50]);
+        Math.random.mockReturnValue(0);
+        pe.updateStyle("translateX", [{ value: 0, scatter: 10 }, 50]);
+        // the roll made when the style was added: (1 - 0.5) * 10
+        expect(pe.getNodeIndexData(0, "styles")[0].near).toBe(5);
+    });
+
+    it("picks new scatter for a keyframe whose method changes", () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("translateX", [{ value: 0, scatter: 10 }, { value: 50, scatter: 10, scatterMethod: "gaussian" }]);
+        Math.random.mockReturnValue(0);
+        // near changes method, far is given the same method under another name
+        pe.updateStyle("translateX", [{ value: 0, scatter: 10, scatterMethod: "normal" }, { value: 50, scatter: 10, scatterMethod: "normal" }]);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: -5, far: 55 }]);
+    });
+
+    it("clamps to the style's range", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle({ rule: "opacity", min: 0, max: 1 }, [0, 1]);
+        pe.updateStyle("opacity", [-1, 3]);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 0, far: 1 }]);
+    });
+
+    it("updates every match", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("translateX", [0, 10]);
+        pe.addStyle("scale", [1, 2]);
+        pe.addStyle("translateX", [0, 20]);
+        expect(pe.updateStyle("translateX", [1, 30])).toBe(true);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 1, far: 30 }, { near: 1, far: 2 }, { near: 1, far: 30 }]);
+    });
+
+    it("keeps a preset known by its preset name", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("hueRotate", [0, 90]);
+        pe.updateStyle("hueRotate", [0, 180]);
+        expect(pe.styles[0].name).toBe("hueRotate");
+        expect(pe.hasStyle("hueRotate")).toBe(true);
+    });
+
+    it("returns false when nothing matches", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("translateX", [0, 10]);
+        expect(pe.updateStyle("blur", [0, 5])).toBe(false);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 0, far: 10 }]);
+    });
+
+    it("leaves every style as it was when a keyframe is bad", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("translateX", [0, 10]);
+        pe.addStyle("translateX", [0, 20]);
+        const styles = pe.styles;
+        expect(() => pe.updateStyle("translateX", [0])).toThrow(TypeError);
+        expect(() => pe.updateStyle("translateX", [0, "far"])).toThrow(TypeError);
+        expect(() => pe.updateStyle("translateX", [0, { value: 1, scatter: -1 }])).toThrow(RangeError);
+        expect(() => pe.updateStyle("translateX", [0, 5, 10])).toThrow(RangeError);
+        expect(() => pe.updateStyle("translateX", [0, NaN])).toThrow(RangeError);
+        expect(pe.styles).toEqual(styles);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 0, far: 10 }, { near: 0, far: 20 }]);
+    });
+
+    it("rejects a name that isn't a string", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        expect(() => pe.updateStyle(undefined, [0, 1])).toThrow(TypeError);
+        expect(() => pe.updateStyle(null, [0, 1])).toThrow(TypeError);
+    });
+
+    it("redraws the nodes", async () =>
+    {
+        const el = makeNode(0, 0),
+              pe = create(el);
+        pe.addStyle("translateX", [0, 10]);
+        pe.addStyle("scale", [1, 2]);
+        await settle();
+        step();
+        expect(el.style.transform).toBe("translateX(10px) scale(2)");
+        pe.updateStyle("translateX", [0, 40]);
+        step();
+        expect(el.style.transform).toBe("translateX(40px) scale(2)");
+    });
+});
+
+
+
 describe("lifecycle", () =>
 {
     it("destroy() stops the loop, removes listeners and restores styles", async () =>
@@ -621,6 +749,7 @@ describe("lifecycle", () =>
         expect(() => { pe.nodes = [el, makeNode(0, 0)]; }).toThrow(Error);
         expect(() => pe.addStyle("blur", [0, 1])).toThrow(Error);
         expect(() => pe.removeStyle("translateX")).toThrow(Error);
+        expect(() => pe.updateStyle("translateX", [0, 1])).toThrow(Error);
         expect(() => pe.setCenterPoints()).toThrow(Error);
         expect(pe.nodes).toEqual([el]);
         expect(pe.styles).toHaveLength(1);

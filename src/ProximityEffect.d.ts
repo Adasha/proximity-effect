@@ -112,7 +112,7 @@ export type Keyframes = readonly [near: Keyframe, far: Keyframe];
 /** Per-style parameters for addStyle(). */
 export interface StyleParams
 {
-    /** A name for the style, which hasStyle() and removeStyle() accept. */
+    /** A name for the style, which hasStyle(), removeStyle() and updateStyle() accept. */
     id?: string;
 }
 
@@ -243,6 +243,8 @@ export default class ProximityEffect extends EventTarget
     addStyle(property: PresetStyle | CustomStyle, keyframes: Keyframes, params?: StyleParams | null): void;
     hasStyle(name: string): boolean;
     removeStyle(name: string): boolean;
+    /** Change the keyframes of every matching style, keeping its place, params and each node's scatter. */
+    updateStyle(name: string, keyframes: Keyframes): boolean;
     distanceFrom(node: Element): number | undefined;
     distanceFromIndex(index: number): number | undefined;
     clearTarget(): void;
