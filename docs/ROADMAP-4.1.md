@@ -1,5 +1,7 @@
 # 4.1 plan
 
+**Done:** released as 4.1.0 on 2026-11-22 (#29 to #34). This is kept as a record of how it was planned, so line links point at the code as it was then.
+
 The four 4.1 items from the README roadmap, put in build order. Stage 1 is a refactor that stages 2 and 3 depend on; stage 4 doesn't depend on anything and can be done at any point. Each stage is meant to be its own PR into a `release/4.1` branch, with its own tests and doc changes, so `master` only gets 4.1 once all four are finished.
 
 | Stage | Item | Depends on | Size |
