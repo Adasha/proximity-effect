@@ -59,6 +59,7 @@ export default class ProximityEffect extends EventTarget
 
     #VALID_DIRECTIONS       = new Set(["both", "horizontal", "vertical"]);
     #VALID_REDUCED_MOTION   = new Set(["rest", "snap", "ignore"]);
+    #VALID_POINTER_LEAVE    = new Set(["rest", "hold"]);
     #DEFAULT_DIRECTION      = "both";
     #DEFAULT_TOLERANCE      = 0.0001;
     #DEFAULT_RUNOFF         = 100;
@@ -68,6 +69,8 @@ export default class ProximityEffect extends EventTarget
 
     #globalParams = {};
     #pointer = null;
+    // a touch or pen point kept after it lifted (pointerLeave "hold"), in page coordinates
+    #held = null;
     #coords = null;
     #stylesStack = [];
     #styleGroups = [];
@@ -141,6 +144,7 @@ export default class ProximityEffect extends EventTarget
      * @param {boolean} [params.perspectiveOrigin=false] - Set the nodes' parent's perspective-origin to the centre of the nodes at rest. The nodes must share a parent.
      * @param {number|null|false} [params.perspective] - A perspective distance in pixels to give each node's transform, viewed from the centre of the node at rest, or null, false or 0 to leave perspective to the parent.
      * @param {string}  [params.reducedMotion="rest"] - What to do when the user prefers reduced motion: "rest" (nodes stay at rest and ignore the pointer), "snap" (nodes follow without easing) or "ignore".
+     * @param {string}  [params.pointerLeave="rest"] - What to do when a touch or pen lifts: "rest" (nodes settle back to rest) or "hold" (the last point is kept, on the same spot on the page, until the next pointer event). A mouse leaving the page always rests.
      * @throws {TypeError} If an argument or parameter is the wrong type.
      * @throws {RangeError} If a parameter value is not allowed (NaN, Infinity, an unknown name).
      */
@@ -181,6 +185,7 @@ export default class ProximityEffect extends EventTarget
         this.zIndex       = param("zIndex", false);
         this.perspective  = param("perspective", null);
         this.reducedMotion = param("reducedMotion", "rest");
+        this.pointerLeave = param("pointerLeave", "rest");
         this.offsetX      = param("offsetX", 0);
         this.offsetY      = param("offsetY", 0);
         this.jitterMethod = param("jitterMethod", this.#DEFAULT_JITTER_METHOD);
@@ -850,12 +855,48 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
+     * Get what the effect does when a touch or pen lifts.
+     * @return {string} "rest" or "hold".
+     */
+    get pointerLeave()
+    {
+        return this.#globalParams.pointerLeave;
+    }
+
+    /**
+     * Set what the effect does when a touch or pen lifts: "rest" lets the
+     * nodes settle back to rest; "hold" keeps the last point, on the same spot
+     * on the page as it scrolls, until the next pointer event. A mouse leaving
+     * the page, or the window losing focus, always rests. Setting "rest" drops
+     * a held point.
+     * @param {string} mode - "rest" or "hold".
+     * @throws {RangeError} If the mode is not one of those.
+     */
+    set pointerLeave(mode)
+    {
+        if (!this.#VALID_POINTER_LEAVE.has(mode))
+        {
+            throw new RangeError(`ProximityEffect: '${String(mode)}' is not a valid pointerLeave. Use "rest" or "hold".`);
+        }
+        this.#globalParams.pointerLeave = mode;
+        if (mode==="rest" && this.#held!==null)
+        {
+            this.#held = null;
+            this.#start();
+        }
+    }
+
+
+
+    /**
      * Get the last known pointer coordinates, relative to the viewport, in pixels.
-     * @return {Object|null} An object containing x and y properties, or null before the pointer has moved and after it leaves the page.
+     * With pointerLeave "hold", this is the held point after a touch or pen lifts.
+     * @return {Object|null} An object containing x and y properties, or null before the pointer has moved and after it leaves the page (or lifts, unless held).
      */
     get pointer()
     {
-        return this.#pointer ? { x: this.#pointer.x, y: this.#pointer.y } : null;
+        const point = this.#pointer ?? this.#heldPoint();
+        return point ? { x: point.x, y: point.y } : null;
     }
 
 
@@ -2099,7 +2140,18 @@ export default class ProximityEffect extends EventTarget
                 y: (b.top + b.bottom)*0.5
             };
         }
-        return this.#pointer;
+        return this.#pointer ?? this.#heldPoint();
+    }
+
+
+
+    // the held point in viewport coordinates, at the current page scroll
+    #heldPoint()
+    {
+        return this.#held && {
+            x: this.#held.x - window.scrollX,
+            y: this.#held.y - window.scrollY
+        };
     }
 
 
@@ -2154,6 +2206,7 @@ export default class ProximityEffect extends EventTarget
         this.#pointer ??= { x: 0, y: 0 };
         this.#pointer.x = evt.clientX;
         this.#pointer.y = evt.clientY;
+        this.#held = null;
         this.#start();
     }
 
@@ -2162,22 +2215,44 @@ export default class ProximityEffect extends EventTarget
 
 
     // pointerout with no element to go to: the pointer left the page, or a
-    // touch or pen lifted off. The nodes settle back to rest.
+    // touch or pen lifted off (pointercancel, when a touch turns into a
+    // scroll, is followed by one too). The nodes settle back to rest, unless
+    // the point is held.
     #pointerOut(evt)
     {
         if (evt.relatedTarget===null && evt.isPrimary!==false)
         {
-            this.#pointerLeft();
+            if (this.#pointer!==null && this.#holds(evt))
+            {
+                // kept in page coordinates, so it stays on the same spot as the page scrolls
+                this.#held = { x: this.#pointer.x + window.scrollX, y: this.#pointer.y + window.scrollY };
+                this.#pointer = null;
+            }
+            else
+            {
+                this.#pointerLeft();
+            }
         }
+    }
+
+
+
+    // Whether a pointer leaving should be held. Only a touch or pen lifting:
+    // a mouse that leaves and comes back is a different thing from a tap.
+    // Kept in one place so another pointerLeave mode (for a mouse) can be added.
+    #holds(evt)
+    {
+        return this.pointerLeave==="hold" && (evt.pointerType==="touch" || evt.pointerType==="pen");
     }
 
 
 
     #pointerLeft()
     {
-        if (this.#pointer!==null)
+        if (this.#pointer!==null || this.#held!==null)
         {
             this.#pointer = null;
+            this.#held = null;
             this.#start();
         }
     }

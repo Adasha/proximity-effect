@@ -11,7 +11,7 @@ import ProximityEffect from "../src/ProximityEffect.js";
 const READ_WRITE = [
     "target", "nodes", "threshold", "runoff", "invert", "zIndex", "perspectiveOrigin", "perspective", "attack", "decay",
     "offsetX", "offsetY", "jitter", "jitterX", "jitterY", "jitterMethod", "direction",
-    "FPS", "tolerance", "reducedMotion", "scaleEffect",
+    "FPS", "tolerance", "reducedMotion", "scaleEffect", "pointerLeave",
 ];
 
 const READ_ONLY = [

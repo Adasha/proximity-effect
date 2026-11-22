@@ -21,6 +21,9 @@ export type RandomMethod = "uniform" | "normal" | "gaussian";
 /** What the effect does when the user prefers reduced motion. */
 export type ReducedMotion = "rest" | "snap" | "ignore";
 
+/** What to do when a touch or pen lifts. */
+export type PointerLeave = "rest" | "hold";
+
 /** The names of the preset styles accepted by addStyle(). */
 export type PresetStyle =
     | "translateX" | "translateY" | "translateZ"
@@ -82,6 +85,8 @@ export interface ProximityEffectParams
     perspective?: number | false | null;
     /** What to do when the user prefers reduced motion: stay at rest, follow without easing, or ignore it. Default "rest". */
     reducedMotion?: ReducedMotion | null;
+    /** What to do when a touch or pen lifts: settle back to rest, or hold the last point on the page. A mouse leaving always rests. Default "rest". */
+    pointerLeave?: PointerLeave | null;
 }
 
 /** A custom style for addStyle(). */
@@ -237,9 +242,11 @@ export default class ProximityEffect extends EventTarget
     set tolerance(value: number);
     get reducedMotion(): ReducedMotion;
     set reducedMotion(mode: ReducedMotion);
+    get pointerLeave(): PointerLeave;
+    set pointerLeave(mode: PointerLeave);
     /** Whether motion is being reduced right now. */
     get motionReduced(): boolean;
-    /** The last pointer position, or null before it moves and after it leaves the page. */
+    /** The last pointer position, or null before it moves and after it leaves the page. With pointerLeave "hold", the held point after a touch or pen lifts. */
     get pointer(): Point | null;
     get paused(): boolean;
     get destroyed(): boolean;

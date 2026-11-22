@@ -148,6 +148,7 @@ Next, define the effect parameters in an object. All parameters are optional. Ev
 | `jitterMethod` | String | How the jitter is distributed: `"uniform"` or `"normal"` (`"gaussian"` also works). Default is `"uniform"`. |
 | `scaleEffect` | Number | Multiplies the effect's pixel distances (`threshold`, `runoff`, offsets, jitter and px style values), so it can shrink or grow with its container. Default is 1. |
 | `target` | Element | An element to track instead of the pointer. Default is `null` (the pointer). |
+| `pointerLeave` | String | What to do when a touch or pen lifts: `"rest"` eases back to rest, and `"hold"` keeps the last point (on the same spot on the page) until the next touch. A mouse leaving the page always rests. Default is `"rest"`. |
 | `FPS` | Number | A frame rate limit. `null`, `false` or 0 follows the screen's refresh rate. Default is `null`. |
 | `zIndex` | Boolean | Sets each element's `z-index` from its distance, so the nearest sit on top. Default is `false`. |
 | `perspectiveOrigin` | Boolean | Sets the parent's `perspective-origin` to the centre of the elements, so a `perspective` on a big parent (such as the page) is viewed from the middle of the elements. The elements must share a parent. Default is `false`. |
@@ -262,7 +263,7 @@ new ProximityEffect(elements, { reducedMotion: "snap" });   // or "ignore"
 
 ### Pointer, touch and pen
 
-The pointer is followed with Pointer Events, so mouse, pen and touch all work. A touch is only followed while the finger is down, and with several touches only the first is followed. When the pointer leaves the page, a touch lifts off, or the window loses focus, the elements ease back to rest.
+The pointer is followed with Pointer Events, so mouse, pen and touch all work. A touch is only followed while the finger is down, and with several touches only the first is followed. When the pointer leaves the page, a touch lifts off, or the window loses focus, the elements ease back to rest. Set `pointerLeave: "hold"` to keep the last point when a touch or pen lifts instead, so a tap leaves the effect where the finger was.
 
 ### Pausing
 

@@ -80,7 +80,8 @@ All read-write properties can also be set through the constructor's `params`. Se
 | Property | Type | Default | Description |
 | --- | --- | --- | --- |
 | `target` | Element or `null` | `null` | An element to track instead of the pointer. Its centre is checked every frame, so it can move freely. Set a falsy value, or call `clearTarget()`, to go back to the pointer. |
-| `pointer` | `{x, y}` or `null` | | Read-only. The last pointer position, relative to the viewport, in pixels. `null` before the pointer first moves, and after it leaves the page, a touch lifts off or the window loses focus. |
+| `pointer` | `{x, y}` or `null` | | Read-only. The last pointer position, relative to the viewport, in pixels. `null` before the pointer first moves, and after it leaves the page, a touch lifts off or the window loses focus. With `pointerLeave: "hold"`, it's the held point after a touch or pen lifts, so it isn't `null` then. |
+| `pointerLeave` | String | `"rest"` | What to do when a touch or pen lifts off: `"rest"` lets the nodes ease back to rest, and `"hold"` keeps the last point until the next pointer event. A held point is kept relative to the page, so it stays on the same spot as the page scrolls. A mouse leaving the page, or the window losing focus, always rests. Setting `"rest"` drops a held point. |
 | `direction` | String | `"both"` | Which distance to measure: `"both"` (straight-line distance), `"horizontal"` or `"vertical"`. |
 
 ### Distance
@@ -378,7 +379,7 @@ Every argument and value is checked before anything changes, so a call that thro
 | Error | Thrown when |
 | --- | --- |
 | `TypeError` | A value is the wrong type: `nodes` isn't an Element or list of Elements, `params` isn't an object, a number or boolean property is set to something else, `target` isn't an Element, or a style or keyframe is malformed. |
-| `RangeError` | A value isn't allowed: `NaN` or `Infinity`, an empty node list, an unknown name for `direction`, `jitterMethod`, `reducedMotion` or a preset, an unsafe custom style, a negative `FPS` or `perspective`, a node or index the instance doesn't have, or a feature that isn't supported yet (more than two keyframes, per-style parameters). |
+| `RangeError` | A value isn't allowed: `NaN` or `Infinity`, an empty node list, an unknown name for `direction`, `jitterMethod`, `reducedMotion`, `pointerLeave` or a preset, an unsafe custom style, a negative `FPS` or `perspective`, a node or index the instance doesn't have, or a feature that isn't supported yet (more than two keyframes, per-style parameters). |
 | `Error` | Constructing without a DOM, or, after `destroy()`, calling `resume()`, `addStyle()`, `removeStyle()`, `updateStyle()` or `setCenterPoints()`, or setting `nodes`. |
 
 Numbers in range are clamped rather than rejected: a negative `threshold` becomes 0, and an `attack` above 1 becomes 1.
