@@ -87,6 +87,8 @@ export interface ProximityEffectParams
     reducedMotion?: ReducedMotion | null;
     /** What to do when a touch or pen lifts: settle back to rest, or hold the last point on the page. A mouse leaving always rests. Default "rest". */
     pointerLeave?: PointerLeave | null;
+    /** Keep a touch dragging over the effect for the effect instead of scrolling the page (touch-action: pinch-zoom): true on each node, or an element such as the nodes' container, so the gaps count too. Default false. */
+    touchDrag?: boolean | Element | null;
 }
 
 /** A custom style for addStyle(). */
@@ -244,6 +246,8 @@ export default class ProximityEffect extends EventTarget
     set reducedMotion(mode: ReducedMotion);
     get pointerLeave(): PointerLeave;
     set pointerLeave(mode: PointerLeave);
+    get touchDrag(): boolean | Element;
+    set touchDrag(value: boolean | Element | null);
     /** Whether motion is being reduced right now. */
     get motionReduced(): boolean;
     /** The last pointer position, or null before it moves and after it leaves the page. With pointerLeave "hold", the held point after a touch or pen lifts. */

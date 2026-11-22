@@ -102,6 +102,9 @@ export default class ProximityEffect extends EventTarget
     // the parent whose perspective-origin is set, and its own inline value
     #originParent = null;
     #originParentValue = "";
+    // the touchDrag container, and its own inline touch-action
+    #dragArea = null;
+    #dragAreaValue = "";
 
     // stable listener references, so they can all be removed
     #onPointerMove  = (evt) => this.#pointerMove(evt);
@@ -144,6 +147,7 @@ export default class ProximityEffect extends EventTarget
      * @param {boolean} [params.perspectiveOrigin=false] - Set the nodes' parent's perspective-origin to the centre of the nodes at rest. The nodes must share a parent.
      * @param {number|null|false} [params.perspective] - A perspective distance in pixels to give each node's transform, viewed from the centre of the node at rest, or null, false or 0 to leave perspective to the parent.
      * @param {string}  [params.reducedMotion="rest"] - What to do when the user prefers reduced motion: "rest" (nodes stay at rest and ignore the pointer), "snap" (nodes follow without easing) or "ignore".
+     * @param {boolean|Element} [params.touchDrag=false] - Keep a touch dragging over the effect for the effect instead of scrolling the page, by setting touch-action: pinch-zoom: true on each node, or an element (such as the nodes' container) to include the gaps between them. False or null leaves touch-action alone.
      * @param {string}  [params.pointerLeave="rest"] - What to do when a touch or pen lifts: "rest" (nodes settle back to rest) or "hold" (the last point is kept, on the same spot on the page, until the next pointer event). A mouse leaving the page always rests.
      * @throws {TypeError} If an argument or parameter is the wrong type.
      * @throws {RangeError} If a parameter value is not allowed (NaN, Infinity, an unknown name).
@@ -197,8 +201,9 @@ export default class ProximityEffect extends EventTarget
         this.target       = param("target", null);
 
         this.nodes = nodes;
-        // after the nodes, since it needs their parent
+        // after the nodes, since they need them
         this.perspectiveOrigin = param("perspectiveOrigin", false);
+        this.touchDrag = param("touchDrag", false);
 
 
         // finish setup once the document has loaded. Deferred even when it
@@ -295,6 +300,11 @@ export default class ProximityEffect extends EventTarget
         if (this.perspectiveOrigin)
         {
             this.#claimOriginParent();
+        }
+        // nodes that left were given their whole inline style back already
+        if (this.touchDrag===true)
+        {
+            this.#claimDrags();
         }
 
         if (this.#ready)
@@ -889,6 +899,51 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
+     * Get what keeps touch drags for the effect.
+     * @return {boolean|Element} true (each node), the element, or false.
+     */
+    get touchDrag()
+    {
+        return this.#globalParams.touchDrag;
+    }
+
+    /**
+     * Set what keeps a touch dragging over the effect for the effect, so the
+     * point follows the finger instead of the page scrolling (the browser
+     * would cancel the pointer as the scroll starts). It sets touch-action:
+     * pinch-zoom, which still lets people zoom. true sets it on each node, so
+     * a drag that starts between them still scrolls; an element, such as the
+     * nodes' container, sets it on that element, so its gaps count too. Keep
+     * that element smaller than the screen, or the page can't be scrolled by
+     * touching it. false or null gives the original touch-action back.
+     * @param {boolean|Element|null} value - true, an element, or false or null.
+     * @throws {TypeError} If the value is anything else.
+     */
+    set touchDrag(value)
+    {
+        if (value!=null && typeof value!=="boolean" && !(value instanceof Element))
+        {
+            throw new TypeError(`ProximityEffect: touchDrag must be true, false, null or an element (received ${String(value)}).`);
+        }
+        const next = value ?? false;
+        if (next===this.#globalParams.touchDrag)
+        {
+            return;
+        }
+        if (!this.#destroyed)
+        {
+            this.#releaseDrags();
+        }
+        this.#globalParams.touchDrag = next;
+        if (!this.#destroyed)
+        {
+            this.#claimDrags();
+        }
+    }
+
+
+
+    /**
      * Get the last known pointer coordinates, relative to the viewport, in pixels.
      * With pointerLeave "hold", this is the held point after a touch or pen lifts.
      * @return {Object|null} An object containing x and y properties, or null before the pointer has moved and after it leaves the page (or lifts, unless held).
@@ -1218,6 +1273,8 @@ export default class ProximityEffect extends EventTarget
             this.#restoreInlineStyle(data);
         }
         this.#releaseOriginParent();
+        // the nodes' touch-action went back with their inline style
+        this.#releaseDragArea();
     }
 
 
@@ -1668,6 +1725,53 @@ export default class ProximityEffect extends EventTarget
         if (this.#ready)
         {
             this.#requestMeasure();
+        }
+    }
+
+
+
+    // touch-action: pinch-zoom keeps one-finger drags for the page's pointer
+    // events (no scroll, so no pointercancel), and still lets people zoom
+    #claimDrags()
+    {
+        const value = this.#globalParams.touchDrag;
+        if (value===true)
+        {
+            for (const data of this.#nodeData)
+            {
+                data.node.style.touchAction = "pinch-zoom";
+            }
+        }
+        else if (value)
+        {
+            this.#dragArea = value;
+            this.#dragAreaValue = value.style.touchAction;
+            value.style.touchAction = "pinch-zoom";
+        }
+    }
+
+
+
+    #releaseDrags()
+    {
+        if (this.#globalParams.touchDrag===true)
+        {
+            for (const data of this.#nodeData)
+            {
+                this.#restoreProperty(data, "touchAction");
+            }
+        }
+        this.#releaseDragArea();
+    }
+
+
+
+    #releaseDragArea()
+    {
+        if (this.#dragArea)
+        {
+            this.#dragArea.style.touchAction = this.#dragAreaValue;
+            this.#dragArea = null;
         }
     }
 

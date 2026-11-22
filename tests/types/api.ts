@@ -27,7 +27,7 @@ const params: ProximityEffectParams = {
     threshold: 10, runoff: 200, invert: true, direction: "horizontal", attack: 0.5, decay: 0.2,
     offsetX: 1, offsetY: 2, jitter: 3, jitterX: 4, jitterY: 5, jitterMethod: "gaussian",
     tolerance: 0.01, FPS: 30, target: el, primeDistances: true, zIndex: true, perspectiveOrigin: true, perspective: 500, reducedMotion: "snap",
-    scaleEffect: 0.5, pointerLeave: "hold",
+    scaleEffect: 0.5, pointerLeave: "hold", touchDrag: el,
 };
 const pe = new ProximityEffect(el, params);
 new ProximityEffect(el, { FPS: false, target: null, threshold: null });
@@ -43,6 +43,8 @@ new ProximityEffect(el, { direction: "diagonal" });
 new ProximityEffect(el, { reducedMotion: "off" });
 // @ts-expect-error unknown pointerLeave
 new ProximityEffect(el, { pointerLeave: "keep" });
+// @ts-expect-error touchDrag takes an element, not a selector
+new ProximityEffect(el, { touchDrag: "#stage" });
 // @ts-expect-error unknown parameter
 new ProximityEffect(el, { accuracy: 5 });
 
@@ -85,6 +87,9 @@ pe.tolerance = 0.1;
 pe.reducedMotion = "ignore";
 pe.pointerLeave = "rest";
 assert<PointerLeave>(pe.pointerLeave);
+pe.touchDrag = true;
+pe.touchDrag = null;
+assert<boolean | Element>(pe.touchDrag);
 assert<boolean>(pe.motionReduced);
 assert<Point | null>(pe.pointer);
 assert<boolean>(pe.paused);

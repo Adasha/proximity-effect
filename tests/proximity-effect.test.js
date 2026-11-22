@@ -2232,6 +2232,92 @@ describe("accessibility", () =>
     });
 
 
+    describe("touchDrag", () =>
+    {
+        it("defaults to false and validates the value", () =>
+        {
+            const pe = create(makeNode(0, 0));
+            expect(pe.touchDrag).toBe(false);
+            for (const bad of ["yes", 1, {}, document])
+            {
+                expect(() => { pe.touchDrag = bad; }).toThrow(TypeError);
+            }
+            pe.touchDrag = null;
+            expect(pe.touchDrag).toBe(false);
+            expect(() => create(makeNode(0, 0), { touchDrag: "stage" })).toThrow(TypeError);
+        });
+
+        it("leaves touch-action alone by default", () =>
+        {
+            const el = makeNode(0, 0);
+            create(el);
+            expect(el.style.touchAction).toBe("");
+        });
+
+        it("with true, claims drags on each node and gives them back", () =>
+        {
+            const a = makeNode(0, 0), b = makeNode(20, 0), c = makeNode(40, 0);
+            b.style.touchAction = "none";
+            const pe = create([a, b], { touchDrag: true });
+            expect(pe.touchDrag).toBe(true);
+            expect([a.style.touchAction, b.style.touchAction]).toEqual(["pinch-zoom", "pinch-zoom"]);
+
+            // nodes that join get it, and nodes that leave get their own back
+            pe.nodes = [a, c];
+            expect(c.style.touchAction).toBe("pinch-zoom");
+            expect(b.style.touchAction).toBe("none");
+
+            pe.touchDrag = false;
+            expect(a.style.touchAction).toBe("");
+            expect(c.style.touchAction).toBe("");
+            expect(a.hasAttribute("style")).toBe(true);
+        });
+
+        it("with an element, claims drags on it so the gaps count too", () =>
+        {
+            const stage = document.createElement("div");
+            stage.style.touchAction = "pan-y";
+            document.body.append(stage);
+            const el = makeNode(0, 0);
+            stage.append(el);
+            const pe = create(el, { touchDrag: stage });
+            expect(pe.touchDrag).toBe(stage);
+            expect(stage.style.touchAction).toBe("pinch-zoom");
+            expect(el.style.touchAction).toBe("");
+
+            // switching gives the first element back
+            const other = document.createElement("div");
+            pe.touchDrag = other;
+            expect(stage.style.touchAction).toBe("pan-y");
+            expect(other.style.touchAction).toBe("pinch-zoom");
+
+            pe.touchDrag = true;
+            expect(other.style.touchAction).toBe("");
+            expect(el.style.touchAction).toBe("pinch-zoom");
+
+            pe.touchDrag = stage;
+            expect(el.style.touchAction).toBe("");
+            expect(stage.style.touchAction).toBe("pinch-zoom");
+        });
+
+        it("gives everything back on destroy", () =>
+        {
+            const stage = document.createElement("div");
+            document.body.append(stage);
+            const a = makeNode(0, 0), b = makeNode(20, 0);
+            const onNodes = create(a, { touchDrag: true });
+            const onStage = create(b, { touchDrag: stage });
+            onNodes.destroy();
+            onStage.destroy();
+            expect(a.style.touchAction).toBe("");
+            expect(stage.style.touchAction).toBe("");
+            // and does nothing once destroyed
+            onStage.touchDrag = stage;
+            expect(stage.style.touchAction).toBe("");
+        });
+    });
+
+
     describe("reduced motion", () =>
     {
         it("defaults to 'rest' and validates the mode", () =>
