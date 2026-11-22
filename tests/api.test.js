@@ -11,7 +11,7 @@ import ProximityEffect from "../src/ProximityEffect.js";
 const READ_WRITE = [
     "target", "nodes", "threshold", "runoff", "invert", "zIndex", "perspectiveOrigin", "perspective", "attack", "decay",
     "offsetX", "offsetY", "jitter", "jitterX", "jitterY", "jitterMethod", "direction",
-    "FPS", "tolerance", "reducedMotion",
+    "FPS", "tolerance", "reducedMotion", "scaleEffect", "pointerLeave", "touchDrag",
 ];
 
 const READ_ONLY = [
@@ -19,7 +19,7 @@ const READ_ONLY = [
 ];
 
 const METHODS = [
-    "addStyle", "hasStyle", "removeStyle", "distanceFrom", "distanceFromIndex",
+    "addStyle", "hasStyle", "removeStyle", "updateStyle", "distanceFrom", "distanceFromIndex",
     "clearTarget", "getCoords", "setCoords", "clearCoords", "setCenterPoints",
     "pause", "resume", "destroy", "getNodeData", "getNodeIndexData", "hasNodeIndexData", "update",
 ];

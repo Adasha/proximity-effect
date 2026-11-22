@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-11-22
+
+For touch screens and responsive layouts. No breaking changes.
+
+### Added
+
+- `updateStyle(name, keyframes)` gives matching styles new keyframes, keeping their place in the stack, their params and each node's scatter.
+- `scaleEffect`, a multiplier for the effect's pixel distances (`threshold`, `runoff`, offsets, jitter and px style values), applied when the effect is drawn, so an effect can grow or shrink with its container.
+- `pointerLeave`, what to do when a touch or pen lifts: `"rest"` (default, as before) or `"hold"`, which keeps the last point on the same spot on the page until the next pointer event, so a tap on a touch screen no longer just flickers. A mouse leaving the page, or the window losing focus, still rests.
+- `touchDrag`, which keeps a touch dragging over the effect for the effect instead of scrolling the page, so the point follows the finger. It sets `touch-action: pinch-zoom` (zooming still works): `true` on each node, or on an element you pass, such as the nodes' container, so the gaps between them count too. Turning it off or `destroy()` gives the original `touch-action` back.
+
+### Changed
+
+- Changing `jitter`, `jitterX` or `jitterY` no longer picks new random amounts. Each node keeps the random amount it was given, and moves further or less far in the same direction, so the jitter can be resized smoothly. Changing `jitterMethod` still picks new amounts. Scatter is kept the same way, so `updateStyle()` can change a keyframe's scatter without the nodes jumping about.
+
 ## [4.0.0] - 2026-10-18
 
 A big tidy-up: fixed, hardened, made faster and accessible, and documented. The 3.0 alphas were never published to npm, so their changes are included here, as changes since the last published version, 2.1.19. See [Upgrading from 2.x](#upgrading-from-2x) for a checklist.
@@ -145,7 +160,8 @@ Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styl
 
 - First release on npm without a pre-release tag. Earlier versions weren't recorded in a changelog.
 
-[Unreleased]: https://github.com/Adasha/proximity-effect/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/Adasha/proximity-effect/compare/v4.1.0...HEAD
+[4.1.0]: https://www.npmjs.com/package/proximity-effect/v/4.1.0
 [4.0.0]: https://www.npmjs.com/package/proximity-effect/v/4.0.0
 [2.1.19]: https://www.npmjs.com/package/proximity-effect/v/2.1.19
 [2.1.16]: https://www.npmjs.com/package/proximity-effect/v/2.1.16

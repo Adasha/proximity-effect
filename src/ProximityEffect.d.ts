@@ -21,6 +21,9 @@ export type RandomMethod = "uniform" | "normal" | "gaussian";
 /** What the effect does when the user prefers reduced motion. */
 export type ReducedMotion = "rest" | "snap" | "ignore";
 
+/** What to do when a touch or pen lifts. */
+export type PointerLeave = "rest" | "hold";
+
 /** The names of the preset styles accepted by addStyle(). */
 export type PresetStyle =
     | "translateX" | "translateY" | "translateZ"
@@ -52,6 +55,8 @@ export interface ProximityEffectParams
     attack?: number | null;
     /** Easing rate (0 to 1) as the target moves away. Default 1 (no easing). */
     decay?: number | null;
+    /** Multiplies every pixel distance in the effect: threshold, runoff, offsets, jitter and px style values. Not perspective. Negative values become 0. Default 1. */
+    scaleEffect?: number | null;
     /** Shifts every node's centre horizontally, in pixels; a positive value moves it left. Adds to each node's data-offsetx. Default 0. */
     offsetX?: number | null;
     /** Shifts every node's centre vertically, in pixels; a positive value moves it up. Adds to each node's data-offsety. Default 0. */
@@ -80,6 +85,10 @@ export interface ProximityEffectParams
     perspective?: number | false | null;
     /** What to do when the user prefers reduced motion: stay at rest, follow without easing, or ignore it. Default "rest". */
     reducedMotion?: ReducedMotion | null;
+    /** What to do when a touch or pen lifts: settle back to rest, or hold the last point on the page. A mouse leaving always rests. Default "rest". */
+    pointerLeave?: PointerLeave | null;
+    /** Keep a touch dragging over the effect for the effect instead of scrolling the page (touch-action: pinch-zoom): true on each node, or an element such as the nodes' container, so the gaps count too. Default false. */
+    touchDrag?: boolean | Element | null;
 }
 
 /** A custom style for addStyle(). */
@@ -112,7 +121,7 @@ export type Keyframes = readonly [near: Keyframe, far: Keyframe];
 /** Per-style parameters for addStyle(). */
 export interface StyleParams
 {
-    /** A name for the style, which hasStyle() and removeStyle() accept. */
+    /** A name for the style, which hasStyle(), removeStyle() and updateStyle() accept. */
     id?: string;
 }
 
@@ -213,6 +222,8 @@ export default class ProximityEffect extends EventTarget
     set attack(value: number);
     get decay(): number;
     set decay(value: number);
+    get scaleEffect(): number;
+    set scaleEffect(value: number);
     get offsetX(): number;
     set offsetX(value: number);
     get offsetY(): number;
@@ -233,9 +244,13 @@ export default class ProximityEffect extends EventTarget
     set tolerance(value: number);
     get reducedMotion(): ReducedMotion;
     set reducedMotion(mode: ReducedMotion);
+    get pointerLeave(): PointerLeave;
+    set pointerLeave(mode: PointerLeave);
+    get touchDrag(): boolean | Element;
+    set touchDrag(value: boolean | Element | null);
     /** Whether motion is being reduced right now. */
     get motionReduced(): boolean;
-    /** The last pointer position, or null before it moves and after it leaves the page. */
+    /** The last pointer position, or null before it moves and after it leaves the page. With pointerLeave "hold", the held point after a touch or pen lifts. */
     get pointer(): Point | null;
     get paused(): boolean;
     get destroyed(): boolean;
@@ -243,6 +258,8 @@ export default class ProximityEffect extends EventTarget
     addStyle(property: PresetStyle | CustomStyle, keyframes: Keyframes, params?: StyleParams | null): void;
     hasStyle(name: string): boolean;
     removeStyle(name: string): boolean;
+    /** Change the keyframes of every matching style, keeping its place, params and each node's scatter. */
+    updateStyle(name: string, keyframes: Keyframes): boolean;
     distanceFrom(node: Element): number | undefined;
     distanceFromIndex(index: number): number | undefined;
     clearTarget(): void;

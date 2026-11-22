@@ -1,6 +1,6 @@
 # ProximityEffect API reference
 
-v4.0.0. For installation and a quick start, see the [README](../README.md).
+v4.1.0. For installation and a quick start, see the [README](../README.md).
 
 ## Contents
 
@@ -80,7 +80,9 @@ All read-write properties can also be set through the constructor's `params`. Se
 | Property | Type | Default | Description |
 | --- | --- | --- | --- |
 | `target` | Element or `null` | `null` | An element to track instead of the pointer. Its centre is checked every frame, so it can move freely. Set a falsy value, or call `clearTarget()`, to go back to the pointer. |
-| `pointer` | `{x, y}` or `null` | | Read-only. The last pointer position, relative to the viewport, in pixels. `null` before the pointer first moves, and after it leaves the page, a touch lifts off or the window loses focus. |
+| `pointer` | `{x, y}` or `null` | | Read-only. The last pointer position, relative to the viewport, in pixels. `null` before the pointer first moves, and after it leaves the page, a touch lifts off or the window loses focus. With `pointerLeave: "hold"`, it's the held point after a touch or pen lifts, so it isn't `null` then. |
+| `pointerLeave` | String | `"rest"` | What to do when a touch or pen lifts off: `"rest"` lets the nodes ease back to rest, and `"hold"` keeps the last point until the next pointer event. A held point is kept relative to the page, so it stays on the same spot as the page scrolls. A mouse leaving the page, or the window losing focus, always rests. Setting `"rest"` drops a held point. |
+| `touchDrag` | Boolean or Element | `false` | Keeps a touch dragging over the effect for the effect, so the point follows the finger instead of the page scrolling (which would also cancel the pointer). It sets `touch-action: pinch-zoom`, so people can still zoom. `true` sets it on each node, so a drag that starts in a gap between nodes still scrolls. An element, such as the nodes' container, sets it on that element, so its gaps count too; keep it smaller than the screen, or the page can't be scrolled by touching it. `false` or `null` gives the original `touch-action` back, as does `destroy()`. |
 | `direction` | String | `"both"` | Which distance to measure: `"both"` (straight-line distance), `"horizontal"` or `"vertical"`. |
 
 ### Distance
@@ -89,7 +91,7 @@ All read-write properties can also be set through the constructor's `params`. Se
 | --- | --- | --- | --- |
 | `threshold` | Number | `0` | The distance from a node's centre within which its styles are at their near value, in pixels. Negative values become 0. |
 | `runoff` | Number | `100` | The distance beyond the threshold over which styles change from near to far, in pixels. 0 gives a hard edge at the threshold. Negative values become 0. |
-| `boundary` | Number | | Read-only. `threshold + runoff`: the distance beyond which styles are at their far value. |
+| `boundary` | Number | | Read-only. `threshold + runoff`: the distance beyond which styles are at their far value (before [`scaleEffect`](#scale)). |
 | `invert` | Boolean | `false` | Swaps near and far, so styles are at their far value close to the pointer. |
 
 ### Easing
@@ -109,7 +111,21 @@ All read-write properties can also be set through the constructor's `params`. Se
 | `jitterX` and `jitterY` | Number | `0` | The same for one axis only. They add to `jitter`. |
 | `jitterMethod` | String | `"uniform"` | How the jitter is distributed: `"uniform"` (any amount equally likely) or `"normal"` (mostly small amounts, clustered around the centre). `"gaussian"` is accepted as another name for `"normal"`. |
 
-Setting any of the jitter properties picks new random amounts for every node. Offsets and jitter don't need the nodes to be measured again.
+Each node picks its random amount once, when it's added. Changing `jitter`, `jitterX` or `jitterY` makes every node move further or less far in the same direction, so you can grow or shrink the jitter without the nodes jumping about. Changing `jitterMethod` picks new random amounts, since the new method has a different spread. Offsets and jitter don't need the nodes to be measured again.
+
+### Scale
+
+| Property | Type | Default | Description |
+| --- | --- | --- | --- |
+| `scaleEffect` | Number | `1` | Multiplies every pixel distance in the effect, so it can grow or shrink with its container. Negative values become 0. |
+
+`scaleEffect` is applied when the effect is drawn, to `threshold`, `runoff`, `offsetX`, `offsetY`, jitter, and the values of styles in pixels: `translateX`, `translateY`, `translateZ`, `blur` and custom styles with a `px` unit, scatter included. Their getters, and `boundary`, still return the values you set. A style's `min` and `max` are applied before scaling, since they're in the style's units at the size it was written for. Styles in other units, `perspective` and the `data-offsetx` and `data-offsety` attributes aren't scaled. Changing it doesn't pick new random amounts or measure the nodes again.
+
+To scale an effect with its container, set it from a `ResizeObserver`:
+
+```javascript
+new ResizeObserver(() => { myEffect.scaleEffect = container.clientWidth / 800; }).observe(container);
+```
 
 ### Drawing
 
@@ -155,6 +171,19 @@ Returns `true` if a matching style has been added. `name` can be a preset name (
 
 Removes every style matching `name` (as for `hasStyle()`), and returns `true` if anything was removed. Any CSS property no longer animated by another style gets the nodes' original inline value back.
 
+#### `updateStyle(name, keyframes)`
+
+Gives every style matching `name` (as for `hasStyle()`) new [keyframes](#keyframes), and returns `true` if anything was updated. Each style keeps its place in the stack and its params, so it's still drawn in the same order and found by the same `id`.
+
+```javascript
+myEffect.addStyle("translateY", [0, { value: 20, scatter: 10 }], { id: "drift" });
+myEffect.updateStyle("drift", [0, { value: 40, scatter: 20 }]);
+```
+
+Each node keeps its random scatter, so with twice the `scatter` it moves twice as far in the same direction, and a keyframe that gains scatter uses the random amount the node already has. A keyframe whose `scatterMethod` changes picks new random amounts, since the new method has a different spread.
+
+The keyframes are checked against each matching style's `min` and `max`, as `addStyle()` checks them, and all of them are checked before anything changes, so a failed call leaves every style as it was. To animate a different property, remove the style and add a new one.
+
 ### Tracking methods
 
 #### `clearTarget()`
@@ -185,7 +214,7 @@ Restarts a paused animation. Throws an `Error` if the instance has been destroye
 
 #### `destroy()`
 
-Stops the effect for good: removes every event listener and observer, stops the animation loop, and gives each node back the inline style it had when the instance was created (removing the `style` attribute from nodes that had none). Any inline styles your own code set on the nodes since then are lost, so set them again afterwards if you need them. Safe to call more than once. Afterwards, anything that would touch the nodes again (`nodes`, `addStyle()`, `removeStyle()`, `setCenterPoints()`, `resume()`) throws an `Error`.
+Stops the effect for good: removes every event listener and observer, stops the animation loop, and gives each node back the inline style it had when the instance was created (removing the `style` attribute from nodes that had none). Any inline styles your own code set on the nodes since then are lost, so set them again afterwards if you need them. Safe to call more than once. Afterwards, anything that would touch the nodes again (`nodes`, `addStyle()`, `removeStyle()`, `updateStyle()`, `setCenterPoints()`, `resume()`) throws an `Error`.
 
 #### `update()`
 
@@ -275,7 +304,7 @@ myEffect.addStyle("translateX", [0, { value: 50, scatter: 15 }]);
 myEffect.addStyle("rotateZ", [{ value: 0, scatter: 30 }, { value: 0, scatter: 90, scatterMethod: "normal" }]);
 ```
 
-Each node's scattered values are picked once, when the style is added or the node is.
+Each node's random scatter is picked once, when the style is added or the node is, and is kept when the keyframes change with [`updateStyle()`](#updatestylename-keyframes). It's kept as a share of the `scatter` amount rather than as a fixed value, so a node keeps its place in the spread if the amount changes later.
 
 More than two keyframes, or a keyframe `distance`, throws a `RangeError` for now. Keyframes in between are planned for 4.3, and rejecting them until then means adding them won't change what existing code does.
 
@@ -283,7 +312,7 @@ More than two keyframes, or a keyframe `distance`, throws a `RangeError` for now
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `id` | String | A name for the style, which `hasStyle()` and `removeStyle()` accept. |
+| `id` | String | A name for the style, which `hasStyle()`, `removeStyle()` and `updateStyle()` accept. |
 
 Per-style `threshold`, `runoff`, `invert`, `attack` and `decay` are planned for 4.2, and throw a `RangeError` for now, for the same reason. Any other parameter is ignored.
 
@@ -308,11 +337,11 @@ The `styles` property returns the styles that have been added, as read-only obje
 | --- | --- | --- |
 | `node` | Element | The node. |
 | `measured` | `{x, y}` | The node's measured centre, relative to the viewport, with any `data-offsetx` and `data-offsety` applied. |
-| `center` | `{x, y}` | The centre used for distances: `measured` with the global offsets and jitter applied. |
-| `jitter` | `{x, y}` | The node's random jitter. |
+| `center` | `{x, y}` | The centre used for distances: `measured` with the global offsets and jitter applied, scaled by `scaleEffect`. |
+| `jitter` | `{x, y}` | The node's random jitter, in pixels, scaled by `scaleEffect`. |
 | `distance` | Number | The distance as of the last frame, from 0 to 1, before easing (as `distanceFrom()` returns). |
 | `lastDelta` | Number | The eased distance as of the last frame, which the styles were drawn with. |
-| `styles` | Array of `{near, far}` | The node's near and far values for each style, after scatter, in the same order as `styles`. |
+| `styles` | Array of `{near, far}` | The node's near and far values for each style, after scatter and `scaleEffect`, in the same order as `styles`. |
 
 ## Events
 
@@ -351,8 +380,8 @@ Every argument and value is checked before anything changes, so a call that thro
 | Error | Thrown when |
 | --- | --- |
 | `TypeError` | A value is the wrong type: `nodes` isn't an Element or list of Elements, `params` isn't an object, a number or boolean property is set to something else, `target` isn't an Element, or a style or keyframe is malformed. |
-| `RangeError` | A value isn't allowed: `NaN` or `Infinity`, an empty node list, an unknown name for `direction`, `jitterMethod`, `reducedMotion` or a preset, an unsafe custom style, a negative `FPS` or `perspective`, a node or index the instance doesn't have, or a feature that isn't supported yet (more than two keyframes, per-style parameters). |
-| `Error` | Constructing without a DOM, or, after `destroy()`, calling `resume()`, `addStyle()`, `removeStyle()` or `setCenterPoints()`, or setting `nodes`. |
+| `RangeError` | A value isn't allowed: `NaN` or `Infinity`, an empty node list, an unknown name for `direction`, `jitterMethod`, `reducedMotion`, `pointerLeave` or a preset, an unsafe custom style, a negative `FPS` or `perspective`, a node or index the instance doesn't have, or a feature that isn't supported yet (more than two keyframes, per-style parameters). |
+| `Error` | Constructing without a DOM, or, after `destroy()`, calling `resume()`, `addStyle()`, `removeStyle()`, `updateStyle()` or `setCenterPoints()`, or setting `nodes`. |
 
 Numbers in range are clamped rather than rejected: a negative `threshold` becomes 0, and an `attack` above 1 becomes 1.
 

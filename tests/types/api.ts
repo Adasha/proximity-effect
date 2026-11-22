@@ -5,6 +5,7 @@
 import ProximityEffect, {
     type NodeData,
     type Point,
+    type PointerLeave,
     type ProximityEffectParams,
     type Style,
 } from "../../src/ProximityEffect.js";
@@ -26,6 +27,7 @@ const params: ProximityEffectParams = {
     threshold: 10, runoff: 200, invert: true, direction: "horizontal", attack: 0.5, decay: 0.2,
     offsetX: 1, offsetY: 2, jitter: 3, jitterX: 4, jitterY: 5, jitterMethod: "gaussian",
     tolerance: 0.01, FPS: 30, target: el, primeDistances: true, zIndex: true, perspectiveOrigin: true, perspective: 500, reducedMotion: "snap",
+    scaleEffect: 0.5, pointerLeave: "hold", touchDrag: el,
 };
 const pe = new ProximityEffect(el, params);
 new ProximityEffect(el, { FPS: false, target: null, threshold: null });
@@ -39,6 +41,10 @@ new ProximityEffect(document.body.childNodes);
 new ProximityEffect(el, { direction: "diagonal" });
 // @ts-expect-error unknown reducedMotion
 new ProximityEffect(el, { reducedMotion: "off" });
+// @ts-expect-error unknown pointerLeave
+new ProximityEffect(el, { pointerLeave: "keep" });
+// @ts-expect-error touchDrag takes an element, not a selector
+new ProximityEffect(el, { touchDrag: "#stage" });
 // @ts-expect-error unknown parameter
 new ProximityEffect(el, { accuracy: 5 });
 
@@ -65,6 +71,8 @@ pe.perspective = false;
 assert<number | null>(pe.perspective);
 pe.attack = 1;
 pe.decay = 1;
+pe.scaleEffect = 2;
+assert<number>(pe.scaleEffect);
 pe.offsetX = 1;
 pe.offsetY = 1;
 pe.jitter = 1;
@@ -77,6 +85,11 @@ pe.FPS = null;
 assert<number | null>(pe.FPS);
 pe.tolerance = 0.1;
 pe.reducedMotion = "ignore";
+pe.pointerLeave = "rest";
+assert<PointerLeave>(pe.pointerLeave);
+pe.touchDrag = true;
+pe.touchDrag = null;
+assert<boolean | Element>(pe.touchDrag);
 assert<boolean>(pe.motionReduced);
 assert<Point | null>(pe.pointer);
 assert<boolean>(pe.paused);
@@ -114,6 +127,9 @@ pe.addStyle("blur", [0, { value: 1, distance: 1 }]);
 pe.addStyle("blur", [0, 1], { threshold: 10 });
 assert<boolean>(pe.hasStyle("hue"));
 assert<boolean>(pe.removeStyle("hue"));
+assert<boolean>(pe.updateStyle("hue", [0, { value: 90, scatter: 10 }]));
+// @ts-expect-error two keyframes only
+pe.updateStyle("blur", [0, 5, 10]);
 const style = pe.styles[0];
 assert<string>(style.name);
 assert<string>(style.rule);

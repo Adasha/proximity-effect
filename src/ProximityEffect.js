@@ -46,7 +46,7 @@ const NODE_DATA = Object.freeze({
 
 /**
  * Animates CSS properties of many elements by their distance from the pointer or a target.
- * @version 4.0.0
+ * @version 4.1.0
  * @author Adam Shailer <adasha76@outlook.com>
  * @class
  * @extends EventTarget
@@ -59,6 +59,7 @@ export default class ProximityEffect extends EventTarget
 
     #VALID_DIRECTIONS       = new Set(["both", "horizontal", "vertical"]);
     #VALID_REDUCED_MOTION   = new Set(["rest", "snap", "ignore"]);
+    #VALID_POINTER_LEAVE    = new Set(["rest", "hold"]);
     #DEFAULT_DIRECTION      = "both";
     #DEFAULT_TOLERANCE      = 0.0001;
     #DEFAULT_RUNOFF         = 100;
@@ -68,6 +69,8 @@ export default class ProximityEffect extends EventTarget
 
     #globalParams = {};
     #pointer = null;
+    // a touch or pen point kept after it lifted (pointerLeave "hold"), in page coordinates
+    #held = null;
     #coords = null;
     #stylesStack = [];
     #styleGroups = [];
@@ -99,6 +102,9 @@ export default class ProximityEffect extends EventTarget
     // the parent whose perspective-origin is set, and its own inline value
     #originParent = null;
     #originParentValue = "";
+    // the touchDrag container, and its own inline touch-action
+    #dragArea = null;
+    #dragAreaValue = "";
 
     // stable listener references, so they can all be removed
     #onPointerMove  = (evt) => this.#pointerMove(evt);
@@ -126,6 +132,7 @@ export default class ProximityEffect extends EventTarget
      * @param {string}  [params.direction="both"] - The effect direction, one of "both", "horizontal" or "vertical".
      * @param {number}  [params.attack=1] - The easing rate (0 to 1) as the target approaches. 1 is no easing.
      * @param {number}  [params.decay=1] - The easing rate (0 to 1) as the target moves away. 1 is no easing.
+     * @param {number}  [params.scaleEffect=1] - A multiplier for every pixel distance in the effect: threshold, runoff, offsets, jitter and px style values. Negative values become 0.
      * @param {number}  [params.offsetX=0] - The global horizontal offset, in pixels. A positive value moves each node's centre left.
      * @param {number}  [params.offsetY=0] - The global vertical offset, in pixels. A positive value moves each node's centre up.
      * @param {number}  [params.jitter=0] - The size of a random offset to each node's centre, in pixels. Affects X and Y.
@@ -140,6 +147,8 @@ export default class ProximityEffect extends EventTarget
      * @param {boolean} [params.perspectiveOrigin=false] - Set the nodes' parent's perspective-origin to the centre of the nodes at rest. The nodes must share a parent.
      * @param {number|null|false} [params.perspective] - A perspective distance in pixels to give each node's transform, viewed from the centre of the node at rest, or null, false or 0 to leave perspective to the parent.
      * @param {string}  [params.reducedMotion="rest"] - What to do when the user prefers reduced motion: "rest" (nodes stay at rest and ignore the pointer), "snap" (nodes follow without easing) or "ignore".
+     * @param {boolean|Element} [params.touchDrag=false] - Keep a touch dragging over the effect for the effect instead of scrolling the page, by setting touch-action: pinch-zoom: true on each node, or an element (such as the nodes' container) to include the gaps between them. False or null leaves touch-action alone.
+     * @param {string}  [params.pointerLeave="rest"] - What to do when a touch or pen lifts: "rest" (nodes settle back to rest) or "hold" (the last point is kept, on the same spot on the page, until the next pointer event). A mouse leaving the page always rests.
      * @throws {TypeError} If an argument or parameter is the wrong type.
      * @throws {RangeError} If a parameter value is not allowed (NaN, Infinity, an unknown name).
      */
@@ -170,6 +179,7 @@ export default class ProximityEffect extends EventTarget
         this.#globalParams.primeDistances = Validate.boolean(param("primeDistances", false), "primeDistances");
 
         // set global parameter values (nodes come last, so their data is built once)
+        this.scaleEffect  = param("scaleEffect", 1);
         this.threshold    = param("threshold", 0);
         this.runoff       = param("runoff", this.#DEFAULT_RUNOFF);
         this.attack       = param("attack", 1);
@@ -179,6 +189,7 @@ export default class ProximityEffect extends EventTarget
         this.zIndex       = param("zIndex", false);
         this.perspective  = param("perspective", null);
         this.reducedMotion = param("reducedMotion", "rest");
+        this.pointerLeave = param("pointerLeave", "rest");
         this.offsetX      = param("offsetX", 0);
         this.offsetY      = param("offsetY", 0);
         this.jitterMethod = param("jitterMethod", this.#DEFAULT_JITTER_METHOD);
@@ -190,8 +201,9 @@ export default class ProximityEffect extends EventTarget
         this.target       = param("target", null);
 
         this.nodes = nodes;
-        // after the nodes, since it needs their parent
+        // after the nodes, since they need them
         this.perspectiveOrigin = param("perspectiveOrigin", false);
+        this.touchDrag = param("touchDrag", false);
 
 
         // finish setup once the document has loaded. Deferred even when it
@@ -289,6 +301,11 @@ export default class ProximityEffect extends EventTarget
         {
             this.#claimOriginParent();
         }
+        // nodes that left were given their whole inline style back already
+        if (this.touchDrag===true)
+        {
+            this.#claimDrags();
+        }
 
         if (this.#ready)
         {
@@ -378,6 +395,38 @@ export default class ProximityEffect extends EventTarget
     get boundary()
     {
     	return this.threshold + this.runoff;
+    }
+
+
+
+
+
+    /**
+     * Get the effect scale.
+     * @return {number} The multiplier for the effect's pixel distances.
+     */
+    get scaleEffect()
+    {
+        return this.#globalParams.scaleEffect;
+    }
+
+    /**
+     * Set a multiplier for every pixel distance in the effect, so it can grow
+     * or shrink with its container: threshold, runoff, offsets, jitter and
+     * styles in px (translateX, translateY, translateZ, blur, and custom
+     * styles with a px unit). Getters still return the values you set.
+     * perspective isn't scaled, and min and max are applied before scaling.
+     * @param {number} value - The new scale, 0 or more (negative values become 0).
+     */
+    set scaleEffect(value)
+    {
+        this.#globalParams.scaleEffect = Math.max(Validate.finite(value, "scaleEffect"), 0);
+        for (const data of this.#nodeData)
+        {
+            data.styles.forEach((entry, i) => this.#resolveStyleValues(this.#stylesStack[i], entry));
+        }
+        this.#applyOffsets();
+        this.#invalidate();
     }
 
 
@@ -641,7 +690,7 @@ export default class ProximityEffect extends EventTarget
     set jitter(num)
     {
         this.#globalParams.jitter = Math.max(Validate.finite(num, "jitter"), 0);
-        this.#calculateJitters();
+        this.#applyOffsets();
   	}
 
     /**
@@ -651,7 +700,7 @@ export default class ProximityEffect extends EventTarget
     set jitterX(num)
     {
         this.#globalParams.jitterX = Math.max(Validate.finite(num, "jitterX"), 0);
-        this.#calculateJitters();
+        this.#applyOffsets();
   	}
 
     /**
@@ -661,7 +710,7 @@ export default class ProximityEffect extends EventTarget
     set jitterY(num)
     {
         this.#globalParams.jitterY = Math.max(Validate.finite(num, "jitterY"), 0);
-        this.#calculateJitters();
+        this.#applyOffsets();
   	}
 
 
@@ -676,13 +725,13 @@ export default class ProximityEffect extends EventTarget
     }
 
     /**
-     * Set the jitter method, and recalculate the jitter.
+     * Set the jitter method, and pick new random jitter for every node.
      * @param {string} method - "uniform" or "normal" ("gaussian" is an alias).
      */
     set jitterMethod(method)
     {
         this.#globalParams.jitterMethod = Validate.randomMethod(method, "jitter method");
-        this.#calculateJitters();
+        this.#rollJitters();
     }
 
 
@@ -816,12 +865,93 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
+     * Get what the effect does when a touch or pen lifts.
+     * @return {string} "rest" or "hold".
+     */
+    get pointerLeave()
+    {
+        return this.#globalParams.pointerLeave;
+    }
+
+    /**
+     * Set what the effect does when a touch or pen lifts: "rest" lets the
+     * nodes settle back to rest; "hold" keeps the last point, on the same spot
+     * on the page as it scrolls, until the next pointer event. A mouse leaving
+     * the page, or the window losing focus, always rests. Setting "rest" drops
+     * a held point.
+     * @param {string} mode - "rest" or "hold".
+     * @throws {RangeError} If the mode is not one of those.
+     */
+    set pointerLeave(mode)
+    {
+        if (!this.#VALID_POINTER_LEAVE.has(mode))
+        {
+            throw new RangeError(`ProximityEffect: '${String(mode)}' is not a valid pointerLeave. Use "rest" or "hold".`);
+        }
+        this.#globalParams.pointerLeave = mode;
+        if (mode==="rest" && this.#held!==null)
+        {
+            this.#held = null;
+            this.#start();
+        }
+    }
+
+
+
+    /**
+     * Get what keeps touch drags for the effect.
+     * @return {boolean|Element} true (each node), the element, or false.
+     */
+    get touchDrag()
+    {
+        return this.#globalParams.touchDrag;
+    }
+
+    /**
+     * Set what keeps a touch dragging over the effect for the effect, so the
+     * point follows the finger instead of the page scrolling (the browser
+     * would cancel the pointer as the scroll starts). It sets touch-action:
+     * pinch-zoom, which still lets people zoom. true sets it on each node, so
+     * a drag that starts between them still scrolls; an element, such as the
+     * nodes' container, sets it on that element, so its gaps count too. Keep
+     * that element smaller than the screen, or the page can't be scrolled by
+     * touching it. false or null gives the original touch-action back.
+     * @param {boolean|Element|null} value - true, an element, or false or null.
+     * @throws {TypeError} If the value is anything else.
+     */
+    set touchDrag(value)
+    {
+        if (value!=null && typeof value!=="boolean" && !(value instanceof Element))
+        {
+            throw new TypeError(`ProximityEffect: touchDrag must be true, false, null or an element (received ${String(value)}).`);
+        }
+        const next = value ?? false;
+        if (next===this.#globalParams.touchDrag)
+        {
+            return;
+        }
+        if (!this.#destroyed)
+        {
+            this.#releaseDrags();
+        }
+        this.#globalParams.touchDrag = next;
+        if (!this.#destroyed)
+        {
+            this.#claimDrags();
+        }
+    }
+
+
+
+    /**
      * Get the last known pointer coordinates, relative to the viewport, in pixels.
-     * @return {Object|null} An object containing x and y properties, or null before the pointer has moved and after it leaves the page.
+     * With pointerLeave "hold", this is the held point after a touch or pen lifts.
+     * @return {Object|null} An object containing x and y properties, or null before the pointer has moved and after it leaves the page (or lifts, unless held).
      */
     get pointer()
     {
-        return this.#pointer ? { x: this.#pointer.x, y: this.#pointer.y } : null;
+        const point = this.#pointer ?? this.#heldPoint();
+        return point ? { x: point.x, y: point.y } : null;
     }
 
 
@@ -870,7 +1000,7 @@ export default class ProximityEffect extends EventTarget
      * @param {Array<number|Object>} keyframes - The near and far style values. Each is a number, or an object with a numeric value and optional scatter and scatterMethod.
      * Keyframes in between, and a keyframe distance, are planned for 4.3; passing them throws a RangeError.
      * @param {Object} [params] - An object containing additional effect parameters.
-     * @param {string} [params.id] - A name for the style, which hasStyle() and removeStyle() accept.
+     * @param {string} [params.id] - A name for the style, which hasStyle(), removeStyle() and updateStyle() accept.
      * Per-style threshold, runoff, invert, attack and decay are planned for 4.2; passing them throws a RangeError.
      * @throws {TypeError} If an argument is the wrong type.
      * @throws {RangeError} If a value is not allowed (see Style).
@@ -881,7 +1011,7 @@ export default class ProximityEffect extends EventTarget
         this.#assertAlive("add a style to");
         // work everything out before changing anything, so a failure leaves the stack as it was
         const style  = new Style(property, keyframes, params),
-              values = this.#nodeData.map(() => this.#scatterValues(style));
+              values = this.#nodeData.map(() => this.#styleValues(style));
 
         this.#stylesStack.push(style);
         this.#nodeData.forEach((data, i) => data.styles.push(values[i]));
@@ -956,6 +1086,52 @@ export default class ProximityEffect extends EventTarget
             this.#invalidate();
         }
         return rules.size>0;
+    }
+
+
+
+    /**
+     * Change the keyframes of every matching style, keeping its place in the
+     * stack, its params and each node's scatter. A keyframe whose scatter
+     * method changes picks new scatter, since the new method has a different
+     * spread. To change the property, remove the style and add a new one.
+     * @param {string} name - The preset name, a custom style's func (or rule if it has none), or the id given in the style's params.
+     * @param {Array<number|Object>} keyframes - The new near and far keyframes, as for addStyle(). They are checked against each matching style.
+     * @return {boolean} True if anything was updated.
+     * @throws {TypeError} If an argument is the wrong type.
+     * @throws {RangeError} If a value is not allowed for a matching style (see Style).
+     * @throws {Error} If the instance has been destroyed.
+     */
+    updateStyle(name, keyframes)
+    {
+        this.#assertAlive("update a style on");
+        Validate.string(name, "style name");
+        // build every replacement before changing anything, so a failure leaves the stack as it was
+        const updates = [];
+        this.#stylesStack.forEach((style, index) =>
+        {
+            if (this.#styleMatches(style, name))
+            {
+                updates.push({ index, style: Style.withKeyframes(style, keyframes) });
+            }
+        });
+
+        for (const { index, style } of updates)
+        {
+            const old = this.#stylesStack[index];
+            this.#stylesStack[index] = style;
+            for (const data of this.#nodeData)
+            {
+                this.#restyleValues(old, style, data.styles[index]);
+            }
+        }
+
+        // the rule and func are unchanged, so the grouping still holds
+        if (updates.length>0)
+        {
+            this.#invalidate();
+        }
+        return updates.length>0;
     }
 
 
@@ -1097,6 +1273,8 @@ export default class ProximityEffect extends EventTarget
             this.#restoreInlineStyle(data);
         }
         this.#releaseOriginParent();
+        // the nodes' touch-action went back with their inline style
+        this.#releaseDragArea();
     }
 
 
@@ -1552,6 +1730,53 @@ export default class ProximityEffect extends EventTarget
 
 
 
+    // touch-action: pinch-zoom keeps one-finger drags for the page's pointer
+    // events (no scroll, so no pointercancel), and still lets people zoom
+    #claimDrags()
+    {
+        const value = this.#globalParams.touchDrag;
+        if (value===true)
+        {
+            for (const data of this.#nodeData)
+            {
+                data.node.style.touchAction = "pinch-zoom";
+            }
+        }
+        else if (value)
+        {
+            this.#dragArea = value;
+            this.#dragAreaValue = value.style.touchAction;
+            value.style.touchAction = "pinch-zoom";
+        }
+    }
+
+
+
+    #releaseDrags()
+    {
+        if (this.#globalParams.touchDrag===true)
+        {
+            for (const data of this.#nodeData)
+            {
+                this.#restoreProperty(data, "touchAction");
+            }
+        }
+        this.#releaseDragArea();
+    }
+
+
+
+    #releaseDragArea()
+    {
+        if (this.#dragArea)
+        {
+            this.#dragArea.style.touchAction = this.#dragAreaValue;
+            this.#dragArea = null;
+        }
+    }
+
+
+
     #releaseOriginParent()
     {
         if (this.#originParent)
@@ -1707,14 +1932,17 @@ export default class ProximityEffect extends EventTarget
 
 
 
-    // a node's centre is where it was measured, moved by the global offset and its jitter
+    // a node's centre is where it was measured, moved by the global offset and
+    // its jitter, both scaled by scaleEffect
     #applyOffset(data)
     {
+        const { offsetX, offsetY, scaleEffect } = this.#globalParams;
+        this.#resolveJitter(data);
         if (data.measured)
         {
             data.center ??= {};
-            data.center.x = data.measured.x - this.offsetX + data.jitter.x;
-            data.center.y = data.measured.y - this.offsetY + data.jitter.y;
+            data.center.x = data.measured.x - offsetX*scaleEffect + data.jitter.x;
+            data.center.y = data.measured.y - offsetY*scaleEffect + data.jitter.y;
         }
     }
 
@@ -1794,49 +2022,113 @@ export default class ProximityEffect extends EventTarget
 
     #createNodeData(node)
     {
-        return {
-            node:      node,
-            style:     node.style.cssText,
-            hadStyle:  node.hasAttribute("style"),
-            lastDelta: this.#globalParams.primeDistances ? 1 : undefined,
-            jitter:    this.#randomJitter(),
-            styles:    this.#stylesStack.map(style => this.#scatterValues(style))
+        const data = {
+            node:       node,
+            style:      node.style.cssText,
+            hadStyle:   node.hasAttribute("style"),
+            lastDelta:  this.#globalParams.primeDistances ? 1 : undefined,
+            jitterUnit: this.#rollJitter(),
+            styles:     this.#stylesStack.map(style => this.#styleValues(style))
         };
+        this.#resolveJitter(data);
+        return data;
     }
 
 
 
-    #scatterValues(style)
+    // A style entry for one node. Scatter is kept as a unit roll, so a new
+    // scatter amount (updateStyle, scaleEffect) moves the node the same way
+    // without rolling again. Every frame gets a roll, even with no scatter, so
+    // one that gains scatter later has one ready. near and far are the
+    // resolved values #writeStyles() reads.
+    #styleValues(style)
     {
-        const value = (frame) => frame.scatter
-            ? AdashaUtils.constrain(frame.value + AdashaUtils.random(frame.scatter, frame.scatterMethod ?? this.#DEFAULT_SCATTER_METHOD), style.min, style.max)
-            : frame.value;
-
-        return {
-            near: value(style.near),
-            far:  value(style.far)
-        };
+        const entry = { nearUnit: this.#rollScatter(style.near), farUnit: this.#rollScatter(style.far) };
+        return this.#resolveStyleValues(style, entry);
     }
 
 
 
+    #scatterMethod(frame)
+    {
+        const method = frame.scatterMethod ?? this.#DEFAULT_SCATTER_METHOD;
+        return method==="gaussian" ? "normal" : method;
+    }
+
+
+
+    #rollScatter(frame)
+    {
+        return AdashaUtils.random(1, this.#scatterMethod(frame));
+    }
+
+
+
+    // A node's entry for a style whose keyframes have changed: keep each
+    // frame's roll unless its method changed, then resolve the new values.
+    #restyleValues(old, style, entry)
+    {
+        if (this.#scatterMethod(old.near)!==this.#scatterMethod(style.near))
+        {
+            entry.nearUnit = this.#rollScatter(style.near);
+        }
+        if (this.#scatterMethod(old.far)!==this.#scatterMethod(style.far))
+        {
+            entry.farUnit = this.#rollScatter(style.far);
+        }
+        return this.#resolveStyleValues(style, entry);
+    }
+
+
+
+    // min and max are in the style's own units at the size it was written for,
+    // so px values are clamped first and then scaled
+    #resolveStyleValues(style, entry)
+    {
+        const scale = style.unit?.toLowerCase()==="px" ? this.#globalParams.scaleEffect : 1,
+              value = (frame, roll) => scale * (frame.scatter
+                  ? AdashaUtils.constrain(frame.value + roll * frame.scatter, style.min, style.max)
+                  : frame.value);
+
+        entry.near = value(style.near, entry.nearUnit);
+        entry.far  = value(style.far, entry.farUnit);
+        return entry;
+    }
+
+
+
+    // random(v, m) scales linearly with v for both methods, so a roll of
+    // random(1, m) times the jitter size has the same spread as random(size, m).
     // the constructor sets the jitter parameters before any node data is built
-    #randomJitter()
+    #rollJitter()
     {
-        const { jitter, jitterX, jitterY, jitterMethod } = this.#globalParams;
+        const method = this.#globalParams.jitterMethod;
         return {
-            x: AdashaUtils.random(jitter + jitterX, jitterMethod),
-            y: AdashaUtils.random(jitter + jitterY, jitterMethod)
+            x: AdashaUtils.random(1, method),
+            y: AdashaUtils.random(1, method)
         };
     }
 
 
 
-    #calculateJitters()
+    // jitter in pixels, from the node's unit roll, the current jitter size and scaleEffect
+    #resolveJitter(data)
+    {
+        const { jitter, jitterX, jitterY, scaleEffect } = this.#globalParams;
+        data.jitter ??= {};
+        data.jitter.x = data.jitterUnit.x * (jitter + jitterX) * scaleEffect;
+        data.jitter.y = data.jitterUnit.y * (jitter + jitterY) * scaleEffect;
+        return data.jitter;
+    }
+
+
+
+    // a new method needs a roll of its own shape
+    #rollJitters()
     {
         for (const data of this.#nodeData)
         {
-            data.jitter = this.#randomJitter();
+            data.jitterUnit = this.#rollJitter();
         }
         this.#applyOffsets();
     }
@@ -1952,7 +2244,18 @@ export default class ProximityEffect extends EventTarget
                 y: (b.top + b.bottom)*0.5
             };
         }
-        return this.#pointer;
+        return this.#pointer ?? this.#heldPoint();
+    }
+
+
+
+    // the held point in viewport coordinates, at the current page scroll
+    #heldPoint()
+    {
+        return this.#held && {
+            x: this.#held.x - window.scrollX,
+            y: this.#held.y - window.scrollY
+        };
     }
 
 
@@ -2007,6 +2310,7 @@ export default class ProximityEffect extends EventTarget
         this.#pointer ??= { x: 0, y: 0 };
         this.#pointer.x = evt.clientX;
         this.#pointer.y = evt.clientY;
+        this.#held = null;
         this.#start();
     }
 
@@ -2015,22 +2319,44 @@ export default class ProximityEffect extends EventTarget
 
 
     // pointerout with no element to go to: the pointer left the page, or a
-    // touch or pen lifted off. The nodes settle back to rest.
+    // touch or pen lifted off (pointercancel, when a touch turns into a
+    // scroll, is followed by one too). The nodes settle back to rest, unless
+    // the point is held.
     #pointerOut(evt)
     {
         if (evt.relatedTarget===null && evt.isPrimary!==false)
         {
-            this.#pointerLeft();
+            if (this.#pointer!==null && this.#holds(evt))
+            {
+                // kept in page coordinates, so it stays on the same spot as the page scrolls
+                this.#held = { x: this.#pointer.x + window.scrollX, y: this.#pointer.y + window.scrollY };
+                this.#pointer = null;
+            }
+            else
+            {
+                this.#pointerLeft();
+            }
         }
+    }
+
+
+
+    // Whether a pointer leaving should be held. Only a touch or pen lifting:
+    // a mouse that leaves and comes back is a different thing from a tap.
+    // Kept in one place so another pointerLeave mode (for a mouse) can be added.
+    #holds(evt)
+    {
+        return this.pointerLeave==="hold" && (evt.pointerType==="touch" || evt.pointerType==="pen");
     }
 
 
 
     #pointerLeft()
     {
-        if (this.#pointer!==null)
+        if (this.#pointer!==null || this.#held!==null)
         {
             this.#pointer = null;
+            this.#held = null;
             this.#start();
         }
     }
@@ -2073,7 +2399,9 @@ export default class ProximityEffect extends EventTarget
               groups  = this.#styleGroups,
               rewrite = this.#needsRewrite,
               instant = this.motionReduced,
-              { threshold, runoff, invert, attack, decay, tolerance, direction, zIndex, perspective } = this.#globalParams;
+              { invert, attack, decay, tolerance, direction, zIndex, perspective, scaleEffect } = this.#globalParams,
+              threshold = this.#globalParams.threshold * scaleEffect,
+              runoff    = this.#globalParams.runoff * scaleEffect;
 
         this.#needsRewrite = false;
         this.#lastTargetPoint = point && { x: point.x, y: point.y };

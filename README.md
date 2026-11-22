@@ -1,6 +1,6 @@
 # ProximityEffect.js
 
-v4.0.0
+v4.1.0
 
 ## Contents
 
@@ -22,7 +22,7 @@ v4.0.0
 
 Bulk modify CSS properties on elements based on mouse pointer or other arbitrary element proximity. Very customisable, definitely overdeveloped. A fun pet project originally from the Flash days, remade in JS for practice.
 
-Give it a set of elements and some styles, and each element moves between a "near" and a "far" value of each style as the pointer (or a touch, a pen, or another element) gets closer. Transforms and filters come built in, and you can animate any other CSS property that takes a single number. No dependencies, and around 8KB gzipped.
+Give it a set of elements and some styles, and each element moves between a "near" and a "far" value of each style as the pointer (or a touch, a pen, or another element) gets closer. Transforms and filters come built in, and you can animate any other CSS property that takes a single number. No dependencies, and about 25KB minified (8.5KB gzipped).
 
 Version 4 is a big tidy-up: lots of fixes, checks on everything you pass in, an animation loop that sleeps when nothing is moving, touch and pen support, reduced motion support, TypeScript declarations, and proper documentation. It has some breaking changes from 2.x - see the [changelog](CHANGELOG.md#upgrading-from-2x).
 
@@ -146,7 +146,10 @@ Next, define the effect parameters in an object. All parameters are optional. Ev
 | `offsetX` and `offsetY` | Number | Shift every element's centre, in pixels. A positive `offsetX` moves it left, and a positive `offsetY` moves it up. Stacks with each element's `data-offsetx` and `data-offsety` attributes. Default is 0. |
 | `jitter`, `jitterX` and `jitterY` | Number | Moves each element's centre by a random amount, up to half this many pixels either way, so the effect's edge looks less regular. `jitter` affects both axes, while `jitterX` and `jitterY` affect only their own. All three stack. Default is 0. |
 | `jitterMethod` | String | How the jitter is distributed: `"uniform"` or `"normal"` (`"gaussian"` also works). Default is `"uniform"`. |
+| `scaleEffect` | Number | Multiplies the effect's pixel distances (`threshold`, `runoff`, offsets, jitter and px style values), so it can shrink or grow with its container. Default is 1. |
 | `target` | Element | An element to track instead of the pointer. Default is `null` (the pointer). |
+| `pointerLeave` | String | What to do when a touch or pen lifts: `"rest"` eases back to rest, and `"hold"` keeps the last point (on the same spot on the page) until the next touch. A mouse leaving the page always rests. Default is `"rest"`. |
+| `touchDrag` | Boolean or Element | Keeps a touch dragging over the effect for the effect instead of scrolling the page, by setting `touch-action: pinch-zoom`: `true` on each element, or on an element you pass (such as their container) so the gaps count too. Default is `false`. |
 | `FPS` | Number | A frame rate limit. `null`, `false` or 0 follows the screen's refresh rate. Default is `null`. |
 | `zIndex` | Boolean | Sets each element's `z-index` from its distance, so the nearest sit on top. Default is `false`. |
 | `perspectiveOrigin` | Boolean | Sets the parent's `perspective-origin` to the centre of the elements, so a `perspective` on a big parent (such as the page) is viewed from the middle of the elements. The elements must share a parent. Default is `false`. |
@@ -194,7 +197,7 @@ myEffect.addStyle("blur",  [0,  10]);
 | --- | --- | --- |
 | `property` | String or Object | The name of a preset style (see below), or an object describing a [custom style](#custom-styles). |
 | `keyframes` | Array | The style's value nearest the pointer, then furthest from it. Each is a number, or an [object with scatter](#scatter). |
-| `params` | Object | (optional) `id` gives the style a name, which `hasStyle()` and `removeStyle()` accept. |
+| `params` | Object | (optional) `id` gives the style a name, which `hasStyle()`, `removeStyle()` and `updateStyle()` accept. |
 
 Preset styles:
 
@@ -234,6 +237,7 @@ myEffect.addStyle("rotateZ", [{ value: 0, scatter: 30 }, { value: 0, scatter: 90
 | `setCoords(x, y)` and `clearCoords()` | Track a fixed point (relative to the viewport) instead of the pointer or target. |
 | `clearTarget()` | Go back to tracking the pointer after setting `target`. |
 | `hasStyle(name)` and `removeStyle(name)` | Find or remove styles by preset name, `func` or `id`. |
+| `updateStyle(name, keyframes)` | Give matching styles new keyframes, keeping their place in the stack and each element's scatter. |
 | `setCenterPoints()` | Measure the elements again. Only needed if they move in a way the effect can't see, such as a CSS animation. |
 
 The effect also dispatches three events: `ready` once it has set up, `redraw` after each frame it draws, and `reflow` when it finds an element has moved:
@@ -260,7 +264,13 @@ new ProximityEffect(elements, { reducedMotion: "snap" });   // or "ignore"
 
 ### Pointer, touch and pen
 
-The pointer is followed with Pointer Events, so mouse, pen and touch all work. A touch is only followed while the finger is down, and with several touches only the first is followed. When the pointer leaves the page, a touch lifts off, or the window loses focus, the elements ease back to rest.
+The pointer is followed with Pointer Events, so mouse, pen and touch all work. A touch is only followed while the finger is down, and with several touches only the first is followed. When the pointer leaves the page, a touch lifts off, or the window loses focus, the elements ease back to rest. Set `pointerLeave: "hold"` to keep the last point when a touch or pen lifts instead, so a tap leaves the effect where the finger was. A finger dragging over the elements scrolls the page, as usual; set `touchDrag` to keep drags for the effect, so the point follows the finger:
+
+```js
+new ProximityEffect(elements, { pointerLeave: "hold", touchDrag: container });
+```
+
+Pass a container that fits on the screen, or `true` for the elements only, so people can still scroll the page.
 
 ### Pausing
 
@@ -352,10 +362,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report a bug or make a change.
 
 ## Roadmap
 
-- (for 4.1) An option to keep the last point when a touch or pen lifts, such as `pointerLeave: "hold" | "rest"`, kept relative to the page so it survives scrolling. Today the point is forgotten when the finger lifts, so on touch screens a tap only flickers.
-- (for 4.1) A `scaleEffect` parameter (or px values that accept CSS lengths), applied at render time to `threshold`, `runoff`, offsets, jitter and px style values, so an effect can shrink with its container.
-- (for 4.1) Jitter and scatter kept as unit random values and multiplied when used, so changing `jitter` or a style's scatter no longer re-rolls them.
-- (for 4.1) `updateStyle(name, keyframes)`, to change a style's keyframes in place instead of removing and re-adding it (which re-rolls its scatter).
 - (for 4.2) Multiple-value CSS properties, such as colours.
 - (for 4.2) A posterise option (`steps`), snapping the effect to a set number of even steps.
 - (for 4.2) Per-property parameters.
@@ -363,6 +369,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report a bug or make a change.
 
 ## Version history
 
+- v4.1   - Touch screens can hold the point (`pointerLeave`, `touchDrag`), `scaleEffect` sizes an effect to its container, `updateStyle()` changes keyframes in place, and jitter and scatter no longer re-roll. See the [changelog](CHANGELOG.md).
 - v4.0   - Fixed, hardened, made faster and accessible, and documented. Breaking changes, see the [changelog](CHANGELOG.md).
 - v3.0   - Alpha versions only, never published to npm. Keyframe arrays, per-axis jitter and manual coordinates.
 - v2.1   - First published on npm, in 2018.

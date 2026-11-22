@@ -255,6 +255,63 @@ describe("jitter", () =>
         await settle();
         expect(pe.getNodeIndexData(0, "center")).toEqual({ x: 105, y: 105 });
     });
+
+    it("scales each node's roll when the size changes, without rolling again", () =>
+    {
+        const pe = create([makeNode(0, 0), makeNode(0, 0), makeNode(0, 0)], { jitter: 10 }),
+              before = [0, 1, 2].map(i => pe.getNodeIndexData(i, "jitter")),
+              random = vi.spyOn(Math, "random");
+        pe.jitter = 20;
+        expect(random).not.toHaveBeenCalled();
+        before.forEach((j, i) =>
+        {
+            const after = pe.getNodeIndexData(i, "jitter");
+            expect(after.x).toBeCloseTo(j.x*2);
+            expect(after.y).toBeCloseTo(j.y*2);
+        });
+    });
+
+    it("keeps the roll while jitter is 0, and uses it when jitter is turned on", () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(0.75);
+        const pe = create(makeNode(0, 0));
+        expect(pe.getNodeIndexData(0, "jitter")).toEqual({ x: 0, y: 0 });
+        Math.random.mockReturnValue(0);
+        pe.jitterX = 8;
+        pe.jitterY = 4;
+        expect(pe.getNodeIndexData(0, "jitter")).toEqual({ x: 2, y: 1 });
+    });
+
+    it("moves the node centres when the size changes, without remeasuring", async () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const el = makeNode(100, 100),
+              pe = create(el, { jitter: 10 });
+        await settle();
+        const measure = vi.spyOn(el, "getBoundingClientRect");
+        pe.jitter = 30;
+        expect(pe.getNodeIndexData(0, "center")).toEqual({ x: 115, y: 115 });
+        expect(measure).not.toHaveBeenCalled();
+    });
+
+    it("picks new jitter when the method changes", () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const pe = create(makeNode(0, 0), { jitter: 10 });
+        Math.random.mockReturnValue(0);
+        pe.jitterMethod = "normal";
+        expect(pe.getNodeIndexData(0, "jitter")).toEqual({ x: -5, y: -5 });
+    });
+
+    it("gives a node added later jitter at the current size", () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const pe = create(makeNode(0, 0), { jitter: 10 });
+        pe.jitter = 40;
+        const el = makeNode(0, 0);
+        pe.nodes = [el];
+        expect(pe.getNodeData(el, "jitter")).toEqual({ x: 20, y: 20 });
+    });
 });
 
 
@@ -512,6 +569,283 @@ describe("styles", () =>
         pe.addStyle("opacity", [{ value: 100, scatter: 50 }, 0]);
         expect(pe.getNodeIndexData(0, "styles")[0].near).toBe(100);
     });
+
+    it("scatters by the frame's own amount and method", () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(0);
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("translateX", [{ value: 10, scatter: 4 }, { value: 50, scatter: 10, scatterMethod: "normal" }]);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 8, far: 45 }]);
+    });
+
+    it("reports only the resolved near and far values", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("translateX", [0, { value: 50, scatter: 10 }]);
+        expect(Object.keys(pe.getNodeIndexData(0, "styles")[0])).toEqual(["near", "far"]);
+    });
+});
+
+
+
+describe("updateStyle", () =>
+{
+    it("changes the keyframes in place, keeping the style's place and params", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("scale", [1, 2]);
+        pe.addStyle("translateX", [0, 10], { id: "slide" });
+        pe.addStyle("rotate", [0, 90]);
+
+        expect(pe.updateStyle("slide", [5, 50])).toBe(true);
+        expect(pe.styles.map(s => s.name)).toEqual(["scale", "translateX", "rotate"]);
+        expect(pe.styles[1].id).toBe("slide");
+        expect(pe.styles[1].near.value).toBe(5);
+        expect(pe.styles[1].far.value).toBe(50);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 1, far: 2 }, { near: 5, far: 50 }, { near: 0, far: 90 }]);
+    });
+
+    it("keeps each node's scatter, without rolling again", () =>
+    {
+        const pe = create([makeNode(0, 0), makeNode(0, 0), makeNode(0, 0)]);
+        pe.addStyle("translateX", [0, { value: 50, scatter: 10 }]);
+        const before = [0, 1, 2].map(i => pe.getNodeIndexData(i, "styles")[0].far - 50),
+              random = vi.spyOn(Math, "random");
+
+        pe.updateStyle("translateX", [0, { value: 100, scatter: 20 }]);
+        expect(random).not.toHaveBeenCalled();
+        before.forEach((offset, i) =>
+        {
+            expect(pe.getNodeIndexData(i, "styles")[0].far - 100).toBeCloseTo(offset*2);
+        });
+    });
+
+    it("uses the roll that's already there when a keyframe gains scatter", () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("translateX", [0, 50]);
+        Math.random.mockReturnValue(0);
+        pe.updateStyle("translateX", [{ value: 0, scatter: 10 }, 50]);
+        // the roll made when the style was added: (1 - 0.5) * 10
+        expect(pe.getNodeIndexData(0, "styles")[0].near).toBe(5);
+    });
+
+    it("picks new scatter for a keyframe whose method changes", () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("translateX", [{ value: 0, scatter: 10 }, { value: 50, scatter: 10, scatterMethod: "gaussian" }]);
+        Math.random.mockReturnValue(0);
+        // near changes method, far is given the same method under another name
+        pe.updateStyle("translateX", [{ value: 0, scatter: 10, scatterMethod: "normal" }, { value: 50, scatter: 10, scatterMethod: "normal" }]);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: -5, far: 55 }]);
+    });
+
+    it("clamps to the style's range", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle({ rule: "opacity", min: 0, max: 1 }, [0, 1]);
+        pe.updateStyle("opacity", [-1, 3]);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 0, far: 1 }]);
+    });
+
+    it("updates every match", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("translateX", [0, 10]);
+        pe.addStyle("scale", [1, 2]);
+        pe.addStyle("translateX", [0, 20]);
+        expect(pe.updateStyle("translateX", [1, 30])).toBe(true);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 1, far: 30 }, { near: 1, far: 2 }, { near: 1, far: 30 }]);
+    });
+
+    it("keeps a preset known by its preset name", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("hueRotate", [0, 90]);
+        pe.updateStyle("hueRotate", [0, 180]);
+        expect(pe.styles[0].name).toBe("hueRotate");
+        expect(pe.hasStyle("hueRotate")).toBe(true);
+    });
+
+    it("returns false when nothing matches", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("translateX", [0, 10]);
+        expect(pe.updateStyle("blur", [0, 5])).toBe(false);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 0, far: 10 }]);
+    });
+
+    it("leaves every style as it was when a keyframe is bad", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        pe.addStyle("translateX", [0, 10]);
+        pe.addStyle("translateX", [0, 20]);
+        const styles = pe.styles;
+        expect(() => pe.updateStyle("translateX", [0])).toThrow(TypeError);
+        expect(() => pe.updateStyle("translateX", [0, "far"])).toThrow(TypeError);
+        expect(() => pe.updateStyle("translateX", [0, { value: 1, scatter: -1 }])).toThrow(RangeError);
+        expect(() => pe.updateStyle("translateX", [0, 5, 10])).toThrow(RangeError);
+        expect(() => pe.updateStyle("translateX", [0, NaN])).toThrow(RangeError);
+        expect(pe.styles).toEqual(styles);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 0, far: 10 }, { near: 0, far: 20 }]);
+    });
+
+    it("rejects a name that isn't a string", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        expect(() => pe.updateStyle(undefined, [0, 1])).toThrow(TypeError);
+        expect(() => pe.updateStyle(null, [0, 1])).toThrow(TypeError);
+    });
+
+    it("redraws the nodes", async () =>
+    {
+        const el = makeNode(0, 0),
+              pe = create(el);
+        pe.addStyle("translateX", [0, 10]);
+        pe.addStyle("scale", [1, 2]);
+        await settle();
+        step();
+        expect(el.style.transform).toBe("translateX(10px) scale(2)");
+        pe.updateStyle("translateX", [0, 40]);
+        step();
+        expect(el.style.transform).toBe("translateX(40px) scale(2)");
+    });
+});
+
+
+
+describe("scaleEffect", () =>
+{
+    it("defaults to 1, and getters return the values that were set", () =>
+    {
+        const pe = create(makeNode(0, 0), { threshold: 10, runoff: 50, offsetX: 4, jitter: 6 });
+        expect(pe.scaleEffect).toBe(1);
+        pe.scaleEffect = 2;
+        expect(pe.scaleEffect).toBe(2);
+        expect([pe.threshold, pe.runoff, pe.offsetX, pe.jitter, pe.boundary]).toEqual([10, 50, 4, 6, 60]);
+        expect(create(makeNode(0, 0), { scaleEffect: 0.5 }).scaleEffect).toBe(0.5);
+    });
+
+    it("moves the threshold and runoff edges", async () =>
+    {
+        const inside = makeNode(15, 0), near = makeNode(30, 0), mid = makeNode(60, 0), far = makeNode(120, 0);
+        const pe = create([inside, near, mid, far], { threshold: 10, runoff: 50, scaleEffect: 2 });
+        await settle();
+        pe.setCoords(0, 0);
+        step();
+        // threshold 20, runoff 100
+        expect(pe.distanceFrom(inside)).toBe(0);
+        expect(pe.distanceFrom(near)).toBeCloseTo(0.1);
+        expect(pe.distanceFrom(mid)).toBeCloseTo(0.4);
+        expect(pe.distanceFrom(far)).toBe(1);
+
+        pe.scaleEffect = 0.5;
+        step();
+        // threshold 5, runoff 25
+        expect(pe.distanceFrom(inside)).toBeCloseTo(0.4);
+        expect(pe.distanceFrom(near)).toBe(1);
+    });
+
+    it("scales the offsets and jitter, without rolling again or remeasuring", async () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const el = makeNode(100, 100),
+              pe = create(el, { offsetX: 10, offsetY: -4, jitter: 10 });
+        await settle();
+        expect(pe.getNodeIndexData(0, "center")).toEqual({ x: 95, y: 109 });
+
+        const measure = vi.spyOn(el, "getBoundingClientRect");
+        Math.random.mockClear();
+        pe.scaleEffect = 3;
+        expect(pe.getNodeIndexData(0, "jitter")).toEqual({ x: 15, y: 15 });
+        expect(pe.getNodeIndexData(0, "center")).toEqual({ x: 85, y: 127 });
+        expect(Math.random).not.toHaveBeenCalled();
+        expect(measure).not.toHaveBeenCalled();
+    });
+
+    it("scales px style values and their scatter, and redraws", async () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const el = makeNode(0, 0),
+              pe = create(el);
+        pe.addStyle("translateX", [{ value: 10, scatter: 4 }, 0]);
+        pe.addStyle("blur", [2, 0]);
+        pe.addStyle({ rule: "marginLeft", unit: "PX" }, [8, 0]);
+        await settle();
+        pe.setCoords(0, 0);
+        step();
+        expect(el.style.transform).toBe("translateX(12px)");
+
+        pe.scaleEffect = 0.5;
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 6, far: 0 }, { near: 1, far: 0 }, { near: 4, far: 0 }]);
+        step();
+        expect(el.style.transform).toBe("translateX(6px)");
+        expect(el.style.filter).toBe("blur(1px)");
+        expect(el.style.marginLeft).toBe("4px");
+    });
+
+    it("leaves deg, %, unitless values and perspective alone", async () =>
+    {
+        const el = makeNode(0, 0),
+              pe = create(el, { perspective: 500, scaleEffect: 2 });
+        pe.addStyle("rotate", [45, 0]);
+        pe.addStyle("scale", [1.5, 1]);
+        pe.addStyle("opacity", [50, 100]);
+        pe.addStyle({ rule: "width", unit: "%" }, [20, 10]);
+        await settle();
+        pe.setCoords(0, 0);
+        step();
+        expect(el.style.transform).toBe("perspective(500px) rotate(45deg) scale(1.5)");
+        expect(el.style.filter).toBe("opacity(50%)");
+        expect(el.style.width).toBe("20%");
+    });
+
+    it("clamps to min and max before scaling", () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(0);
+        const pe = create(makeNode(0, 0), { scaleEffect: 2 });
+        // blur has a min of 0: 1 + (0 - 0.5) * 10 = -4, clamped to 0
+        pe.addStyle("blur", [{ value: 1, scatter: 10 }, 3]);
+        // 6 + (0 - 0.5) * 10 = 1, clamped to 5
+        pe.addStyle({ rule: "marginLeft", unit: "px", min: 5, max: 20 }, [{ value: 6, scatter: 10 }, 10]);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 0, far: 6 }, { near: 10, far: 20 }]);
+    });
+
+    it("applies to styles added and updated later", () =>
+    {
+        const pe = create(makeNode(0, 0), { scaleEffect: 2 });
+        pe.addStyle("translateY", [5, 0]);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 10, far: 0 }]);
+        pe.updateStyle("translateY", [7, 1]);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 14, far: 2 }]);
+    });
+
+    it("works at 0, and turns negative values into 0", async () =>
+    {
+        const el = makeNode(50, 0),
+              pe = create(el, { threshold: 10, runoff: 50 });
+        pe.addStyle("translateX", [10, 0]);
+        pe.scaleEffect = -1;
+        expect(pe.scaleEffect).toBe(0);
+        await settle();
+        pe.setCoords(50, 0);
+        step();
+        // a runoff of 0 is a hard edge at a threshold of 0
+        expect(pe.distanceFrom(el)).toBe(0);
+        expect(el.style.transform).toBe("translateX(0px)");
+    });
+
+    it("rejects an invalid value, keeping the old one", () =>
+    {
+        const pe = create(makeNode(0, 0), { scaleEffect: 2 });
+        expect(() => { pe.scaleEffect = "2"; }).toThrow(TypeError);
+        expect(() => { pe.scaleEffect = NaN; }).toThrow(RangeError);
+        expect(() => { pe.scaleEffect = Infinity; }).toThrow(RangeError);
+        expect(pe.scaleEffect).toBe(2);
+        expect(() => new ProximityEffect(makeNode(0, 0), { scaleEffect: "big" })).toThrow(TypeError);
+    });
 });
 
 
@@ -549,6 +883,7 @@ describe("lifecycle", () =>
         expect(() => { pe.nodes = [el, makeNode(0, 0)]; }).toThrow(Error);
         expect(() => pe.addStyle("blur", [0, 1])).toThrow(Error);
         expect(() => pe.removeStyle("translateX")).toThrow(Error);
+        expect(() => pe.updateStyle("translateX", [0, 1])).toThrow(Error);
         expect(() => pe.setCenterPoints()).toThrow(Error);
         expect(pe.nodes).toEqual([el]);
         expect(pe.styles).toHaveLength(1);
@@ -639,7 +974,7 @@ describe("lifecycle", () =>
 
 describe("hardening", () =>
 {
-    const NUMERIC = ["threshold", "runoff", "attack", "decay", "tolerance", "offsetX", "offsetY", "jitter", "jitterX", "jitterY"];
+    const NUMERIC = ["threshold", "runoff", "attack", "decay", "tolerance", "offsetX", "offsetY", "jitter", "jitterX", "jitterY", "scaleEffect"];
 
     it("rejects non-numbers and non-finite numbers in every numeric setter, leaving the value unchanged", () =>
     {
@@ -1727,6 +2062,258 @@ describe("accessibility", () =>
             document.dispatchEvent(new PointerEvent("pointerout", { isPrimary: true, relatedTarget: null }));
             window.dispatchEvent(new Event("blur"));
             expect(pe.pointer).toEqual({ x: 10, y: 10 });
+        });
+    });
+
+
+    describe("pointerLeave", () =>
+    {
+        // a touch or pen lifting off: pointerout with nowhere to go
+        const lift = (pointerType = "touch") =>
+            document.dispatchEvent(new PointerEvent("pointerout", { isPrimary: true, pointerType, relatedTarget: null }));
+
+        it("defaults to 'rest' and validates the mode", () =>
+        {
+            const pe = create(makeNode(0, 0));
+            expect(pe.pointerLeave).toBe("rest");
+            pe.pointerLeave = "hold";
+            expect(pe.pointerLeave).toBe("hold");
+            expect(create(makeNode(0, 0), { pointerLeave: "hold" }).pointerLeave).toBe("hold");
+            for (const bad of ["Hold", "keep", "", null, 1])
+            {
+                expect(() => { pe.pointerLeave = bad; }).toThrow(RangeError);
+            }
+            expect(pe.pointerLeave).toBe("hold");
+            expect(() => create(makeNode(0, 0), { pointerLeave: "keep" })).toThrow(RangeError);
+        });
+
+        it("keeps the point when a touch or pen lifts", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { runoff: 100, pointerLeave: "hold" });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            movePointer(50, 0, { pointerType: "touch" });
+            step();
+            lift("touch");
+            expect(pe.pointer).toEqual({ x: 50, y: 0 });
+            for (let i=0; i<5; i++) step();
+            expect(pe.distanceFrom(el)).toBe(0.5);
+            expect(translateOf(el)).toBe(50);
+
+            movePointer(0, 25, { pointerType: "pen" });
+            lift("pen");
+            step();
+            expect(pe.pointer).toEqual({ x: 0, y: 25 });
+            expect(pe.distanceFrom(el)).toBe(0.25);
+        });
+
+        it("keeps the held point on the same spot on the page as it scrolls", async () =>
+        {
+            const flow = makeNode(0, 100);
+            const bar = document.createElement("nav");
+            bar.style.position = "fixed";
+            document.body.append(bar);
+            const pinned = makeNode(0, 100);
+            bar.append(pinned);
+            const pe = create([flow, pinned], { runoff: 100, pointerLeave: "hold" });
+            await settle();
+            movePointer(0, 100, { pointerType: "touch" });
+            lift();
+            step();
+            expect(pe.distanceFrom(flow)).toBe(0);
+            expect(pe.distanceFrom(pinned)).toBe(0);
+
+            vi.spyOn(window, "scrollY", "get").mockReturnValue(50);
+            document.dispatchEvent(new Event("scroll"));
+            expect(frames.size).toBe(1);
+            step();
+            expect(pe.pointer).toEqual({ x: 0, y: 50 });
+            // the held point and the page both moved up, the fixed node didn't
+            expect(pe.distanceFrom(flow)).toBe(0);
+            expect(pe.distanceFrom(pinned)).toBe(0.5);
+        });
+
+        it("still rests when a mouse leaves the page", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { pointerLeave: "hold" });
+            await settle();
+            movePointer(10, 10);
+            lift("mouse");
+            expect(pe.pointer).toBeNull();
+        });
+
+        it("still rests when the window loses focus", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { pointerLeave: "hold" });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            movePointer(0, 0, { pointerType: "touch" });
+            lift();
+            step();
+            expect(translateOf(el)).toBe(0);
+            window.dispatchEvent(new Event("blur"));
+            expect(pe.pointer).toBeNull();
+            step();
+            expect(translateOf(el)).toBe(100);
+        });
+
+        it("replaces the held point with the next pointer event", async () =>
+        {
+            const pe = create(makeNode(0, 0), { pointerLeave: "hold" });
+            await settle();
+            movePointer(10, 10, { pointerType: "touch" });
+            lift();
+            vi.spyOn(window, "scrollY", "get").mockReturnValue(50);
+            document.dispatchEvent(new PointerEvent("pointerdown", { clientX: 30, clientY: 30, isPrimary: true, pointerType: "touch" }));
+            expect(pe.pointer).toEqual({ x: 30, y: 30 });
+            movePointer(40, 40);
+            expect(pe.pointer).toEqual({ x: 40, y: 40 });
+        });
+
+        it("leaves 'rest' mode as it was", async () =>
+        {
+            const pe = create(makeNode(0, 0));
+            await settle();
+            movePointer(10, 10, { pointerType: "touch" });
+            lift();
+            expect(pe.pointer).toBeNull();
+        });
+
+        it("drops a held point when set back to 'rest'", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { pointerLeave: "hold" });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            movePointer(0, 0, { pointerType: "touch" });
+            lift();
+            step();
+            expect(translateOf(el)).toBe(0);
+            pe.pointerLeave = "rest";
+            expect(pe.pointer).toBeNull();
+            expect(frames.size).toBe(1);
+            step();
+            expect(translateOf(el)).toBe(100);
+        });
+
+        it("gives way to setCoords() and the target", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el, { runoff: 100, pointerLeave: "hold" });
+            await settle();
+            movePointer(50, 0, { pointerType: "touch" });
+            lift();
+            pe.setCoords(0, 0);
+            step();
+            expect(pe.distanceFrom(el)).toBe(0);
+            pe.clearCoords();
+            step();
+            expect(pe.distanceFrom(el)).toBe(0.5);
+        });
+
+        it("still rests under reduced motion 'rest'", async () =>
+        {
+            const query = fakeMotionQuery(false);
+            const el = makeNode(0, 0);
+            const pe = create(el, { pointerLeave: "hold" });
+            pe.addStyle("translateX", [0, 100]);
+            await settle();
+            movePointer(0, 0, { pointerType: "touch" });
+            lift();
+            step();
+            expect(translateOf(el)).toBe(0);
+            query.set(true);
+            step();
+            expect(translateOf(el)).toBe(100);
+        });
+    });
+
+
+    describe("touchDrag", () =>
+    {
+        it("defaults to false and validates the value", () =>
+        {
+            const pe = create(makeNode(0, 0));
+            expect(pe.touchDrag).toBe(false);
+            for (const bad of ["yes", 1, {}, document])
+            {
+                expect(() => { pe.touchDrag = bad; }).toThrow(TypeError);
+            }
+            pe.touchDrag = null;
+            expect(pe.touchDrag).toBe(false);
+            expect(() => create(makeNode(0, 0), { touchDrag: "stage" })).toThrow(TypeError);
+        });
+
+        it("leaves touch-action alone by default", () =>
+        {
+            const el = makeNode(0, 0);
+            create(el);
+            expect(el.style.touchAction).toBe("");
+        });
+
+        it("with true, claims drags on each node and gives them back", () =>
+        {
+            const a = makeNode(0, 0), b = makeNode(20, 0), c = makeNode(40, 0);
+            b.style.touchAction = "none";
+            const pe = create([a, b], { touchDrag: true });
+            expect(pe.touchDrag).toBe(true);
+            expect([a.style.touchAction, b.style.touchAction]).toEqual(["pinch-zoom", "pinch-zoom"]);
+
+            // nodes that join get it, and nodes that leave get their own back
+            pe.nodes = [a, c];
+            expect(c.style.touchAction).toBe("pinch-zoom");
+            expect(b.style.touchAction).toBe("none");
+
+            pe.touchDrag = false;
+            expect(a.style.touchAction).toBe("");
+            expect(c.style.touchAction).toBe("");
+            expect(a.hasAttribute("style")).toBe(true);
+        });
+
+        it("with an element, claims drags on it so the gaps count too", () =>
+        {
+            const stage = document.createElement("div");
+            stage.style.touchAction = "pan-y";
+            document.body.append(stage);
+            const el = makeNode(0, 0);
+            stage.append(el);
+            const pe = create(el, { touchDrag: stage });
+            expect(pe.touchDrag).toBe(stage);
+            expect(stage.style.touchAction).toBe("pinch-zoom");
+            expect(el.style.touchAction).toBe("");
+
+            // switching gives the first element back
+            const other = document.createElement("div");
+            pe.touchDrag = other;
+            expect(stage.style.touchAction).toBe("pan-y");
+            expect(other.style.touchAction).toBe("pinch-zoom");
+
+            pe.touchDrag = true;
+            expect(other.style.touchAction).toBe("");
+            expect(el.style.touchAction).toBe("pinch-zoom");
+
+            pe.touchDrag = stage;
+            expect(el.style.touchAction).toBe("");
+            expect(stage.style.touchAction).toBe("pinch-zoom");
+        });
+
+        it("gives everything back on destroy", () =>
+        {
+            const stage = document.createElement("div");
+            document.body.append(stage);
+            const a = makeNode(0, 0), b = makeNode(20, 0);
+            const onNodes = create(a, { touchDrag: true });
+            const onStage = create(b, { touchDrag: stage });
+            onNodes.destroy();
+            onStage.destroy();
+            expect(a.style.touchAction).toBe("");
+            expect(stage.style.touchAction).toBe("");
+            // and does nothing once destroyed
+            onStage.touchDrag = stage;
+            expect(stage.style.touchAction).toBe("");
         });
     });
 
