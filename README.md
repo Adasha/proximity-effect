@@ -146,6 +146,7 @@ Next, define the effect parameters in an object. All parameters are optional. Ev
 | `offsetX` and `offsetY` | Number | Shift every element's centre, in pixels. A positive `offsetX` moves it left, and a positive `offsetY` moves it up. Stacks with each element's `data-offsetx` and `data-offsety` attributes. Default is 0. |
 | `jitter`, `jitterX` and `jitterY` | Number | Moves each element's centre by a random amount, up to half this many pixels either way, so the effect's edge looks less regular. `jitter` affects both axes, while `jitterX` and `jitterY` affect only their own. All three stack. Default is 0. |
 | `jitterMethod` | String | How the jitter is distributed: `"uniform"` or `"normal"` (`"gaussian"` also works). Default is `"uniform"`. |
+| `scaleEffect` | Number | Multiplies the effect's pixel distances (`threshold`, `runoff`, offsets, jitter and px style values), so it can shrink or grow with its container. Default is 1. |
 | `target` | Element | An element to track instead of the pointer. Default is `null` (the pointer). |
 | `FPS` | Number | A frame rate limit. `null`, `false` or 0 follows the screen's refresh rate. Default is `null`. |
 | `zIndex` | Boolean | Sets each element's `z-index` from its distance, so the nearest sit on top. Default is `false`. |

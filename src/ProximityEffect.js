@@ -126,6 +126,7 @@ export default class ProximityEffect extends EventTarget
      * @param {string}  [params.direction="both"] - The effect direction, one of "both", "horizontal" or "vertical".
      * @param {number}  [params.attack=1] - The easing rate (0 to 1) as the target approaches. 1 is no easing.
      * @param {number}  [params.decay=1] - The easing rate (0 to 1) as the target moves away. 1 is no easing.
+     * @param {number}  [params.scaleEffect=1] - A multiplier for every pixel distance in the effect: threshold, runoff, offsets, jitter and px style values. Negative values become 0.
      * @param {number}  [params.offsetX=0] - The global horizontal offset, in pixels. A positive value moves each node's centre left.
      * @param {number}  [params.offsetY=0] - The global vertical offset, in pixels. A positive value moves each node's centre up.
      * @param {number}  [params.jitter=0] - The size of a random offset to each node's centre, in pixels. Affects X and Y.
@@ -170,6 +171,7 @@ export default class ProximityEffect extends EventTarget
         this.#globalParams.primeDistances = Validate.boolean(param("primeDistances", false), "primeDistances");
 
         // set global parameter values (nodes come last, so their data is built once)
+        this.scaleEffect  = param("scaleEffect", 1);
         this.threshold    = param("threshold", 0);
         this.runoff       = param("runoff", this.#DEFAULT_RUNOFF);
         this.attack       = param("attack", 1);
@@ -378,6 +380,38 @@ export default class ProximityEffect extends EventTarget
     get boundary()
     {
     	return this.threshold + this.runoff;
+    }
+
+
+
+
+
+    /**
+     * Get the effect scale.
+     * @return {number} The multiplier for the effect's pixel distances.
+     */
+    get scaleEffect()
+    {
+        return this.#globalParams.scaleEffect;
+    }
+
+    /**
+     * Set a multiplier for every pixel distance in the effect, so it can grow
+     * or shrink with its container: threshold, runoff, offsets, jitter and
+     * styles in px (translateX, translateY, translateZ, blur, and custom
+     * styles with a px unit). Getters still return the values you set.
+     * perspective isn't scaled, and min and max are applied before scaling.
+     * @param {number} value - The new scale, 0 or more (negative values become 0).
+     */
+    set scaleEffect(value)
+    {
+        this.#globalParams.scaleEffect = Math.max(Validate.finite(value, "scaleEffect"), 0);
+        for (const data of this.#nodeData)
+        {
+            data.styles.forEach((entry, i) => this.#resolveStyleValues(this.#stylesStack[i], entry));
+        }
+        this.#applyOffsets();
+        this.#invalidate();
     }
 
 
@@ -1753,15 +1787,17 @@ export default class ProximityEffect extends EventTarget
 
 
 
-    // a node's centre is where it was measured, moved by the global offset and its jitter
+    // a node's centre is where it was measured, moved by the global offset and
+    // its jitter, both scaled by scaleEffect
     #applyOffset(data)
     {
+        const { offsetX, offsetY, scaleEffect } = this.#globalParams;
         this.#resolveJitter(data);
         if (data.measured)
         {
             data.center ??= {};
-            data.center.x = data.measured.x - this.offsetX + data.jitter.x;
-            data.center.y = data.measured.y - this.offsetY + data.jitter.y;
+            data.center.x = data.measured.x - offsetX*scaleEffect + data.jitter.x;
+            data.center.y = data.measured.y - offsetY*scaleEffect + data.jitter.y;
         }
     }
 
@@ -1900,11 +1936,14 @@ export default class ProximityEffect extends EventTarget
 
 
 
+    // min and max are in the style's own units at the size it was written for,
+    // so px values are clamped first and then scaled
     #resolveStyleValues(style, entry)
     {
-        const value = (frame, roll) => frame.scatter
-            ? AdashaUtils.constrain(frame.value + roll * frame.scatter, style.min, style.max)
-            : frame.value;
+        const scale = style.unit?.toLowerCase()==="px" ? this.#globalParams.scaleEffect : 1,
+              value = (frame, roll) => scale * (frame.scatter
+                  ? AdashaUtils.constrain(frame.value + roll * frame.scatter, style.min, style.max)
+                  : frame.value);
 
         entry.near = value(style.near, entry.nearUnit);
         entry.far  = value(style.far, entry.farUnit);
@@ -1927,13 +1966,13 @@ export default class ProximityEffect extends EventTarget
 
 
 
-    // jitter in pixels, from the node's unit roll and the current jitter size
+    // jitter in pixels, from the node's unit roll, the current jitter size and scaleEffect
     #resolveJitter(data)
     {
-        const { jitter, jitterX, jitterY } = this.#globalParams;
+        const { jitter, jitterX, jitterY, scaleEffect } = this.#globalParams;
         data.jitter ??= {};
-        data.jitter.x = data.jitterUnit.x * (jitter + jitterX);
-        data.jitter.y = data.jitterUnit.y * (jitter + jitterY);
+        data.jitter.x = data.jitterUnit.x * (jitter + jitterX) * scaleEffect;
+        data.jitter.y = data.jitterUnit.y * (jitter + jitterY) * scaleEffect;
         return data.jitter;
     }
 
@@ -2181,7 +2220,9 @@ export default class ProximityEffect extends EventTarget
               groups  = this.#styleGroups,
               rewrite = this.#needsRewrite,
               instant = this.motionReduced,
-              { threshold, runoff, invert, attack, decay, tolerance, direction, zIndex, perspective } = this.#globalParams;
+              { invert, attack, decay, tolerance, direction, zIndex, perspective, scaleEffect } = this.#globalParams,
+              threshold = this.#globalParams.threshold * scaleEffect,
+              runoff    = this.#globalParams.runoff * scaleEffect;
 
         this.#needsRewrite = false;
         this.#lastTargetPoint = point && { x: point.x, y: point.y };

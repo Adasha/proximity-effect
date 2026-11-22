@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format is based on 
 ### Added
 
 - `updateStyle(name, keyframes)` gives matching styles new keyframes, keeping their place in the stack, their params and each node's scatter.
+- `scaleEffect`, a multiplier for the effect's pixel distances (`threshold`, `runoff`, offsets, jitter and px style values), applied when the effect is drawn, so an effect can grow or shrink with its container.
 
 ### Changed
 

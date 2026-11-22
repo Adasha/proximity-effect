@@ -716,6 +716,140 @@ describe("updateStyle", () =>
 
 
 
+describe("scaleEffect", () =>
+{
+    it("defaults to 1, and getters return the values that were set", () =>
+    {
+        const pe = create(makeNode(0, 0), { threshold: 10, runoff: 50, offsetX: 4, jitter: 6 });
+        expect(pe.scaleEffect).toBe(1);
+        pe.scaleEffect = 2;
+        expect(pe.scaleEffect).toBe(2);
+        expect([pe.threshold, pe.runoff, pe.offsetX, pe.jitter, pe.boundary]).toEqual([10, 50, 4, 6, 60]);
+        expect(create(makeNode(0, 0), { scaleEffect: 0.5 }).scaleEffect).toBe(0.5);
+    });
+
+    it("moves the threshold and runoff edges", async () =>
+    {
+        const inside = makeNode(15, 0), near = makeNode(30, 0), mid = makeNode(60, 0), far = makeNode(120, 0);
+        const pe = create([inside, near, mid, far], { threshold: 10, runoff: 50, scaleEffect: 2 });
+        await settle();
+        pe.setCoords(0, 0);
+        step();
+        // threshold 20, runoff 100
+        expect(pe.distanceFrom(inside)).toBe(0);
+        expect(pe.distanceFrom(near)).toBeCloseTo(0.1);
+        expect(pe.distanceFrom(mid)).toBeCloseTo(0.4);
+        expect(pe.distanceFrom(far)).toBe(1);
+
+        pe.scaleEffect = 0.5;
+        step();
+        // threshold 5, runoff 25
+        expect(pe.distanceFrom(inside)).toBeCloseTo(0.4);
+        expect(pe.distanceFrom(near)).toBe(1);
+    });
+
+    it("scales the offsets and jitter, without rolling again or remeasuring", async () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const el = makeNode(100, 100),
+              pe = create(el, { offsetX: 10, offsetY: -4, jitter: 10 });
+        await settle();
+        expect(pe.getNodeIndexData(0, "center")).toEqual({ x: 95, y: 109 });
+
+        const measure = vi.spyOn(el, "getBoundingClientRect");
+        Math.random.mockClear();
+        pe.scaleEffect = 3;
+        expect(pe.getNodeIndexData(0, "jitter")).toEqual({ x: 15, y: 15 });
+        expect(pe.getNodeIndexData(0, "center")).toEqual({ x: 85, y: 127 });
+        expect(Math.random).not.toHaveBeenCalled();
+        expect(measure).not.toHaveBeenCalled();
+    });
+
+    it("scales px style values and their scatter, and redraws", async () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(1);
+        const el = makeNode(0, 0),
+              pe = create(el);
+        pe.addStyle("translateX", [{ value: 10, scatter: 4 }, 0]);
+        pe.addStyle("blur", [2, 0]);
+        pe.addStyle({ rule: "marginLeft", unit: "PX" }, [8, 0]);
+        await settle();
+        pe.setCoords(0, 0);
+        step();
+        expect(el.style.transform).toBe("translateX(12px)");
+
+        pe.scaleEffect = 0.5;
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 6, far: 0 }, { near: 1, far: 0 }, { near: 4, far: 0 }]);
+        step();
+        expect(el.style.transform).toBe("translateX(6px)");
+        expect(el.style.filter).toBe("blur(1px)");
+        expect(el.style.marginLeft).toBe("4px");
+    });
+
+    it("leaves deg, %, unitless values and perspective alone", async () =>
+    {
+        const el = makeNode(0, 0),
+              pe = create(el, { perspective: 500, scaleEffect: 2 });
+        pe.addStyle("rotate", [45, 0]);
+        pe.addStyle("scale", [1.5, 1]);
+        pe.addStyle("opacity", [50, 100]);
+        pe.addStyle({ rule: "width", unit: "%" }, [20, 10]);
+        await settle();
+        pe.setCoords(0, 0);
+        step();
+        expect(el.style.transform).toBe("perspective(500px) rotate(45deg) scale(1.5)");
+        expect(el.style.filter).toBe("opacity(50%)");
+        expect(el.style.width).toBe("20%");
+    });
+
+    it("clamps to min and max before scaling", () =>
+    {
+        vi.spyOn(Math, "random").mockReturnValue(0);
+        const pe = create(makeNode(0, 0), { scaleEffect: 2 });
+        // blur has a min of 0: 1 + (0 - 0.5) * 10 = -4, clamped to 0
+        pe.addStyle("blur", [{ value: 1, scatter: 10 }, 3]);
+        // 6 + (0 - 0.5) * 10 = 1, clamped to 5
+        pe.addStyle({ rule: "marginLeft", unit: "px", min: 5, max: 20 }, [{ value: 6, scatter: 10 }, 10]);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 0, far: 6 }, { near: 10, far: 20 }]);
+    });
+
+    it("applies to styles added and updated later", () =>
+    {
+        const pe = create(makeNode(0, 0), { scaleEffect: 2 });
+        pe.addStyle("translateY", [5, 0]);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 10, far: 0 }]);
+        pe.updateStyle("translateY", [7, 1]);
+        expect(pe.getNodeIndexData(0, "styles")).toEqual([{ near: 14, far: 2 }]);
+    });
+
+    it("works at 0, and turns negative values into 0", async () =>
+    {
+        const el = makeNode(50, 0),
+              pe = create(el, { threshold: 10, runoff: 50 });
+        pe.addStyle("translateX", [10, 0]);
+        pe.scaleEffect = -1;
+        expect(pe.scaleEffect).toBe(0);
+        await settle();
+        pe.setCoords(50, 0);
+        step();
+        // a runoff of 0 is a hard edge at a threshold of 0
+        expect(pe.distanceFrom(el)).toBe(0);
+        expect(el.style.transform).toBe("translateX(0px)");
+    });
+
+    it("rejects an invalid value, keeping the old one", () =>
+    {
+        const pe = create(makeNode(0, 0), { scaleEffect: 2 });
+        expect(() => { pe.scaleEffect = "2"; }).toThrow(TypeError);
+        expect(() => { pe.scaleEffect = NaN; }).toThrow(RangeError);
+        expect(() => { pe.scaleEffect = Infinity; }).toThrow(RangeError);
+        expect(pe.scaleEffect).toBe(2);
+        expect(() => new ProximityEffect(makeNode(0, 0), { scaleEffect: "big" })).toThrow(TypeError);
+    });
+});
+
+
+
 describe("lifecycle", () =>
 {
     it("destroy() stops the loop, removes listeners and restores styles", async () =>
@@ -840,7 +974,7 @@ describe("lifecycle", () =>
 
 describe("hardening", () =>
 {
-    const NUMERIC = ["threshold", "runoff", "attack", "decay", "tolerance", "offsetX", "offsetY", "jitter", "jitterX", "jitterY"];
+    const NUMERIC = ["threshold", "runoff", "attack", "decay", "tolerance", "offsetX", "offsetY", "jitter", "jitterX", "jitterY", "scaleEffect"];
 
     it("rejects non-numbers and non-finite numbers in every numeric setter, leaving the value unchanged", () =>
     {
