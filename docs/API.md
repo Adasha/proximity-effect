@@ -89,7 +89,7 @@ All read-write properties can also be set through the constructor's `params`. Se
 | --- | --- | --- | --- |
 | `threshold` | Number | `0` | The distance from a node's centre within which its styles are at their near value, in pixels. Negative values become 0. |
 | `runoff` | Number | `100` | The distance beyond the threshold over which styles change from near to far, in pixels. 0 gives a hard edge at the threshold. Negative values become 0. |
-| `boundary` | Number | | Read-only. `threshold + runoff`: the distance beyond which styles are at their far value. |
+| `boundary` | Number | | Read-only. `threshold + runoff`: the distance beyond which styles are at their far value (before [`scaleEffect`](#scale)). |
 | `invert` | Boolean | `false` | Swaps near and far, so styles are at their far value close to the pointer. |
 
 ### Easing
@@ -110,6 +110,20 @@ All read-write properties can also be set through the constructor's `params`. Se
 | `jitterMethod` | String | `"uniform"` | How the jitter is distributed: `"uniform"` (any amount equally likely) or `"normal"` (mostly small amounts, clustered around the centre). `"gaussian"` is accepted as another name for `"normal"`. |
 
 Each node picks its random amount once, when it's added. Changing `jitter`, `jitterX` or `jitterY` makes every node move further or less far in the same direction, so you can grow or shrink the jitter without the nodes jumping about. Changing `jitterMethod` picks new random amounts, since the new method has a different spread. Offsets and jitter don't need the nodes to be measured again.
+
+### Scale
+
+| Property | Type | Default | Description |
+| --- | --- | --- | --- |
+| `scaleEffect` | Number | `1` | Multiplies every pixel distance in the effect, so it can grow or shrink with its container. Negative values become 0. |
+
+`scaleEffect` is applied when the effect is drawn, to `threshold`, `runoff`, `offsetX`, `offsetY`, jitter, and the values of styles in pixels: `translateX`, `translateY`, `translateZ`, `blur` and custom styles with a `px` unit, scatter included. Their getters, and `boundary`, still return the values you set. A style's `min` and `max` are applied before scaling, since they're in the style's units at the size it was written for. Styles in other units, `perspective` and the `data-offsetx` and `data-offsety` attributes aren't scaled. Changing it doesn't pick new random amounts or measure the nodes again.
+
+To scale an effect with its container, set it from a `ResizeObserver`:
+
+```javascript
+new ResizeObserver(() => { myEffect.scaleEffect = container.clientWidth / 800; }).observe(container);
+```
 
 ### Drawing
 
@@ -321,11 +335,11 @@ The `styles` property returns the styles that have been added, as read-only obje
 | --- | --- | --- |
 | `node` | Element | The node. |
 | `measured` | `{x, y}` | The node's measured centre, relative to the viewport, with any `data-offsetx` and `data-offsety` applied. |
-| `center` | `{x, y}` | The centre used for distances: `measured` with the global offsets and jitter applied. |
-| `jitter` | `{x, y}` | The node's random jitter. |
+| `center` | `{x, y}` | The centre used for distances: `measured` with the global offsets and jitter applied, scaled by `scaleEffect`. |
+| `jitter` | `{x, y}` | The node's random jitter, in pixels, scaled by `scaleEffect`. |
 | `distance` | Number | The distance as of the last frame, from 0 to 1, before easing (as `distanceFrom()` returns). |
 | `lastDelta` | Number | The eased distance as of the last frame, which the styles were drawn with. |
-| `styles` | Array of `{near, far}` | The node's near and far values for each style, after scatter, in the same order as `styles`. |
+| `styles` | Array of `{near, far}` | The node's near and far values for each style, after scatter and `scaleEffect`, in the same order as `styles`. |
 
 ## Events
 

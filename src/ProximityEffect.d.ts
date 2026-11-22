@@ -52,6 +52,8 @@ export interface ProximityEffectParams
     attack?: number | null;
     /** Easing rate (0 to 1) as the target moves away. Default 1 (no easing). */
     decay?: number | null;
+    /** Multiplies every pixel distance in the effect: threshold, runoff, offsets, jitter and px style values. Not perspective. Negative values become 0. Default 1. */
+    scaleEffect?: number | null;
     /** Shifts every node's centre horizontally, in pixels; a positive value moves it left. Adds to each node's data-offsetx. Default 0. */
     offsetX?: number | null;
     /** Shifts every node's centre vertically, in pixels; a positive value moves it up. Adds to each node's data-offsety. Default 0. */
@@ -213,6 +215,8 @@ export default class ProximityEffect extends EventTarget
     set attack(value: number);
     get decay(): number;
     set decay(value: number);
+    get scaleEffect(): number;
+    set scaleEffect(value: number);
     get offsetX(): number;
     set offsetX(value: number);
     get offsetY(): number;
