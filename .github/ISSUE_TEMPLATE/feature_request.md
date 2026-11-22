@@ -15,4 +15,4 @@ How you'd like it to work, ideally with an example of the code you'd write.
 Anything you've tried, or other ways it could work.
 
 **Anything else**
-Check the [roadmap](https://github.com/Adasha/proximity-effect#roadmap) first: multi-value properties (such as colours), per-style parameters and keyframes in between are already planned.
+Check the [roadmap](https://github.com/Adasha/proximity-effect#roadmap) first: multi-value properties (such as colours), holding the point after a touch, a scale option, in-place style updates, per-style parameters and keyframes in between are already planned.

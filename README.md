@@ -326,7 +326,7 @@ Any browser that supports ES2022: Chrome and Edge 93+, Firefox 92+, Safari 15.4+
 
 ## Known issues
 
-- Only CSS properties that take a single number can be animated, so colours and other multi-value properties can't be used yet (planned for 4.1). CSS custom properties (`--foo`) aren't supported either.
+- Only CSS properties that take a single number can be animated, so colours and other multi-value properties can't be used yet (planned for 4.2). CSS custom properties (`--foo`) aren't supported either.
 - `destroy()` gives the elements back the inline styles they had when the instance was created, so inline styles your own code set on them since then are lost.
 - If an element containing a `position: fixed` element is given an animated `filter`, the fixed element can be measured slightly out of place, since the browser positions it relative to the filtered one.
 - When a style changes the elements' size (such as a custom `width`), a size change made by something else in the very same frame isn't noticed until the next scroll, resize or `setCenterPoints()`.
@@ -352,8 +352,12 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report a bug or make a change.
 
 ## Roadmap
 
-- (for 4.1) Multiple-value CSS properties, such as colours.
-- (for 4.1) A posterise option (`steps`), snapping the effect to a set number of even steps.
+- (for 4.1) An option to keep the last point when a touch or pen lifts, such as `pointerLeave: "hold" | "rest"`, kept relative to the page so it survives scrolling. Today the point is forgotten when the finger lifts, so on touch screens a tap only flickers.
+- (for 4.1) A `scaleEffect` parameter (or px values that accept CSS lengths), applied at render time to `threshold`, `runoff`, offsets, jitter and px style values, so an effect can shrink with its container.
+- (for 4.1) Jitter and scatter kept as unit random values and multiplied when used, so changing `jitter` or a style's scatter no longer re-rolls them.
+- (for 4.1) `updateStyle(name, keyframes)`, to change a style's keyframes in place instead of removing and re-adding it (which re-rolls its scatter).
+- (for 4.2) Multiple-value CSS properties, such as colours.
+- (for 4.2) A posterise option (`steps`), snapping the effect to a set number of even steps.
 - (for 4.2) Per-property parameters.
 - (for 4.3) Multi-point animations.
 
