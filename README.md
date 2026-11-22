@@ -353,7 +353,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report a bug or make a change.
 ## Roadmap
 
 - (for 4.1) An option to keep the last point when a touch or pen lifts, such as `pointerLeave: "hold" | "rest"`, kept relative to the page so it survives scrolling. Today the point is forgotten when the finger lifts, so on touch screens a tap only flickers.
-- (for 4.1) A `scale` parameter (or px values that accept CSS lengths), applied at render time to `threshold`, `runoff`, jitter and px style values, so an effect can shrink with its container.
+- (for 4.1) A `scaleEffect` parameter (or px values that accept CSS lengths), applied at render time to `threshold`, `runoff`, offsets, jitter and px style values, so an effect can shrink with its container.
 - (for 4.1) Jitter and scatter kept as unit random values and multiplied when used, so changing `jitter` or a style's scatter no longer re-rolls them.
 - (for 4.1) `updateStyle(name, keyframes)`, to change a style's keyframes in place instead of removing and re-adding it (which re-rolls its scatter).
 - (for 4.2) Multiple-value CSS properties, such as colours.
