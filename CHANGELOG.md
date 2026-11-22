@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-11-22
+
+For touch screens and responsive layouts. No breaking changes.
+
 ### Added
 
 - `updateStyle(name, keyframes)` gives matching styles new keyframes, keeping their place in the stack, their params and each node's scatter.
@@ -156,7 +160,8 @@ Measured with `npm run bench` (headless Chrome, 1,000 and 5,000 nodes, four styl
 
 - First release on npm without a pre-release tag. Earlier versions weren't recorded in a changelog.
 
-[Unreleased]: https://github.com/Adasha/proximity-effect/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/Adasha/proximity-effect/compare/v4.1.0...HEAD
+[4.1.0]: https://www.npmjs.com/package/proximity-effect/v/4.1.0
 [4.0.0]: https://www.npmjs.com/package/proximity-effect/v/4.0.0
 [2.1.19]: https://www.npmjs.com/package/proximity-effect/v/2.1.19
 [2.1.16]: https://www.npmjs.com/package/proximity-effect/v/2.1.16

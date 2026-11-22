@@ -1,6 +1,6 @@
 # ProximityEffect API reference
 
-v4.0.0. For installation and a quick start, see the [README](../README.md).
+v4.1.0. For installation and a quick start, see the [README](../README.md).
 
 ## Contents
 
