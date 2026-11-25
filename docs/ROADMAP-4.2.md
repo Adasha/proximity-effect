@@ -44,3 +44,33 @@ effect.addStyle({ rule: "backgroundPositionX", unit: "px" },
 - **Round stepped px output.** Float drift such as `-383.9999px` can show a one-pixel sliver of the next frame.
 - **`zIndex`.** It's derived from the same distance ([ProximityEffect.js:2502](../src/ProximityEffect.js#L2502)). Decide whether it follows the global `steps`.
 - **Performance note for the docs.** `background-position` repaints, unlike transforms and filters, but stepping means it repaints only at step boundaries.
+
+## Per-style parameters: design notes
+
+Per-style `threshold`, `runoff`, `invert`, `attack`, `decay` (and `steps`, above) are rejected today by `FUTURE_PARAMS` in [StyleClass.mjs:132](../src/StyleClass.mjs#L132). The cost is in semantics, not speed: the per-frame maths is tiny next to building style strings and the browser's restyle.
+
+**Two kinds of parameter.** Today [update()](../src/ProximityEffect.js#L2388) works out one `hypot`, one normalised distance and one eased value (`lastDelta`) per node, then lerps each style in [#writeStyles()](../src/ProximityEffect.js#L2477).
+
+| Param | Acts on | Needs its own easing state? |
+| --- | --- | --- |
+| `threshold`, `runoff` | the target distance `td` | Yes: a different `td` eases separately |
+| `attack`, `decay`, `tolerance` | how `d` follows `td` | Yes |
+| `invert` | the eased value | No: the `xor(td>last, invert)` rate choice makes inverted easing equal `1 - (uninverted easing)`, so it can be a flip at write time. Check how `primeDistances` interacts. |
+| `steps` | the eased value | No: snap only the written copy |
+
+**Channels.** Group styles by their resolved `(threshold, runoff, attack, decay, tolerance)`. Each distinct set is a channel with its own `lastDelta` per node. `hypot` still runs once per node. Each channel adds a subtract, divide, clamp and easing step.
+
+- With no per-style params there's one channel, so the loop does exactly what it does now.
+- Cost is about nodes x channels x ~10 flops: microseconds for 1,000 nodes and 3 channels. Memory is one number per channel per node.
+- Writes can drop: only rewrite a rule group (such as the combined `transform`) if one of its members' channels changed, instead of rewriting the whole node.
+- A slow-decay channel keeps its node, and the rAF loop, awake until it settles. That's the user's choice, but say so in the docs.
+
+**Open questions.**
+
+1. **Inheritance.** An unset per-style value follows the global one live, so `effect.runoff = 300` still reaches styles that don't set it. Rebuild the channel table in [#groupStyles()](../src/ProximityEffect.js#L1965) and when a relevant global setter runs. `scaleEffect` applies to per-style `threshold` and `runoff` too.
+2. **Distance APIs.** `distanceFrom()`, `getNodeData("distance" | "lastDelta")` and `zIndex` assume one distance per node. Simplest: they report the global channel, plus a per-style form such as `distanceFrom(node, { style: id })`. Design this with the per-node value hook above.
+3. **Rest and change detection.** `#changed` and `#resting()` must cover every channel. Mostly falls out of setting `changed` per channel in the loop.
+4. **`updateStyle()` moving a style between channels.** Seed the new channel from the style's current eased value to avoid a jump, or accept and document the jump.
+5. **Per-style `direction`?** Not in the list, but cheap: compute `hypot` or the single axis lazily per channel.
+
+**Size.** Roughly 60 to 100 lines for the loop and channel table, a similar amount for validation, inheritance and API changes (including `.d.ts`, the API.md limit at [API.md:290](API.md#L290) and the `RangeError` row), and more again in tests: inheritance, live global changes, mixed channels in one transform group, and rest detection.
