@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comet: ProximityEffect demo</title>
+<link rel="stylesheet" href="demo.css">
+<style>
+    :root { --text: #e8ecf8; --bg: #04050c; --accent: #8fb4ff; }
+
+    /* full-screen: the page itself is the stage */
+    html, body { height: 100%; }
+    body { max-width: none; padding: 0; overflow: hidden; }
+
+    #stage
+    {
+        position: fixed; inset: 0; overflow: hidden;
+        perspective: 1000px; perspective-origin: 50% 20%;
+        background:
+            radial-gradient(ellipse at 50% 120%, #1a2350 0%, transparent 60%),
+            radial-gradient(ellipse at 50% -20%, #120a2a 0%, transparent 55%),
+            var(--bg);
+        touch-action: none; cursor: grab;
+    }
+    #stage.grabbing { cursor: grabbing; }
+
+    /* the tilted field of tiles; three nested layers per tile, one per effect */
+    #field
+    {
+        position: absolute; left: 50%; top: 50%;
+        display: grid; gap: var(--gap);
+        grid-template-columns: repeat(var(--cols), var(--size));
+        transform: translate(-50%, -38%) rotateX(58deg);
+        transform-style: preserve-3d;
+    }
+    .cell  { width: var(--size); height: var(--size); transform-style: preserve-3d; }
+    .core  { width: 100%; height: 100%; }
+    .face  { width: 100%; height: 100%; border-radius: 3px; background: #2f5bd8; box-shadow: inset 0 0 0 1px #6f93ff55; }
+
+    /* the comet and its tail; drawn above the field, never hit by the pointer */
+    #tail  { position: fixed; inset: 0; pointer-events: none; }
+    #comet
+    {
+        position: fixed; left: 0; top: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px;
+        border-radius: 50%; pointer-events: none;
+        background: radial-gradient(circle, #fff 0 35%, #bfe0ff 55%, #5d8cff00 72%);
+        box-shadow: 0 0 18px 6px #9cc4ff, 0 0 60px 20px #4f6fff66;
+    }
+
+    /* the page text floats over the stage */
+    header
+    {
+        position: relative; z-index: 1; margin: 0; padding: 1rem 1rem 2rem;
+        pointer-events: none; text-shadow: 0 1px 3px #000;
+        /* a dark backdrop, so the text stays readable over bright tiles */
+        background: radial-gradient(ellipse 60rem 100% at 0 0, #04050cee 30%, #04050c00 75%);
+    }
+    header > * { pointer-events: auto; max-width: 34rem; }
+    header h1 { margin: 0.25rem 0 0; }
+    header p  { margin: 0.5rem 0; color: #c2c9e0; }
+    .controls button
+    {
+        padding: 0.35rem 0.8rem; border: 1px solid #ffffff40; border-radius: 6px;
+        background: #ffffff14; color: var(--text); cursor: pointer;
+    }
+    .controls button[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+    #status { font: 0.85rem/1 ui-monospace, monospace; color: #9aa6c8; }
+    #status[data-drawing="true"] b { color: #7dffb0; }
+
+    @media (max-width: 600px)
+    {
+        header p:not(.controls) { font-size: 0.9rem; }
+    }
+</style>
+</head>
+<body>
+<header>
+    <nav><a href="index.html">All demos</a></nav>
+    <h1>Comet</h1>
+    <p>Move the mouse to steer the comet, or grab it and throw it. Three effects on the same tiles follow it as a <code>target</code> element. A fast core lifts and lights the tiles under it. A slow-decay wake leaves a trail that fades over a few seconds. A wide colour field tints everything near its path. The trail comes from <code>decay</code>, not from particles.</p>
+    <p class="controls">
+        <button type="button" id="pause"     aria-pressed="false">Pause effect</button>
+        <button type="button" id="autopilot" aria-pressed="true">Autopilot</button>
+        <button type="button" id="sound"     aria-pressed="false">Sound</button>
+        <span id="status" role="status" data-drawing="false">loop: <b>idle</b></span>
+    </p>
+</header>
+
+<div id="stage" aria-hidden="true">
+    <div id="field"></div>
+    <canvas id="tail"></canvas>
+    <div id="comet"></div>
+</div>
+
+<script type="module">
+import ProximityEffect from "../src/ProximityEffect.js";
+import { demo } from "./demo.js";
+
+const stage = document.getElementById("stage"),
+      field = document.getElementById("field"),
+      comet = document.getElementById("comet"),
+      tail  = document.getElementById("tail"),
+      ctx   = tail.getContext("2d");
+
+const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+
+
+// ---------------------------------------------------------------------------
+// The field: a grid sized to the screen, capped so phones get fewer tiles.
+// Each tile is three nested elements, since two effects writing `transform`
+// (or `filter`) to the same element would overwrite each other.
+
+let cells = [], cores = [], faces = [];
+
+// ?tiles=500 sets the most tiles to draw. Without it, the count starts high
+// and steps down (see 'quality' below) if the screen can't keep up.
+const tilesParam = Number(new URLSearchParams(location.search).get("tiles")) || 0;
+let cap = tilesParam || (innerWidth<600 ? 600 : 1400);
+
+// work out the grid for the screen, and build it if it's different from
+// the current one; returns whether it built a new one
+let layout = "";
+function build()
+{
+    // the field always covers the same area, so with fewer tiles each one
+    // is bigger, rather than the field shrinking into the distance
+    const w      = innerWidth*1.7,
+          h      = innerHeight*2.1,
+          ideal  = Math.min(34, Math.max(20, innerWidth/40))*1.22,
+          pitch  = Math.max(ideal, Math.sqrt(w*h/cap)),
+          size   = Math.round(pitch/1.22),
+          gap    = Math.round(size*0.22),
+          cols   = Math.ceil(w/(size+gap)),
+          rows   = Math.ceil(h/(size+gap));
+    const next = `${cols}x${rows}@${size}`;
+    if (next===layout)
+    {
+        return false;
+    }
+    layout = next;
+
+    field.style.setProperty("--size", `${size}px`);
+    field.style.setProperty("--gap",  `${gap}px`);
+    field.style.setProperty("--cols", cols);
+
+    const frag = document.createDocumentFragment();
+    cells = []; cores = []; faces = [];
+    for (let i=0; i<cols*rows; i++)
+    {
+        const cell = document.createElement("div"),
+              core = document.createElement("div"),
+              face = document.createElement("div");
+        cell.className = "cell"; core.className = "core"; face.className = "face";
+        core.append(face); cell.append(core); frag.append(cell);
+        cells.push(cell); cores.push(core); faces.push(face);
+    }
+    field.replaceChildren(frag);
+    return true;
+}
+
+build();
+
+
+// ---------------------------------------------------------------------------
+// The effects. All three track the comet element. With reduced motion they
+// keep the tiles at rest (the default), and autopilot starts off.
+
+// The wake, on the outer layer: a wide, slow-decaying swell that tilts the
+// tiles towards the comet's path, like the wake behind a boat.
+const wake = new ProximityEffect(cells, {
+    target:    comet,
+    threshold: 0,
+    runoff:    260,
+    attack:    0.2,
+    decay:     0.014,
+    tolerance: 0.002,
+    jitter:    40,
+});
+wake.addStyle("translateZ", [{ value: 45, scatter: 25 }, 0]);
+wake.addStyle("rotateX",    [{ value: -28, scatter: 20 }, 0]);
+wake.addStyle("rotateY",    [{ value: 0, scatter: 50 }, 0]);
+
+// The core, on the middle layer: tight and fast, so tiles right under the
+// comet jump up and flare white, then drop back quickly.
+const core = new ProximityEffect(cores, {
+    target:    comet,
+    threshold: 12,
+    runoff:    110,
+    attack:    0.55,
+    decay:     0.07,
+    jitter:        24,
+});
+core.addStyle("translateZ", [{ value: 110, scatter: 50 }, 0]);
+core.addStyle("scale",      [1.45, 1]);
+core.addStyle("brightness", [{ value: 420, scatter: 120 }, 100]);
+
+// The colour field, on the inner layer: the widest and slowest of all, so
+// the comet's path stays tinted long after the wake has settled, and tiles
+// far from anything sink into the dark.
+const glow = new ProximityEffect(faces, {
+    target:    comet,
+    threshold: 30,
+    runoff:    320,
+    attack:    0.08,
+    decay:     0.006,
+    tolerance: 0.003,
+    jitter:    80,
+    jitterMethod: "normal",
+});
+glow.addStyle("hueRotate",  [{ value: 150, scatter: 90, scatterMethod: "normal" }, { value: 0, scatter: 20 }]);
+glow.addStyle("saturate",   [220, 70]);
+glow.addStyle("brightness", [140, { value: 40, scatter: 15 }]);
+
+const effects = [wake, core, glow];
+
+// the shared pause button pauses the core; pause the others with it
+demo(core);
+document.getElementById("pause").addEventListener("click", () =>
+{
+    for (const fx of [wake, glow])
+    {
+        core.paused ? fx.pause() : fx.resume();
+    }
+});
+
+function rebuild()
+{
+    if (build())
+    {
+        wake.nodes = cells; core.nodes = cores; glow.nodes = faces;
+    }
+}
+
+// rebuild the grid when the screen changes size enough to need more tiles
+let resizeTimer;
+addEventListener("resize", () =>
+{
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(rebuild, 250);
+});
+
+// Quality: thousands of 3D tiles is a lot for some screens. Watch the frame
+// time for a couple of seconds at a time, and if it's slow, use fewer tiles.
+const frameTimes = [];
+let downgrades = 0,
+    watchFrom  = performance.now() + 1500;   // skip the slow first frames
+function watchQuality(dt, now)
+{
+    if (tilesParam || downgrades>=4 || core.paused || document.hidden || now<watchFrom)
+    {
+        frameTimes.length = 0;
+        return;
+    }
+    frameTimes.push(dt);
+    // two seconds' worth, and enough frames for a fair middle value
+    if (frameTimes.length<20 || frameTimes.reduce((a, b) => a+b)<2)
+    {
+        return;
+    }
+    const median = frameTimes.sort((a, b) => a-b)[frameTimes.length>>1];
+    frameTimes.length = 0;
+    if (median>0.022 && cells.length>250)
+    {
+        downgrades++;
+        cap = Math.max(250, Math.round(cells.length*0.6));
+        rebuild();
+        // and again after a rebuild, which takes a frame or two to settle
+        watchFrom = performance.now() + 1500;
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+// The loop's status: 'redraw' only fires when the effect draws, so when the
+// comet stops and the trail has faded it goes quiet.
+
+const status = document.getElementById("status"),
+      label  = status.querySelector("b");
+let lastRedraw = 0;
+glow.addEventListener("redraw", () => { lastRedraw = performance.now(); });
+wake.addEventListener("redraw", () => { lastRedraw = performance.now(); });
+core.addEventListener("redraw", () => { lastRedraw = performance.now(); });
+
+function showStatus(now)
+{
+    const drawing = now-lastRedraw<400,
+          text    = drawing ? `drawing ${cells.length*3} nodes` : "idle";
+    if (text!==label.textContent)
+    {
+        status.dataset.drawing = drawing;
+        label.textContent = text;
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+// The comet: a little spring physics. A mouse over the stage steers it.
+// Grabbing it pulls it to the pointer; letting go throws it, and it bounces
+// off the edges of the screen. Otherwise autopilot flies it along a slowly
+// changing figure of eight.
+
+const pos = { x: innerWidth*0.5, y: innerHeight*0.6 },
+      vel = { x: 0, y: 0 },
+      history = [];
+let grab = null,          // the pointer's position while dragging
+    hover = null,         // a mouse's position while it moves over the stage
+    autopilot = !reduced.matches,
+    lastThrow = -Infinity,
+    t = 0,
+    last = performance.now();
+
+const autopilotButton = document.getElementById("autopilot");
+autopilotButton.setAttribute("aria-pressed", String(autopilot));
+autopilotButton.addEventListener("click", () =>
+{
+    autopilot = !autopilot;
+    autopilotButton.setAttribute("aria-pressed", String(autopilot));
+});
+
+stage.addEventListener("pointerdown", (e) =>
+{
+    stage.setPointerCapture(e.pointerId);
+    stage.classList.add("grabbing");
+    grab = { x: e.clientX, y: e.clientY };
+});
+// moves are followed over the whole page, text included, not just the stage
+document.addEventListener("pointermove", (e) =>
+{
+    if (grab)
+    {
+        grab.x = e.clientX; grab.y = e.clientY;
+    }
+    else if (e.pointerType==="mouse")
+    {
+        hover = { x: e.clientX, y: e.clientY };
+    }
+});
+document.documentElement.addEventListener("pointerleave", () => { hover = null; });
+const release = () =>
+{
+    if (grab)
+    {
+        grab = null;
+        lastThrow = performance.now();
+        stage.classList.remove("grabbing");
+    }
+};
+stage.addEventListener("pointerup", release);
+stage.addEventListener("pointercancel", release);
+
+function autopilotPoint(time)
+{
+    const w = innerWidth, h = innerHeight, s = time*0.00028;
+    return {
+        x: w*0.5 + w*0.36*Math.sin(s*1.0 + Math.sin(s*0.31)*0.8),
+        y: h*0.62 + h*0.25*Math.sin(s*2.0 + 0.6),
+    };
+}
+
+function step(now)
+{
+    const dt = Math.min(0.05, (now-last)/1000);
+    watchQuality((now-last)/1000, now);
+    last = now;
+    t += dt*1000;
+
+    if (grab)
+    {
+        if (reduced.matches)
+        {
+            // no springs with reduced motion: the comet sits under the pointer
+            pos.x = grab.x; pos.y = grab.y; vel.x = vel.y = 0;
+        }
+        else
+        {
+            // stiff spring to the pointer, so a quick flick builds up speed
+            vel.x += ((grab.x-pos.x)*120 - vel.x*14)*dt;
+            vel.y += ((grab.y-pos.y)*120 - vel.y*14)*dt;
+        }
+    }
+    else if (hover)
+    {
+        // a loose spring to a hovering mouse, so the comet swings after it
+        // and settles under it, letting the field come to rest
+        if (reduced.matches)
+        {
+            pos.x = hover.x; pos.y = hover.y; vel.x = vel.y = 0;
+        }
+        else
+        {
+            vel.x += ((hover.x-pos.x)*16 - vel.x*4.5)*dt;
+            vel.y += ((hover.y-pos.y)*16 - vel.y*4.5)*dt;
+        }
+        lastThrow = now - 2000;
+    }
+    else if (autopilot && now-lastThrow>3500)
+    {
+        // a soft spring to the path, so leaving a throw blends back into it
+        const p = autopilotPoint(t);
+        vel.x += ((p.x-pos.x)*9 - vel.x*3.2)*dt;
+        vel.y += ((p.y-pos.y)*9 - vel.y*3.2)*dt;
+    }
+    else
+    {
+        // coasting after a throw: a little drag, and a bounce off each edge
+        const drag = Math.pow(0.45, dt);
+        vel.x *= drag; vel.y *= drag;
+        if (Math.hypot(vel.x, vel.y)<4)
+        {
+            vel.x = vel.y = 0;
+        }
+    }
+
+    pos.x += vel.x*dt;
+    pos.y += vel.y*dt;
+
+    const pad = 12, w = innerWidth, h = innerHeight;
+    let bounced = 0;
+    if (pos.x<pad   && vel.x<0) { pos.x = pad;   vel.x *= -0.8; bounced = Math.abs(vel.x); }
+    if (pos.x>w-pad && vel.x>0) { pos.x = w-pad; vel.x *= -0.8; bounced = Math.abs(vel.x); }
+    if (pos.y<pad   && vel.y<0) { pos.y = pad;   vel.y *= -0.8; bounced = Math.abs(vel.y); }
+    if (pos.y>h-pad && vel.y>0) { pos.y = h-pad; vel.y *= -0.8; bounced = Math.abs(vel.y); }
+
+    comet.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+
+    history.unshift({ x: pos.x, y: pos.y });
+    history.length = Math.min(history.length, 26);
+    drawTail();
+    showStatus(now);
+    sound?.update(Math.hypot(vel.x, vel.y), bounced);
+
+    requestAnimationFrame(step);
+}
+
+
+// The comet's own tail: a tapering glow along its last few positions.
+function sizeTail()
+{
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    tail.width = innerWidth*dpr; tail.height = innerHeight*dpr;
+    tail.style.width = `${innerWidth}px`; tail.style.height = `${innerHeight}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+sizeTail();
+addEventListener("resize", sizeTail);
+
+function drawTail()
+{
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.lineCap = "round";
+    for (let i=1; i<history.length; i++)
+    {
+        const a = history[i-1], b = history[i], k = 1 - i/history.length;
+        ctx.strokeStyle = `rgba(150, 190, 255, ${0.5*k})`;
+        ctx.lineWidth   = 14*k + 1;
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+}
+
+requestAnimationFrame(step);
+
+
+// ---------------------------------------------------------------------------
+// Sound (optional, loaded on first use): Tone.js plays a pad whose filter
+// opens with how lit-up the field is, read from each tile's eased value, so
+// the sound fades out with the trail. Speed adds a whoosh, and bounces ping.
+
+let sound = null;
+const soundButton = document.getElementById("sound");
+
+soundButton.addEventListener("click", async () =>
+{
+    if (!window.Tone)
+    {
+        await new Promise((done, fail) =>
+        {
+            const s = document.createElement("script");
+            s.src = "https://cdnjs.cloudflare.com/ajax/libs/tone/15.0.4/Tone.js";
+            s.onload = done; s.onerror = fail;
+            document.head.append(s);
+        });
+    }
+    if (!sound)
+    {
+        await Tone.start();
+        sound = createSound();
+    }
+    sound.on = !sound.on;
+    sound.output.gain.rampTo(sound.on ? 1 : 0, 0.4);
+    soundButton.setAttribute("aria-pressed", String(sound.on));
+});
+
+function createSound()
+{
+    const output = new Tone.Gain(0).toDestination(),
+          reverb = new Tone.Reverb({ decay: 6, wet: 0.45 }).connect(output),
+          filter = new Tone.Filter(200, "lowpass", -24).connect(reverb),
+          pad    = new Tone.PolySynth(Tone.FMSynth, {
+              volume: -16,
+              envelope: { attack: 2, release: 4 },
+              modulationIndex: 2,
+          }).connect(filter),
+          noiseFilter = new Tone.Filter(800, "bandpass").connect(reverb),
+          noise  = new Tone.Noise("pink").connect(noiseFilter),
+          ping   = new Tone.MetalSynth({ volume: -28, envelope: { decay: 0.6 }, harmonicity: 3.1, resonance: 2400 }).connect(reverb);
+
+    pad.triggerAttack(["A2", "E3", "B3", "C#4"]);
+    noise.start();
+    noise.volume.value = -Infinity;
+
+    let lastPing = 0;
+    return {
+        on: false,
+        output,
+        update(speed, bounced)
+        {
+            if (!this.on)
+            {
+                return;
+            }
+            // how lit the field is: the average eased value of a sample of tiles
+            const n = glow.totalNodes, stride = Math.max(1, Math.floor(n/300));
+            let sum = 0, count = 0;
+            for (let i=0; i<n; i+=stride)
+            {
+                const d = glow.getNodeIndexData(i, "lastDelta");
+                if (d!==undefined) { sum += 1-d; count++; }
+            }
+            const energy = count ? Math.min(1, sum/count*6) : 0;
+            filter.frequency.rampTo(180 + energy*energy*2600, 0.1);
+
+            const whoosh = Math.min(1, speed/2500);
+            noise.volume.rampTo(whoosh>0.02 ? -40 + whoosh*30 : -Infinity, 0.1);
+            noiseFilter.frequency.rampTo(400 + whoosh*3000, 0.1);
+
+            const now = performance.now();
+            if (bounced>200 && now-lastPing>80)
+            {
+                lastPing = now;
+                ping.triggerAttackRelease("C6", 0.1, undefined, Math.min(1, bounced/2000));
+            }
+        },
+    };
+}
+
+window.effects = effects;
+</script>
+</body>
+</html>
