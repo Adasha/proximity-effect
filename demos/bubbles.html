@@ -15,6 +15,7 @@
 <main>
     <h1>Bubbles</h1>
     <p>Bubbles light up and grow as the pointer comes near. <code>invert</code> swaps the near and far values, <code>runoff: 0</code> gives a hard edge, and <code>jitter</code> moves each bubble's centre a random amount, so the edge is ragged. A slow <code>decay</code> leaves a trail.</p>
+    <p>On a touch screen, dragging over the bubbles moves the point, since <code>touchDrag</code> is on. Drag between them to scroll the page.</p>
 
     <div class="controls">
         <button type="button" id="pause" aria-pressed="false">Pause effect</button>
@@ -40,6 +41,8 @@ const pe = new ProximityEffect(stage.children, {
     attack:      0.6,
     decay:       0.06,
     invert:   true,
+    // a finger dragging over the bubbles moves the point instead of scrolling
+    touchDrag: true,
 });
 pe.addStyle("scale",      [0.2,   1]);
 pe.addStyle("brightness", [  0, 650]);

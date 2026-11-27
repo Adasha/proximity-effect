@@ -19,6 +19,7 @@
 <main>
     <h1>Flip</h1>
     <p>One photo is cut into tiles, each with a second photo on its back. Tiles turn over as the pointer passes. Only horizontal distance counts (<code>direction: "horizontal"</code>), and each row's <code>data-offsetx</code> shifts its centres, so the tiles turn in a diagonal band.</p>
+    <p>On a touch screen, tap and the band stays where your finger was (<code>pointerLeave: "hold"</code>). Dragging over the photo moves it, since <code>touchDrag</code> is set to the stage; scroll the page from outside it.</p>
 
     <div class="controls">
         <button type="button" id="pause" aria-pressed="false">Pause effect</button>
@@ -61,6 +62,10 @@ const pe = new ProximityEffect(stage.children, {
     direction: "horizontal",
     attack:     0.6,
     decay:      0.6,
+    // a tap leaves the band where the finger was, and a drag over the
+    // photo moves it (the tiles ignore the pointer, so it's set on the stage)
+    pointerLeave: "hold",
+    touchDrag:    stage,
 });
 pe.addStyle("rotateY",    [180,    0]);
 pe.addStyle("translateZ", [ 40,    0]);

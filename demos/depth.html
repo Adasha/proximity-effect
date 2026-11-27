@@ -15,6 +15,7 @@
 <main>
     <h1>Depth</h1>
     <p>Tiles near the pointer lift towards you, brighten and go out of focus, as though seen through a camera lens. The <code>translateZ</code> keyframe has some <code>scatter</code>, so each tile lifts a slightly different amount.</p>
+    <p>On a touch screen, dragging over the tiles moves the point, since <code>touchDrag</code> is on. Drag between them to scroll the page.</p>
 
     <div class="controls">
         <button type="button" id="pause" aria-pressed="false">Pause effect</button>
@@ -38,6 +39,8 @@ const pe = new ProximityEffect(stage.children, {
     runoff:   100,
     attack:     0.6,
     decay:      0.6,
+    // a finger dragging over the tiles moves the point instead of scrolling
+    touchDrag:  true,
 });
 pe.addStyle("translateZ", [{ value: 200, scatter: 50 }, 0]);
 pe.addStyle("blur",       [ 10,   0]);

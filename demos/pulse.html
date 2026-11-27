@@ -15,6 +15,7 @@
 <main>
     <h1>Pulse</h1>
     <p>900 squares, skewed and stretched by random amounts near the pointer. A <code>redraw</code> listener changes the <code>threshold</code> on every frame, so the area around the pointer pulses. Since the effect only draws frames while something is changing, the pulse stops when the pointer leaves, and so does the work.</p>
+    <p>On a touch screen, dragging over the stage moves the point, since <code>touchDrag</code> is set to the stage; scroll the page from outside it.</p>
 
     <div class="controls">
         <button type="button" id="pause" aria-pressed="false">Pause effect</button>
@@ -39,6 +40,8 @@ const pe = new ProximityEffect(stage.children, {
     jitter:    50,
     attack:     1,
     decay:      0.1,
+    // a finger dragging over the stage moves the point instead of scrolling
+    touchDrag:  stage,
 });
 pe.addStyle("skewX",   [{ value:  0,   scatter: 120 }, 0]);
 pe.addStyle("skewY",   [{ value:  0,   scatter: 120 }, 0]);

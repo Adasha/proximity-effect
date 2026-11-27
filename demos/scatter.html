@@ -19,6 +19,7 @@
 <main>
     <h1>Scatter</h1>
     <p>The poem's letters (or words) are scattered in 3D, and fall into place as the pointer passes. The far keyframes use <code>scatter</code>, so each piece rests somewhere different. A <code>redraw</code> listener also blurs each piece by how far it is from where it belongs, using <code>getNodeIndexData()</code> and <code>distanceFromIndex()</code>.</p>
+    <p>On a touch screen, tap and the poem stays gathered where your finger was, on the same spot as the page scrolls (<code>pointerLeave: "hold"</code>). Dragging scrolls as usual.</p>
     <p>This one is decorative: the poem can't be read until the pointer gathers it. Screen readers read it as normal.</p>
 
     <div class="controls">
@@ -67,6 +68,8 @@ const pe = new ProximityEffect(pieces("letter"), {
     direction: "horizontal",
     attack:      0.3,
     decay:       0.3,
+    // a tap leaves the poem gathered where the finger was; dragging still scrolls
+    pointerLeave: "hold",
 });
 pe.addStyle("translateX", [0, { value:  0, scatter:  50, scatterMethod: "normal" }]);
 pe.addStyle("translateY", [0, { value:  0, scatter:  50, scatterMethod: "normal" }]);
