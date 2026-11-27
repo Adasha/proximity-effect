@@ -6,8 +6,9 @@
 <title>Reveal: ProximityEffect demo</title>
 <link rel="stylesheet" href="demo.css">
 <style>
-    #stage { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 10px; min-height: 600px; padding: 10px; background: radial-gradient(ellipse at center, #eaeaea 1%, #a8a8a8 100%); perspective: 1000px; transform-style: preserve-3d; }
-    #stage div { width: 50px; height: 50px; border-radius: 50%; background: #666; box-shadow: 0 0 50px #000 inset; }
+    /* a square that shrinks to fit a phone, with room around it to scroll */
+    #stage { display: grid; grid-template-columns: repeat(10, 1fr); gap: 1.6%; box-sizing: border-box; width: 600px; max-width: 100%; aspect-ratio: 1; margin: 1rem auto; padding: 2%; background: radial-gradient(ellipse at center, #eaeaea 1%, #a8a8a8 100%); perspective: 1000px; transform-style: preserve-3d; }
+    #stage div { aspect-ratio: 1; border-radius: 50%; background: #666; box-shadow: 0 0 50px #000 inset; }
 </style>
 </head>
 <body>
@@ -15,6 +16,7 @@
 <main>
     <h1>Reveal</h1>
     <p>At rest, every bubble sits at the viewer's eye (<code>translateZ</code> equal to the <code>perspective</code>), so it can't be seen. Bubbles near the pointer drop back into place, revealing them in a small pool. If you've asked your system for reduced motion, they stay hidden.</p>
+    <p>On a touch screen, tap and the pool stays open where your finger was (<code>pointerLeave: "hold"</code>). Dragging over the stage moves it, since <code>touchDrag</code> is set to the stage; scroll the page from outside it.</p>
 
     <div class="controls">
         <button type="button" id="pause" aria-pressed="false">Pause effect</button>
@@ -38,9 +40,23 @@ const pe = new ProximityEffect(stage.children, {
     runoff:    20,
     attack:     0.4,
     decay:      0.4,
+    // a tap leaves the pool open where the finger was, and a drag over the
+    // stage moves it (hidden bubbles can't be touched, so it's set on the stage)
+    pointerLeave: "hold",
+    touchDrag:    stage,
 });
 pe.addStyle("translateZ", [0, 1000]);
 pe.addStyle("blur",       [0,   20]);
+
+// The effect was made for a 600px stage. When the stage is smaller, scale its
+// distances to match, and the perspective with them, so that the bubbles at
+// rest (translateZ 1000px, scaled) still sit at the viewer's eye.
+new ResizeObserver(() =>
+{
+    const scale = stage.clientWidth/600;
+    pe.scaleEffect = scale;
+    stage.style.perspective = `${1000*scale}px`;
+}).observe(stage);
 
 demo(pe);
 </script>

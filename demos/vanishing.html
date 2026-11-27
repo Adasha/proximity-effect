@@ -20,6 +20,7 @@
 <main>
     <h1>Vanishing point</h1>
     <p>The tiles tip back near the pointer. They sit at the top of a long column with a <code>perspective</code>, and the red cross marks the column's <code>perspective-origin</code>: the point the 3D is seen from. With <code>perspectiveOrigin</code> on, the effect puts it at the centre of the tiles. Turn it off to see the browser's default, the middle of the column, far down the page, so the tiles are seen steeply from below.</p>
+    <p>On a touch screen, dragging over the tiles moves the point, since <code>touchDrag</code> is on. Drag beside them to scroll the page.</p>
 
     <div class="controls">
         <button type="button" id="pause" aria-pressed="false">Pause effect</button>
@@ -78,6 +79,8 @@ const pe = new ProximityEffect(column.querySelectorAll(".tile"), {
     runoff:           160,
     attack:             0.3,
     decay:              0.2,
+    // a finger dragging over the tiles moves the point; beside them, it scrolls
+    touchDrag:          true,
     perspectiveOrigin: toggle.checked,
 });
 pe.addStyle("rotateX",    [60, 0]);
