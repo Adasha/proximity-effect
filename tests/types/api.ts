@@ -93,6 +93,7 @@ assert<boolean | Element>(pe.touchDrag);
 assert<boolean>(pe.motionReduced);
 assert<Point | null>(pe.pointer);
 assert<boolean>(pe.paused);
+assert<boolean>(pe.resting);
 assert<boolean>(pe.destroyed);
 // @ts-expect-error read-only
 pe.totalNodes = 3;
@@ -102,6 +103,8 @@ pe.boundary = 3;
 pe.motionReduced = true;
 // @ts-expect-error read-only
 pe.paused = true;
+// @ts-expect-error read-only
+pe.resting = true;
 // @ts-expect-error not a number
 pe.threshold = "10";
 // @ts-expect-error unknown method
@@ -178,5 +181,9 @@ pe.getNodeData(el, "scrollsWithPage");
 pe.addEventListener("ready", (evt) => assert<Event>(evt));
 pe.addEventListener("redraw", function () { assert<ProximityEffect>(this); });
 pe.addEventListener("reflow", () => {}, { once: true });
+for (const type of ["beforeupdate", "wake", "rest"] as const)
+{
+    pe.addEventListener(type, (evt) => assert<Event>(evt));
+}
 pe.removeEventListener("redraw", () => {});
 pe.addEventListener("custom", () => {});

@@ -95,6 +95,7 @@ export default class ProximityEffect extends EventTarget
     #scrollY = 0;
     #needsRewrite = true;
     #awake = false;
+    #atRest = false;
     #lastTargetPoint = null;
     #changed = false;
     #scratchStyle;
@@ -973,6 +974,18 @@ export default class ProximityEffect extends EventTarget
 
 
     /**
+     * Whether the nodes have settled: the last frame the loop drew changed
+     * nothing, and nothing has woken it since. Pausing doesn't change it.
+     * @return {boolean} True between the 'rest' and 'wake' events.
+     */
+    get resting()
+    {
+        return this.#atRest;
+    }
+
+
+
+    /**
      * Whether the instance has been destroyed.
      * @return {boolean} True once destroy() has been called.
      */
@@ -1252,7 +1265,12 @@ export default class ProximityEffect extends EventTarget
     {
         this.#assertAlive("resume");
         this.#paused = false;
-        this.#start();
+        // anything that changed while paused has already asked for a frame; a
+        // settled effect with nothing new stays settled, so resume() doesn't wake it
+        if (this.#awake || this.#changed || !this.#atRest || this.#followingTarget())
+        {
+            this.#schedule();
+        }
     }
 
 
@@ -1599,8 +1617,31 @@ export default class ProximityEffect extends EventTarget
         const idle = !awake && !moved && !this.#changed;
         if (!(idle && this.#followingTarget() && this.#samePoint(this.#targetPoint(), this.#lastTargetPoint)))
         {
+            if (this.#atRest)
+            {
+                this.#atRest = false;
+                this.dispatchEvent(new Event("wake"));
+            }
+            // outside code gets its turn before the frame is drawn, so changes
+            // it makes now (updateStyle(), setCoords()) show in this frame
+            this.dispatchEvent(new Event("beforeupdate"));
+            if (this.#destroyed)
+            {
+                return;
+            }
             this.update();
             this.dispatchEvent(new Event("redraw"));
+            if (this.#destroyed)
+            {
+                return;
+            }
+
+            // settled once a drawn frame changes nothing and nothing is waiting
+            if (!this.#changed && !this.#measureWhenSettled && !this.#awake && !this.#needsMeasure)
+            {
+                this.#atRest = true;
+                this.dispatchEvent(new Event("rest"));
+            }
         }
 
         // keep going while nodes are still easing, or a measurement is waiting
@@ -1617,13 +1658,13 @@ export default class ProximityEffect extends EventTarget
     // set coordinates take over from the target, so it needn't be watched
     #followingTarget()
     {
-        return this.target!=null && this.#coords===null && !this.#resting();
+        return this.target!=null && this.#coords===null && !this.#reducedToRest();
     }
 
 
 
     // reduced motion in "rest" mode: nothing is tracked, so the nodes stay at rest
-    #resting()
+    #reducedToRest()
     {
         return this.motionReduced && this.reducedMotion==="rest";
     }
@@ -2255,7 +2296,7 @@ export default class ProximityEffect extends EventTarget
     // the point being tracked: manual coords, then target, then pointer
     #targetPoint()
     {
-        if (this.#resting())
+        if (this.#reducedToRest())
         {
             return null;
         }

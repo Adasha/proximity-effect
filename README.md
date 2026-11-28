@@ -240,7 +240,7 @@ myEffect.addStyle("rotateZ", [{ value: 0, scatter: 30 }, { value: 0, scatter: 90
 | `updateStyle(name, keyframes)` | Give matching styles new keyframes, keeping their place in the stack and each element's scatter. |
 | `setCenterPoints()` | Measure the elements again. Only needed if they move in a way the effect can't see, such as a CSS animation. |
 
-The effect also dispatches three events: `ready` once it has set up, `redraw` after each frame it draws, and `reflow` when it finds an element has moved:
+The effect also dispatches events: `ready` once it has set up, `beforeupdate` and `redraw` around each frame it draws, `reflow` when it finds an element has moved, and `rest` and `wake` when the elements settle and start moving again (the `resting` property says which):
 
 ```javascript
 myEffect.addEventListener("ready", () => console.log("Ready"));

@@ -15,7 +15,7 @@ const READ_WRITE = [
 ];
 
 const READ_ONLY = [
-    "totalNodes", "styles", "boundary", "motionReduced", "pointer", "paused", "destroyed",
+    "totalNodes", "styles", "boundary", "motionReduced", "pointer", "paused", "resting", "destroyed",
 ];
 
 const METHODS = [
@@ -251,7 +251,7 @@ describe("events", () =>
         const pe = create(makeNode(0, 0));
         const seen = [];
         const record = (evt) => seen.push(evt);
-        for (const type of ["ready", "redraw", "reflow"])
+        for (const type of ["ready", "redraw", "reflow", "beforeupdate", "wake", "rest"])
         {
             pe.addEventListener(type, record);
         }
@@ -263,7 +263,7 @@ describe("events", () =>
         window.dispatchEvent(new Event("resize"));
         step();
 
-        expect(seen.map(evt => evt.type)).toEqual(["ready", "redraw", "reflow", "redraw"]);
+        expect(seen.map(evt => evt.type)).toEqual(["ready", "beforeupdate", "redraw", "reflow", "beforeupdate", "redraw", "rest"]);
         for (const evt of seen)
         {
             expect(evt.constructor).toBe(Event);
@@ -287,5 +287,210 @@ describe("events", () =>
         pe.update();
         expect(el.style.transform).toBe("translateX(50px)");
         expect(redraw).not.toHaveBeenCalled();
+    });
+});
+
+
+
+describe("rest state", () =>
+{
+    const LOOP_EVENTS = ["wake", "beforeupdate", "redraw", "rest"];
+
+    function record(pe)
+    {
+        const seen = [];
+        for (const type of LOOP_EVENTS)
+        {
+            pe.addEventListener(type, () => seen.push(type));
+        }
+        return seen;
+    }
+
+    function runUntilIdle(max = 100)
+    {
+        for (let i=0; i<max && frames.size>0; i++)
+        {
+            step();
+        }
+    }
+
+    it("isn't resting until the first frames settle", async () =>
+    {
+        const pe = create(makeNode(50, 0));
+        pe.addStyle("translateX", [0, 100]);
+        const seen = record(pe);
+        expect(pe.resting).toBe(false);
+        await settle();
+        expect(pe.resting).toBe(false);
+        runUntilIdle();
+        expect(pe.resting).toBe(true);
+        expect(seen.at(-1)).toBe("rest");
+        expect(seen.filter(type => type==="rest")).toHaveLength(1);
+        expect(seen).not.toContain("wake");
+    });
+
+    it("dispatches wake, then a beforeupdate and redraw per frame, then rest", async () =>
+    {
+        const pe = create(makeNode(50, 0), { attack: 0.5, decay: 0.5 });
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        runUntilIdle();
+        const seen = record(pe);
+
+        pe.setCoords(0, 0);
+        step();
+        expect(seen).toEqual(["wake", "beforeupdate", "redraw"]);
+        expect(pe.resting).toBe(false);
+
+        // still easing, so no rest yet
+        step();
+        expect(seen.slice(3)).toEqual(["beforeupdate", "redraw"]);
+        expect(pe.resting).toBe(false);
+
+        runUntilIdle();
+        expect(seen.at(-1)).toBe("rest");
+        expect(pe.resting).toBe(true);
+        expect(seen.filter(type => type==="wake")).toHaveLength(1);
+        expect(seen.filter(type => type==="rest")).toHaveLength(1);
+        expect(seen.filter(type => type==="beforeupdate")).toHaveLength(seen.filter(type => type==="redraw").length);
+        expect(frames.size).toBe(0);
+    });
+
+    it("doesn't rest while something keeps changing", async () =>
+    {
+        const pe = create(makeNode(50, 0));
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        runUntilIdle();
+        const seen = record(pe);
+        for (let i=0; i<5; i++)
+        {
+            pe.setCoords(i*10, 0);
+            step();
+        }
+        expect(seen.filter(type => type==="wake")).toHaveLength(1);
+        expect(seen).not.toContain("rest");
+        expect(pe.resting).toBe(false);
+    });
+
+    it("rests straight after waking when the change moves nothing", async () =>
+    {
+        const pe = create(makeNode(50, 0));
+        pe.addStyle("translateX", [0, 100]);
+        pe.setCoords(0, 0);
+        await settle();
+        runUntilIdle();
+        const seen = record(pe);
+        pe.setCoords(0, 0);
+        step();
+        expect(seen).toEqual(["wake", "beforeupdate", "redraw", "rest"]);
+        expect(pe.resting).toBe(true);
+    });
+
+    it("draws changes made in beforeupdate in the same frame", async () =>
+    {
+        const el = makeNode(50, 0);
+        const pe = create(el);
+        pe.addStyle("translateX", [0, 100]);
+        pe.setCoords(0, 0);
+        await settle();
+        runUntilIdle();
+        pe.addEventListener("beforeupdate", () => pe.updateStyle("translateX", [0, 200]), { once: true });
+        pe.setCoords(0, 0);
+        step();
+        expect(el.style.transform).toBe("translateX(100px)");
+        // the change kept it awake, so the next frame confirms it has settled
+        expect(pe.resting).toBe(false);
+        runUntilIdle();
+        expect(pe.resting).toBe(true);
+    });
+
+    it("isn't changed by pause() and resume()", async () =>
+    {
+        const pe = create(makeNode(50, 0), { attack: 0.5, decay: 0.5 });
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        runUntilIdle();
+        const seen = record(pe);
+
+        pe.pause();
+        pe.resume();
+        runUntilIdle();
+        expect(seen).toEqual([]);
+        expect(pe.resting).toBe(true);
+
+        // paused mid-ease: resuming carries on without a second wake
+        pe.setCoords(0, 0);
+        step();
+        pe.pause();
+        expect(pe.resting).toBe(false);
+        pe.resume();
+        runUntilIdle();
+        expect(seen.filter(type => type==="wake")).toHaveLength(1);
+        expect(seen.filter(type => type==="rest")).toHaveLength(1);
+
+        // a change made while paused is drawn, with a wake, on resume
+        pe.pause();
+        pe.setCoords(100, 0);
+        step();
+        expect(seen.filter(type => type==="wake")).toHaveLength(1);
+        pe.resume();
+        step();
+        expect(seen.filter(type => type==="wake")).toHaveLength(2);
+    });
+
+    it("rests while a followed target stays still, and wakes when it moves", async () =>
+    {
+        let at = 0;
+        const target = makeNode(0, 0);
+        target.getBoundingClientRect = () => ({ left: at-5, right: at+5, top: -5, bottom: 5, width: 10, height: 10 });
+        const pe = create(makeNode(50, 0), { target });
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        for (let i=0; i<5; i++)
+        {
+            step();
+        }
+        expect(pe.resting).toBe(true);
+        const seen = record(pe);
+
+        step();
+        step();
+        expect(seen).toEqual([]);
+        expect(frames.size).toBe(1);
+
+        at = 20;
+        step();
+        expect(seen.slice(0, 3)).toEqual(["wake", "beforeupdate", "redraw"]);
+        step();
+        expect(seen.at(-1)).toBe("rest");
+    });
+
+    it("update() dispatches nothing and leaves resting alone", async () =>
+    {
+        const pe = create(makeNode(50, 0));
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        runUntilIdle();
+        const seen = record(pe);
+        pe.pause();
+        pe.setCoords(0, 0);
+        pe.update();
+        expect(seen).toEqual([]);
+        expect(pe.resting).toBe(true);
+    });
+
+    it("stops dispatching once a listener destroys the instance", async () =>
+    {
+        const pe = create(makeNode(50, 0));
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        runUntilIdle();
+        const seen = record(pe);
+        pe.addEventListener("beforeupdate", () => pe.destroy());
+        pe.setCoords(0, 0);
+        step();
+        expect(seen).toEqual(["wake", "beforeupdate"]);
+        expect(frames.size).toBe(0);
     });
 });

@@ -184,10 +184,16 @@ export interface ProximityEffectEventMap
 {
     /** The instance is set up, once the document has loaded. Always asynchronous. */
     ready: Event;
+    /** The animation loop is about to draw a frame. Changes made in a listener show in that frame. */
+    beforeupdate: Event;
     /** The animation loop drew a frame. */
     redraw: Event;
     /** A remeasure found that a node moved. */
     reflow: Event;
+    /** The nodes settled: a frame changed nothing. */
+    rest: Event;
+    /** The loop started drawing again after `rest`. */
+    wake: Event;
 }
 
 
@@ -253,6 +259,8 @@ export default class ProximityEffect extends EventTarget
     /** The last pointer position, or null before it moves and after it leaves the page. With pointerLeave "hold", the held point after a touch or pen lifts. */
     get pointer(): Point | null;
     get paused(): boolean;
+    /** Whether the nodes have settled, between the `rest` and `wake` events. */
+    get resting(): boolean;
     get destroyed(): boolean;
 
     addStyle(property: PresetStyle | CustomStyle, keyframes: Keyframes, params?: StyleParams | null): void;
