@@ -1,6 +1,6 @@
 # 4.2 plan
 
-**Status:** agenda set 2026-11-28. Stages 1 (#39) and 2 (#40) done. 4.2 is about **fixing known issues and letting other code work with the effect**. New effects (colours, `steps`, per-style params and the other ideas below) move to 4.3. No breaking changes.
+**Status:** agenda set 2026-11-28. Stages 1 (#39), 2 (#40) and 3 (#43) done. 4.2 is about **fixing known issues and letting other code work with the effect**. New effects (colours, `steps`, per-style params and the other ideas below) move to 4.3. No breaking changes.
 
 As with 4.1, each stage is its own PR into a `release/4.2` branch, with its own tests, types and doc changes.
 
@@ -42,9 +42,9 @@ From the Dandelion gaps ([section 3](#3-hooks-for-outside-code) below):
 
 `distanceFrom()` returns the value *before* easing ([API.md:243](API.md#L243)), so code built on it ignores `attack` and `decay`, and `getNodeIndexData(i, "lastDelta")` copies on every call.
 
-- Add `valueFromIndex(index)` and `valueFrom(node)` (names to settle): the eased value the styles were drawn with, with `invert` applied, no copying.
+- `valueFrom(node)` and `valueFromIndex(index)`: the eased value the styles were drawn with, with `invert` applied, no copying. `undefined` before the first frame, even with `primeDistances`.
 - Keep `distanceFrom()` as it is, and say plainly in API.md which one to use for what.
-- Design it so a per-style form (`valueFrom(node, { style: id })`) fits when 4.3's per-style params arrive, and so it can report the stepped value once `steps` exists.
+- Both read through one private `#easedValue()`, so a per-style form (`valueFrom(node, { style: id })`) fits there when 4.3's per-style params arrive, and so can the stepped value once `steps` exists.
 
 ## Stage 4: CSS custom property output
 
@@ -195,7 +195,7 @@ Gaps hit while building Dandelion:
 - **Pre-frame hook.** The demo's wind loop runs in its own rAF, so its `updateStyle()` calls land a frame before or after the effect's frame. A `beforeupdate` event, or the shared scheduler (2) offering a tick to subscribe to, keeps outside code in step.
 - **Driving it from outside.** `autoUpdate: false` plus `update(time)`, for GSAP tickers, game loops or a page's own scheduler. Check how this works with `pause()` and the sleep logic.
 - **Pointer velocity.** Momentum and wind effects all work out pointer speed themselves. Expose `pointerVelocity` (px/ms, smoothed), on the instance or the shared input.
-- **Fewer copies in hot paths.** `nodes` and `getNodeIndexData()` return copies, which is fine for safety but allocates per call when used every frame. The rest events above remove the main reason to call them each frame. Otherwise consider a cheap read such as `easedValue(i)`, designed with the planned per-node value hook.
+- **Fewer copies in hot paths.** `nodes` and `getNodeIndexData()` return copies, which is fine for safety but allocates per call when used every frame. The rest events above remove the main reason to call them each frame. Otherwise use the cheap read `valueFromIndex(i)` (stage 3).
 
 ### 4. Broader features
 
