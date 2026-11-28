@@ -142,7 +142,7 @@ new ResizeObserver(() => { myEffect.scaleEffect = container.clientWidth / 800; }
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `nodes` | Array of Elements | A copy of the nodes being animated. Set it to a new Element, NodeList, HTMLCollection or array to change them. Nodes that stay keep their random values; nodes that are dropped get their original inline style back. |
+| `nodes` | Array of Elements | A copy of the nodes being animated. Set it to a new Element, NodeList, HTMLCollection or array to change them. Nodes that stay keep their random values; nodes that are dropped get their original values back for the properties the effect set, and keep their other inline styles. |
 | `totalNodes` | Number | Read-only. The number of nodes. |
 | `styles` | Array of [Style objects](#style-objects) | Read-only. A copy of the styles added with `addStyle()`, in the order they were added. |
 | `paused` | Boolean | Read-only. `true` between `pause()` and `resume()`. |
@@ -214,7 +214,7 @@ Restarts a paused animation. Throws an `Error` if the instance has been destroye
 
 #### `destroy()`
 
-Stops the effect for good: removes every event listener and observer, stops the animation loop, and gives each node back the inline style it had when the instance was created (removing the `style` attribute from nodes that had none). Any inline styles your own code set on the nodes since then are lost, so set them again afterwards if you need them. Safe to call more than once. Afterwards, anything that would touch the nodes again (`nodes`, `addStyle()`, `removeStyle()`, `updateStyle()`, `setCenterPoints()`, `resume()`) throws an `Error`.
+Stops the effect for good: removes every event listener and observer, stops the animation loop, and gives each node back its original inline value for each property the effect set (the animated properties, plus `z-index` and `touch-action` if it set them). Other inline styles are left alone, including any your own code set since the instance was created. A property that both your code and the effect set, such as `transform`, goes back to the value it had when the instance was created. A node that had no `style` attribute is left with none, unless your own code has given it inline styles since. Safe to call more than once. Afterwards, anything that would touch the nodes again (`nodes`, `addStyle()`, `removeStyle()`, `updateStyle()`, `setCenterPoints()`, `resume()`) throws an `Error`.
 
 #### `update()`
 

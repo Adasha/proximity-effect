@@ -233,7 +233,7 @@ myEffect.addStyle("rotateZ", [{ value: 0, scatter: 30 }, { value: 0, scatter: 90
 | Method | Description |
 | --- | --- |
 | `pause()` and `resume()` | Stop and restart the animation. |
-| `destroy()` | Stops the effect for good, and gives the elements back their original inline styles. |
+| `destroy()` | Stops the effect for good, and gives the elements back their original values for the properties it set. |
 | `setCoords(x, y)` and `clearCoords()` | Track a fixed point (relative to the viewport) instead of the pointer or target. |
 | `clearTarget()` | Go back to tracking the pointer after setting `target`. |
 | `hasStyle(name)` and `removeStyle(name)` | Find or remove styles by preset name, `func` or `id`. |
@@ -337,7 +337,6 @@ Any browser that supports ES2022: Chrome and Edge 93+, Firefox 92+, Safari 15.4+
 ## Known issues
 
 - Only CSS properties that take a single number can be animated, so colours and other multi-value properties can't be used yet (planned for 4.2). CSS custom properties (`--foo`) aren't supported either.
-- `destroy()` gives the elements back the inline styles they had when the instance was created, so inline styles your own code set on them since then are lost.
 - If an element containing a `position: fixed` element is given an animated `filter`, the fixed element can be measured slightly out of place, since the browser positions it relative to the filtered one.
 - When a style changes the elements' size (such as a custom `width`), a size change made by something else in the very same frame isn't noticed until the next scroll, resize or `setCenterPoints()`.
 

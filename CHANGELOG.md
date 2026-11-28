@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+### Fixed
+
+- `destroy()`, and dropping nodes from `nodes`, no longer throw away inline styles your own code set on the nodes after the instance was created. Each node gets its original value back only for the properties the effect set (the animated properties, plus `z-index` and `touch-action` if it set them), and its other inline styles are left alone. A property that both your code and the effect set still goes back to the value it had when the instance was created.
+
 ## [4.1.0] - 2026-11-22
 
 For touch screens and responsive layouts. No breaking changes.

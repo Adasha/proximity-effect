@@ -175,6 +175,19 @@ describe("nodes", () =>
         expect(a.style.cssText).toBe("color: red;");
     });
 
+    it("keeps inline styles set after construction on nodes that are dropped", async () =>
+    {
+        const a = makeNode(0, 0), b = makeNode(500, 0);
+        const pe = create([a, b], { zIndex: true });
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        movePointer(0, 0);
+        step();
+        a.style.color = "red";
+        pe.nodes = [b];
+        expect(a.style.cssText).toBe("color: red;");
+    });
+
     it("builds style and jitter data for nodes added later", async () =>
     {
         const pe = create(makeNode(0, 0), { jitter: 20 });
@@ -852,6 +865,70 @@ describe("scaleEffect", () =>
 
 describe("lifecycle", () =>
 {
+    it("destroy() keeps inline styles the page set after construction", async () =>
+    {
+        const el = makeNode(0, 0), bare = makeNode(50, 0);
+        el.style.color = "blue";
+        const pe = create([el, bare], { zIndex: true, touchDrag: true });
+        pe.addStyle("translateX", [0, 100]);
+        pe.addStyle("blur", [0, 4]);
+        await settle();
+        movePointer(0, 0);
+        step();
+        el.style.marginTop = "3px";
+        bare.style.color = "red";
+        pe.destroy();
+        expect(el.style.cssText).toBe("color: blue; margin-top: 3px;");
+        expect(bare.style.cssText).toBe("color: red;");
+    });
+
+    it("destroy() gives a property the page and the effect both set its original value", async () =>
+    {
+        const el = makeNode(0, 0);
+        el.style.transform = "rotate(5deg)";
+        const pe = create(el);
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        movePointer(0, 0);
+        step();
+        pe.destroy();
+        expect(el.style.cssText).toBe("transform: rotate(5deg);");
+    });
+
+    it("destroy() leaves alone properties the effect already gave back", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el, { zIndex: true, touchDrag: true });
+        pe.addStyle({ rule: "letterSpacing", unit: "px" }, [2, 0]);
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        movePointer(0, 0);
+        step();
+        pe.removeStyle("letterSpacing");
+        pe.zIndex = false;
+        pe.touchDrag = false;
+        el.style.letterSpacing = "1px";
+        el.style.zIndex = "7";
+        el.style.touchAction = "none";
+        pe.destroy();
+        expect(el.style.cssText).toBe("letter-spacing: 1px; z-index: 7; touch-action: none;");
+    });
+
+    it("destroy() gives back z-index when every style was removed and one added again", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el, { zIndex: true });
+        pe.addStyle("translateX", [0, 100]);
+        pe.removeStyle("translateX");
+        pe.addStyle("blur", [0, 4]);
+        await settle();
+        movePointer(0, 0);
+        step();
+        expect(el.style.zIndex).not.toBe("");
+        pe.destroy();
+        expect(el.hasAttribute("style")).toBe(false);
+    });
+
     it("destroy() stops the loop, removes listeners and restores styles", async () =>
     {
         const el = makeNode(0, 0);
