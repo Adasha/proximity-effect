@@ -94,7 +94,7 @@ export interface ProximityEffectParams
 /** A custom style for addStyle(). */
 export interface CustomStyle
 {
-    /** The CSS property, in camelCase or kebab-case. */
+    /** The CSS property, in camelCase or kebab-case, or a custom property such as "--proximity". */
     rule: string;
     /** A CSS function wrapping the value, such as "perspective". */
     func?: string;

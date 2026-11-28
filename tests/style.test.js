@@ -153,10 +153,30 @@ describe("Style hardening", () =>
         expect(new Style({ rule: "webkitFilter", func: "blur", unit: "px" }, [0, 1]).rule).toBe("webkitFilter");
     });
 
+    it("accepts custom property names, named by their rule", () =>
+    {
+        for (const rule of ["--proximity", "--Proximity", "--my_value-2", "---x", "--0"])
+        {
+            const style = new Style({ rule }, [0, 1]);
+            expect(style.rule, rule).toBe(rule);
+            expect(style.name, rule).toBe(rule);
+        }
+        expect(new Style({ rule: "--t", func: "scale" }, [1, 2]).name).toBe("scale");
+        expect(new Style({ rule: "--size", unit: "px" }, [0, 1]).unit).toBe("px");
+    });
+
+    it("rejects custom property names with anything but letters, digits, - and _", () =>
+    {
+        for (const rule of ["--", "-", "--a b", "--a;b", "--a:1", "--a)", "--a\\62", "--\u00e9", "--a\n", "--a/*"])
+        {
+            expect(() => new Style({ rule }, [0, 1]), rule).toThrow(RangeError);
+        }
+    });
+
     it("rejects rules that aren't CSS property names", () =>
     {
         for (const rule of ["cssText", "setProperty", "parentRule", "length", "constructor", "__proto__",
-            "color; background: red", "background:url(x)", "", "1px", "--custom", "Transform"])
+            "color; background: red", "background:url(x)", "", "1px", "-custom", "Transform"])
         {
             expect(() => new Style({ rule }, [0, 1]), rule).toThrow(RangeError);
         }

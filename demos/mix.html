@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mix: ProximityEffect demo</title>
+<link rel="stylesheet" href="demo.css">
+<style>
+    #stage { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; box-sizing: border-box; width: 640px; max-width: 100%; margin: 1rem auto; padding: 12px; background: #1d1d24; }
+
+    /* The effect writes one number, --proximity, from 0 (far) to 1 (near).
+       Everything else is CSS reading it. */
+    #stage div
+    {
+        --p: var(--proximity, 0);
+        aspect-ratio: 1;
+        /* a colour, which the effect can't animate by itself yet */
+        background: color-mix(in oklch, #ffb238 calc(var(--p) * 100%), #3a3f6b);
+        /* a size, worked out with calc() */
+        scale: calc(0.6 + var(--p) * 0.5);
+        /* a paused animation, its playhead set by --proximity: a 1s
+           animation with a delay of -0.5s is drawn half way through */
+        animation: morph 1s linear paused both;
+        animation-delay: calc(var(--p) * -0.999s);
+    }
+
+    /* three steps, which two keyframes on a style couldn't give */
+    @keyframes morph
+    {
+        0%   { border-radius: 50%; rotate: 0deg; }
+        50%  { border-radius: 50% 0;  rotate: 45deg; }
+        100% { border-radius: 4px; rotate: 90deg; }
+    }
+</style>
+</head>
+<body>
+<nav><a href="index.html">All demos</a></nav>
+<main>
+    <h1>Mix</h1>
+    <p>The effect animates a single CSS custom property, <code>--proximity</code>, from 0 far from the pointer to 1 near it. The page's own CSS does the rest: <code>color-mix()</code> blends each tile's colour, <code>calc()</code> works out its size, and a paused <code>@keyframes</code> animation is scrubbed through three shapes by setting its <code>animation-delay</code> from the value.</p>
+    <p>The effect only ever writes one number per tile, so <code>attack</code> and <code>decay</code> ease all three together.</p>
+
+    <div class="controls">
+        <button type="button" id="pause" aria-pressed="false">Pause effect</button>
+    </div>
+
+    <div id="stage" class="stage" aria-hidden="true"></div>
+</main>
+
+<script type="module">
+import ProximityEffect from "../src/ProximityEffect.js";
+import { demo } from "./demo.js";
+
+const stage = document.getElementById("stage");
+for (let i=0; i<144; i++)
+{
+    stage.append(document.createElement("div"));
+}
+
+const pe = new ProximityEffect(stage.children, {
+    threshold: 20,
+    runoff:   200,
+    attack:     0.3,
+    decay:      0.08,
+    touchDrag: stage,
+});
+// unitless, from 1 near the pointer to 0 far away
+pe.addStyle({ rule: "--proximity" }, [1, 0]);
+
+// The effect was made for a 640px stage: scale its distances on a phone
+new ResizeObserver(() =>
+{
+    pe.scaleEffect = stage.clientWidth/640;
+}).observe(stage);
+
+demo(pe);
+</script>
+</body>
+</html>

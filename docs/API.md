@@ -279,7 +279,7 @@ Instead of a preset name, pass an object describing the CSS to write:
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `rule` | String | Required. The CSS property to write to, in camelCase (`"letterSpacing"`) or kebab-case (`"letter-spacing"`). Both spellings name the same property, so styles using either are combined and restored together. |
+| `rule` | String | Required. The CSS property to write to, in camelCase (`"letterSpacing"`) or kebab-case (`"letter-spacing"`), or a custom property (`"--proximity"`). Both spellings of a regular property name the same property, so styles using either are combined and restored together. Custom property names are case-sensitive, as in CSS. |
 | `func` | String | (optional) A CSS function to wrap the value in, such as `"perspective"`. Styles with a `func` and the same `rule` are combined, as the presets are. |
 | `unit` | String | (optional) A CSS unit to add to the value, such as `"px"`, `"em"`, `"%"` or `"deg"`. |
 | `min` and `max` | Number | (optional) Keyframe and scattered values are clamped to this range. |
@@ -288,15 +288,40 @@ Instead of a preset name, pass an object describing the CSS to write:
 ```javascript
 myEffect.addStyle({ rule: "left", unit: "em" }, [10, 5]);
 myEffect.addStyle({ rule: "transform", func: "perspective", unit: "px" }, [100, 50]);
+myEffect.addStyle({ rule: "--proximity" }, [1, 0]);
 ```
 
 Each frame writes exactly one number, plus the unit, to one CSS property. To keep it that way, custom styles are checked when added:
 
-- `rule` must be a CSS property name. `cssText`, `CSSStyleDeclaration` methods and other members that aren't properties are rejected.
+- `rule` must be a CSS property name. `cssText`, `CSSStyleDeclaration` methods and other members that aren't properties are rejected. A custom property name is `--` followed by ASCII letters, digits, `-` and `_`.
 - `func` must be a plain CSS function name. Functions that load resources or read values from elsewhere (`url()`, `image-set()`, `attr()`, `var()` and similar) are rejected.
 - `unit` must be a known CSS unit.
 
-Only one numeric value per property is supported, so `rgb()` and other functions taking several values can't be used yet (planned for 4.2). CSS custom properties (`--foo`) aren't supported either. Animating properties that change the layout, such as `width` or `fontSize`, works, but costs much more than transforms, since the page has to be laid out again on every frame.
+Only one numeric value per property is supported, so `rgb()` and other functions taking several values can't be used yet (planned for 4.3). Animating properties that change the layout, such as `width` or `fontSize`, works, but costs much more than transforms, since the page has to be laid out again on every frame.
+
+#### Custom properties
+
+A style whose `rule` is a custom property writes a number (with its `unit` and `func`, if it has them) to that property on each node, and the page's CSS decides what it does. A unitless value from 0 to 1 is the most useful:
+
+```javascript
+myEffect.addStyle({ rule: "--proximity" }, [1, 0]);
+```
+
+```css
+.node {
+    /* colours, which a style can't animate by itself yet */
+    background: color-mix(in oklch, orange calc(var(--proximity, 0) * 100%), navy);
+    /* any calculation */
+    scale: calc(1 + var(--proximity, 0) * 0.5);
+    /* a paused animation, scrubbed by the value */
+    animation: spin 1s linear paused both;
+    animation-delay: calc(var(--proximity, 0) * -0.999s);
+}
+```
+
+Since the effect writes only the one number, `attack` and `decay` ease everything that reads it together. The [Mix demo](../demos/mix.html) does all three.
+
+The effect doesn't take custom properties off while it measures the nodes, since most pages use them for paint and taking them off would restyle everything that reads them. If your CSS uses one in layout (a `width` or `margin` worked out from it), the nodes are measured with it applied, so keep layout-changing uses off the animated nodes, or animate a regular property instead. `destroy()`, and dropping a node from `nodes`, give the property back the value it had when the instance was created, as for any other style.
 
 ### Keyframes
 

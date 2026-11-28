@@ -116,6 +116,7 @@ pe.addStyle("blur", [0, 10]);
 pe.addStyle("hueRotate", [{ value: 0, scatter: 10, scatterMethod: "normal" }, 90], { id: "hue" });
 pe.addStyle({ rule: "letter-spacing", unit: "px", min: 0 }, [4, 0]);
 pe.addStyle({ rule: "transform", func: "perspective", unit: "px" }, [100, 50], null);
+pe.addStyle({ rule: "--proximity" }, [1, 0], { id: "proximity" });
 // @ts-expect-error unknown preset
 pe.addStyle("color", [0, 1]);
 // @ts-expect-error a custom style needs a rule
