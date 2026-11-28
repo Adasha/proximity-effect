@@ -98,6 +98,9 @@ export default class ProximityEffect extends EventTarget
     #lastTargetPoint = null;
     #changed = false;
     #scratchStyle;
+    // the inline properties the instance has written and not yet put back,
+    // rule key => spelling, so destroy() and dropped nodes give back only these
+    #written = new Map();
     #prefersReducedMotion = false;
     // the parent whose perspective-origin is set, and its own inline value
     #originParent = null;
@@ -274,7 +277,7 @@ export default class ProximityEffect extends EventTarget
     }
 
     /**
-     * Set the nodes to animate. Nodes that are no longer in the list get their original inline style back.
+     * Set the nodes to animate. Nodes that are no longer in the list get their original values back for the properties the effect set, and keep any other inline styles.
      * @param {NodeList|HTMLCollection|Array<Element>|Element} list - The nodes.
      * @throws {Error} If the instance has been destroyed.
      */
@@ -289,7 +292,7 @@ export default class ProximityEffect extends EventTarget
         {
             if (!keeping.has(data.node))
             {
-                this.#restoreInlineStyle(data);
+                this.#restoreWritten(data);
                 this.#resizeObserver?.unobserve(data.node);
                 this.#sizeReported.delete(data.node);
             }
@@ -301,7 +304,7 @@ export default class ProximityEffect extends EventTarget
         {
             this.#claimOriginParent();
         }
-        // nodes that left were given their whole inline style back already
+        // nodes that left were given their touch-action back already
         if (this.touchDrag===true)
         {
             this.#claimDrags();
@@ -480,7 +483,9 @@ export default class ProximityEffect extends EventTarget
             {
                 this.#restoreProperty(data, "zIndex");
             }
+            this.#written.delete("zIndex");
         }
+        this.#claimZIndex();
         this.#invalidate();
     }
 
@@ -1077,6 +1082,7 @@ export default class ProximityEffect extends EventTarget
                 {
                     this.#restoreProperty(data, rule);
                 }
+                this.#written.delete(key);
             }
         }
 
@@ -1253,7 +1259,8 @@ export default class ProximityEffect extends EventTarget
 
     /**
      * Stop the effect for good: remove every listener, stop the animation loop
-     * and restore each node's original inline style. Safe to call more than once.
+     * and give each node its original values back for the properties the effect
+     * set, keeping any other inline styles. Safe to call more than once.
      */
     destroy()
     {
@@ -1270,10 +1277,11 @@ export default class ProximityEffect extends EventTarget
 
         for (const data of this.#nodeData)
         {
-            this.#restoreInlineStyle(data);
+            this.#restoreWritten(data);
         }
+        this.#written.clear();
         this.#releaseOriginParent();
-        // the nodes' touch-action went back with their inline style
+        // the nodes' touch-action went back with the other written properties
         this.#releaseDragArea();
     }
 
@@ -1741,6 +1749,7 @@ export default class ProximityEffect extends EventTarget
             {
                 data.node.style.touchAction = "pinch-zoom";
             }
+            this.#written.set("touchAction", "touchAction");
         }
         else if (value)
         {
@@ -1760,6 +1769,7 @@ export default class ProximityEffect extends EventTarget
             {
                 this.#restoreProperty(data, "touchAction");
             }
+            this.#written.delete("touchAction");
         }
         this.#releaseDragArea();
     }
@@ -1987,6 +1997,22 @@ export default class ProximityEffect extends EventTarget
         });
 
         this.#styleGroups = [...plain, ...funcs.values()];
+        for (const group of this.#styleGroups)
+        {
+            this.#written.set(group.key, group.rule);
+        }
+        this.#claimZIndex();
+    }
+
+
+
+    // z-index is written while it's on and there's a style to draw
+    #claimZIndex()
+    {
+        if (this.#globalParams.zIndex && this.#styleGroups.length>0)
+        {
+            this.#written.set("zIndex", "zIndex");
+        }
     }
 
 
@@ -2192,15 +2218,16 @@ export default class ProximityEffect extends EventTarget
 
 
 
-    // put back a node's whole original inline style, and no empty style
-    // attribute if it didn't have one
-    #restoreInlineStyle(data)
+    // put back a node's original value for each property the instance has
+    // written, leaving the rest of its inline style (including anything the
+    // page has set since) alone, and no empty style attribute if it had none
+    #restoreWritten(data)
     {
-        if (data.hadStyle)
+        for (const rule of this.#written.values())
         {
-            data.node.style.cssText = data.style;
+            this.#restoreProperty(data, rule);
         }
-        else
+        if (!data.hadStyle && data.node.style.length===0)
         {
             data.node.removeAttribute("style");
         }
