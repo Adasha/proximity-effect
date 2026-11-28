@@ -239,9 +239,17 @@ The same, for the node at `index` in `nodes`. Throws a `TypeError` if `index` is
 
 Returns `true` if `prop` is a node data field with a value for the node at `index`. Throws as for `getNodeIndexData()`.
 
+#### `valueFrom(node)` and `valueFromIndex(index)`
+
+Return a node's eased value as of the last frame, from 0 (near) to 1 (far): the value its styles were drawn with, after `attack` and `decay`, with `invert` applied. `undefined` before the first frame, even with `primeDistances`. Nothing is copied, so they're cheap enough to call for every node in a `redraw` listener. They throw as for `getNodeData()` and `getNodeIndexData()`.
+
+Use these to drive anything else from the effect (a Web Animations `currentTime`, a Lottie frame, a canvas, an SVG attribute) so it moves with the styles, easing and all.
+
 #### `distanceFrom(node)` and `distanceFromIndex(index)`
 
 Return a node's distance from the tracked point as of the last frame, from 0 (near) to 1 (far), with `invert` applied and before easing. `undefined` before the first frame. They throw as for `getNodeData()` and `getNodeIndexData()`.
+
+Use these for where the tracked point is now, such as to tell which nodes are in range, whatever `attack` and `decay` are doing. To follow what the styles show, use `valueFrom()` instead. With `attack` and `decay` both 1 (or with reduced motion), the two are the same.
 
 ## Styles
 
@@ -341,7 +349,7 @@ The `styles` property returns the styles that have been added, as read-only obje
 | `center` | `{x, y}` | The centre used for distances: `measured` with the global offsets and jitter applied, scaled by `scaleEffect`. |
 | `jitter` | `{x, y}` | The node's random jitter, in pixels, scaled by `scaleEffect`. |
 | `distance` | Number | The distance as of the last frame, from 0 to 1, before easing (as `distanceFrom()` returns). |
-| `lastDelta` | Number | The eased distance as of the last frame, which the styles were drawn with. |
+| `lastDelta` | Number | The eased distance as of the last frame, which the styles were drawn with. `valueFrom()` reads it without copying the node data. |
 | `styles` | Array of `{near, far}` | The node's near and far values for each style, after scatter and `scaleEffect`, in the same order as `styles`. |
 
 ## Events
@@ -366,7 +374,7 @@ Events are plain `Event` objects. They don't bubble (an instance has no parent),
 ```javascript
 myEffect.addEventListener("redraw", () => {
     myEffect.nodes.forEach((node, i) => {
-        node.dataset.near = myEffect.distanceFromIndex(i) < 0.5;
+        node.dataset.near = myEffect.valueFromIndex(i) < 0.5;
     });
 });
 ```

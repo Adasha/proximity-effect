@@ -344,6 +344,63 @@ describe("distance and easing", () =>
         expect(() => pe.distanceFrom(document.body)).toThrow(RangeError);
     });
 
+    it("valueFrom returns the eased value the styles were drawn with", async () =>
+    {
+        const a = makeNode(0, 0), b = makeNode(50, 0);
+        const pe = create([a, b], { runoff: 100, attack: 0.5 });
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        step();
+        expect(pe.valueFrom(a)).toBe(1);
+        movePointer(0, 0);
+        step();
+        // distance jumps to the target, the eased value goes half way
+        expect(pe.distanceFrom(a)).toBe(0);
+        expect(pe.valueFrom(a)).toBe(0.5);
+        expect(pe.valueFromIndex(0)).toBe(0.5);
+        expect(pe.valueFromIndex(1)).toBe(0.75);
+        expect(translateOf(a)).toBe(50);
+        expect(translateOf(b)).toBe(75);
+        expect(pe.valueFromIndex(1)).toBe(pe.getNodeIndexData(1, "lastDelta"));
+    });
+
+    it("valueFrom follows decay and has invert applied", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el, { runoff: 100, decay: 0.5, invert: true });
+        pe.addStyle("translateX", [0, 100]);
+        await settle();
+        movePointer(0, 0);
+        step();
+        expect(pe.valueFrom(el)).toBe(1);
+        movePointer(100, 0);
+        step();
+        expect(pe.distanceFrom(el)).toBe(0);
+        expect(pe.valueFrom(el)).toBe(0.5);
+        expect(translateOf(el)).toBe(50);
+    });
+
+    it("valueFrom is undefined before the first frame, even when primed", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el, { attack: 0.5, primeDistances: true });
+        expect(pe.valueFrom(el)).toBeUndefined();
+        expect(pe.valueFromIndex(0)).toBeUndefined();
+        await settle();
+        movePointer(0, 0);
+        step();
+        expect(pe.valueFrom(el)).toBe(0.5);
+    });
+
+    it("valueFrom and valueFromIndex reject what isn't in the node list", () =>
+    {
+        const pe = create(makeNode(0, 0));
+        expect(() => pe.valueFrom(document.body)).toThrow(RangeError);
+        expect(() => pe.valueFromIndex("0")).toThrow(TypeError);
+        expect(() => pe.valueFromIndex(1)).toThrow(RangeError);
+        expect(() => pe.valueFromIndex(0.5)).toThrow(RangeError);
+    });
+
     it("rests at the far value before the pointer has moved", async () =>
     {
         const el = makeNode(0, 0);

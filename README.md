@@ -238,6 +238,7 @@ myEffect.addStyle("rotateZ", [{ value: 0, scatter: 30 }, { value: 0, scatter: 90
 | `clearTarget()` | Go back to tracking the pointer after setting `target`. |
 | `hasStyle(name)` and `removeStyle(name)` | Find or remove styles by preset name, `func` or `id`. |
 | `updateStyle(name, keyframes)` | Give matching styles new keyframes, keeping their place in the stack and each element's scatter. |
+| `valueFrom(element)` and `valueFromIndex(index)` | An element's eased value from 0 (near) to 1 (far), the one its styles were drawn with, for driving anything else from the effect. |
 | `setCenterPoints()` | Measure the elements again. Only needed if they move in a way the effect can't see, such as a CSS animation. |
 
 The effect also dispatches events: `ready` once it has set up, `beforeupdate` and `redraw` around each frame it draws, `reflow` when it finds an element has moved, and `rest` and `wake` when the elements settle and start moving again (the `resting` property says which):

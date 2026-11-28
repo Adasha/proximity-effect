@@ -524,7 +524,7 @@ function createSound()
             let sum = 0, count = 0;
             for (let i=0; i<n; i+=stride)
             {
-                const d = glow.getNodeIndexData(i, "lastDelta");
+                const d = glow.valueFromIndex(i);
                 if (d!==undefined) { sum += 1-d; count++; }
             }
             const energy = count ? Math.min(1, sum/count*6) : 0;
