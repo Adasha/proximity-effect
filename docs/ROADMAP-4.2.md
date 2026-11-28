@@ -1,6 +1,6 @@
 # 4.2 plan
 
-**Status:** agenda set 2026-11-28. Stages 1 (#39), 2 (#40) and 3 (#43) done. 4.2 is about **fixing known issues and letting other code work with the effect**. New effects (colours, `steps`, per-style params and the other ideas below) move to 4.3. No breaking changes.
+**Status:** agenda set 2026-11-28. Stages 1 (#39), 2 (#40), 3 (#43) and 4 (#45) done. 4.2 is about **fixing known issues and letting other code work with the effect**. New effects (colours, `steps`, per-style params and the other ideas below) move to 4.3. No breaking changes.
 
 As with 4.1, each stage is its own PR into a `release/4.2` branch, with its own tests, types and doc changes.
 
@@ -52,7 +52,7 @@ From the Dandelion gaps ([section 3](#3-hooks-for-outside-code) below):
 
 This is the main integration hook for CSS: a unitless `--proximity` from 0 to 1 lets a page do the rest with `calc()`, scrub a paused `@keyframes` (see [Frame-driven animation](#frame-driven-animation-what-it-needs)), and do **colours** with `color-mix(in oklch, red calc(var(--proximity) * 100%), blue)`. That workaround is why multi-value properties can wait for 4.3. Add a demo for it.
 
-Check: custom properties don't take part in measuring (they're paint-only unless the page uses them in layout, which is the page's business: document it), and `destroy()` removes them (stage 1).
+Custom properties don't take part in measuring (they're paint-only unless the page uses them in layout, which is the page's business: documented in API.md), and `destroy()` gives back their original values (stage 1). They count as resizing, so the `ResizeObserver` ignores size changes they make, as for `width`. The cost is that a page scroll remeasures every node, not only the fixed and sticky ones, when there are any of those.
 
 ## Stage 5: driving it from outside
 
