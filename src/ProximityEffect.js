@@ -15,12 +15,33 @@ import * as Validate from './validate.mjs';
 // A custom style's rule can be camelCase or kebab-case, so rules are compared
 // by their camelCase form: "letter-spacing" and "letterSpacing" are one
 // property, as are "-webkit-filter" and "webkitFilter". Styles are still
-// written with the spelling they were given.
-const ruleKey = (rule) => rule.replace(/^-/, "").replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
+// written with the spelling they were given. Custom properties (--name) are
+// case-sensitive and have no camelCase form, so they're their own key.
+const isCustomProperty = (rule) => rule.startsWith("--");
+const ruleKey = (rule) => isCustomProperty(rule)
+    ? rule
+    : rule.replace(/^-/, "").replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
+
+// Read and write one property of an inline style. Custom properties aren't
+// members of CSSStyleDeclaration, so they go through the property methods.
+const readRule = (style, rule) => isCustomProperty(rule) ? style.getPropertyValue(rule) : style[rule];
+const writeRule = (style, rule, value) =>
+{
+    if (isCustomProperty(rule))
+    {
+        style.setProperty(rule, value);
+    }
+    else
+    {
+        style[rule] = value;
+    }
+};
 
 // properties that don't move or resize an element's box, so nodes can be
-// measured without taking them off first (as rule keys)
+// measured without taking them off first (as rule keys). Custom properties
+// count as paint-only too (see #measure).
 const PAINT_ONLY_RULES = new Set(["filter", "webkitFilter", "backdropFilter", "webkitBackdropFilter", "opacity", "zIndex"]);
+const paintOnly = (key) => PAINT_ONLY_RULES.has(key) || isCustomProperty(key);
 
 // properties that can't change an element's size, so writing them never
 // makes the ResizeObserver report (as rule keys)
@@ -1009,7 +1030,7 @@ export default class ProximityEffect extends EventTarget
     /**
      * Add a new style rule to the styles animation stack.
      * @param {string|Object} property - The predefined style rule as a string, or an object containing a CSS style configuration.
-     * @param {string} [property.rule] - The custom CSS style rule to use.
+     * @param {string} [property.rule] - The CSS property to write, in camelCase or kebab-case, or a custom property ("--name").
      * @param {string} [property.func] - The CSS function of the given style rule.
      * @param {number} [property.min] - The minimum style value.
      * @param {number} [property.max] - The maximum style value.
@@ -1726,8 +1747,10 @@ export default class ProximityEffect extends EventTarget
     // three passes (write, read, write) so the page is laid out once, not
     // once per node. Only the properties that can move a node's box are put
     // back to their original values, one by one: replacing the whole cssText
-    // would make the browser redo layout for every node. Returns whether any
-    // node's position changed.
+    // would make the browser redo layout for every node. Custom properties are
+    // left on: most pages use them for paint, and taking them off would restyle
+    // everything that reads them. A page that uses one in layout gets its nodes
+    // measured with it applied. Returns whether any node's position changed.
     #measure(all)
     {
         if (all===this.#nodeData)
@@ -1741,15 +1764,15 @@ export default class ProximityEffect extends EventTarget
         this.#followScroll();
 
         const rules = [...new Map(this.#styleGroups.map(group => [group.key, group.rule])).entries()]
-                  .filter(([key]) => !PAINT_ONLY_RULES.has(key))
+                  .filter(([key]) => !paintOnly(key))
                   .map(([, rule]) => rule),
-              saved = all.map(data => rules.map(rule => data.node.style[rule]));
+              saved = all.map(data => rules.map(rule => readRule(data.node.style, rule)));
 
         for (const data of all)
         {
             for (const rule of rules)
             {
-                data.node.style[rule] = this.#originalValue(data, rule);
+                writeRule(data.node.style, rule, this.#originalValue(data, rule));
             }
         }
 
@@ -1767,7 +1790,7 @@ export default class ProximityEffect extends EventTarget
                   last = data.measured;
             rules.forEach((rule, r) =>
             {
-                node.style[rule] = saved[i][r];
+                writeRule(node.style, rule, saved[i][r]);
             });
             data.measured = {
                 x: (b.left+b.right )*0.5 - this.#dataOffset(node.dataset.offsetx),
@@ -2048,7 +2071,9 @@ export default class ProximityEffect extends EventTarget
 
     // Group the stack by CSS property, so functions that share one (transform,
     // filter) are written together, with the first style's spelling. Plain
-    // properties come first, in stack order.
+    // properties come first, in stack order. A custom property might be used
+    // in layout, so it counts as resizing: the observer then ignores size
+    // changes it makes, as it does for width.
     #groupStyles()
     {
         const plain = [],
@@ -2058,16 +2083,17 @@ export default class ProximityEffect extends EventTarget
         {
             const item    = { index, func: style.func, unit: style.unit || "" },
                   key     = ruleKey(style.rule),
+                  custom  = isCustomProperty(key),
                   resizes = !SIZE_NEUTRAL_RULES.has(key);
             if (!style.func)
             {
-                plain.push({ rule: style.rule, key, resizes, items: [item] });
+                plain.push({ rule: style.rule, key, custom, resizes, items: [item] });
             }
             else
             {
                 if (!funcs.has(key))
                 {
-                    funcs.set(key, { rule: style.rule, key, resizes, transform: TRANSFORM_RULES.has(key), items: [] });
+                    funcs.set(key, { rule: style.rule, key, custom, resizes, transform: TRANSFORM_RULES.has(key), items: [] });
                 }
                 funcs.get(key).items.push(item);
             }
@@ -2299,7 +2325,7 @@ export default class ProximityEffect extends EventTarget
         {
             this.#scratchStyle ??= document.createElement("div").style;
             this.#scratchStyle.cssText = data.style;
-            data.originals.set(rule, this.#scratchStyle[rule]);
+            data.originals.set(rule, readRule(this.#scratchStyle, rule));
         }
         return data.originals.get(rule);
     }
@@ -2326,7 +2352,7 @@ export default class ProximityEffect extends EventTarget
     // put back a node's original inline value for one CSS property
     #restoreProperty(data, rule)
     {
-        data.node.style[rule] = this.#originalValue(data, rule);
+        writeRule(data.node.style, rule, this.#originalValue(data, rule));
     }
 
 
@@ -2607,7 +2633,14 @@ export default class ProximityEffect extends EventTarget
                     ? `${value==="" ? "" : " "}${func}(${val}${unit})`
                     : `${val}${unit}`;
             }
-            style[group.rule] = value;
+            if (group.custom)
+            {
+                style.setProperty(group.rule, value);
+            }
+            else
+            {
+                style[group.rule] = value;
+            }
             if (group.resizes)
             {
                 this.#ownResizes.add(data.node);

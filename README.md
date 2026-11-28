@@ -219,6 +219,18 @@ myEffect.addStyle({ rule: "transform", func: "perspective", unit: "px" }, [100, 
 
 `rule` is the CSS property, `func` an optional CSS function to wrap the value in, and `unit` an optional CSS unit. These are checked, so a style can only ever write one number to one property. See the [API reference](docs/API.md#custom-styles) for the details, and for `min` and `max`.
 
+`rule` can also be a CSS custom property. A unitless one from 0 to 1 lets your CSS do the rest, such as mixing colours, which a style can't animate by itself yet:
+
+```javascript
+myEffect.addStyle({ rule: "--proximity" }, [1, 0]);
+```
+
+```css
+.tile { background: color-mix(in oklch, orange calc(var(--proximity, 0) * 100%), navy); }
+```
+
+See [Custom properties](docs/API.md#custom-properties) for more, including scrubbing a paused CSS animation.
+
 #### Scatter
 
 A keyframe can be an object with a `value` and a `scatter`, which gives each element a different random amount, up to half the scatter either way:
@@ -337,7 +349,7 @@ Any browser that supports ES2022: Chrome and Edge 93+, Firefox 92+, Safari 15.4+
 
 ## Known issues
 
-- Only CSS properties that take a single number can be animated, so colours and other multi-value properties can't be used yet (planned for 4.3). CSS custom properties (`--foo`) aren't supported either (planned for 4.2).
+- Only CSS properties that take a single number can be animated, so colours and other multi-value properties can't be used yet (planned for 4.3). Until then, animate a custom property such as `--proximity` and mix colours from it in CSS (see [Custom properties](docs/API.md#custom-properties)).
 - If an element containing a `position: fixed` element is given an animated `filter`, the fixed element can be measured slightly out of place, since the browser positions it relative to the filtered one.
 - When a style changes the elements' size (such as a custom `width`), a size change made by something else in the very same frame isn't noticed until the next scroll, resize or `setCenterPoints()`.
 

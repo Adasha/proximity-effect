@@ -658,6 +658,101 @@ describe("styles", () =>
 
 
 
+describe("custom properties", () =>
+{
+    it("writes a custom property with setProperty(), unitless or with a unit", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el, { runoff: 100 });
+        pe.addStyle({ rule: "--proximity" }, [1, 0]);
+        pe.addStyle({ rule: "--lift", unit: "px" }, [10, 0]);
+        await settle();
+        pe.setCoords(50, 0);
+        step();
+        expect(el.style.getPropertyValue("--proximity")).toBe("0.5");
+        expect(el.style.getPropertyValue("--lift")).toBe("5px");
+    });
+
+    it("keeps custom property names case-sensitive and apart from regular properties", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el, { runoff: 100 });
+        pe.addStyle({ rule: "--a-b" }, [1, 0]);
+        pe.addStyle({ rule: "--aB" }, [2, 0]);
+        pe.addStyle({ rule: "--opacity" }, [3, 0]);
+        pe.addStyle("opacity", [100, 0]);
+        await settle();
+        pe.setCoords(0, 0);
+        step();
+        expect(el.style.getPropertyValue("--a-b")).toBe("1");
+        expect(el.style.getPropertyValue("--aB")).toBe("2");
+        expect(el.style.getPropertyValue("--opacity")).toBe("3");
+        expect(el.style.filter).toBe("opacity(100%)");
+
+        expect(pe.removeStyle("--aB")).toBe(true);
+        expect(el.style.getPropertyValue("--aB")).toBe("");
+        expect(el.style.getPropertyValue("--a-b")).toBe("1");
+    });
+
+    it("combines functions written to the same custom property", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el);
+        pe.addStyle({ rule: "--t", func: "translateX", unit: "px" }, [0, 10]);
+        pe.addStyle({ rule: "--t", func: "rotate", unit: "deg" }, [0, 90]);
+        await settle();
+        step();
+        expect(el.style.getPropertyValue("--t")).toBe("translateX(10px) rotate(90deg)");
+    });
+
+    it("doesn't take custom properties off to measure", async () =>
+    {
+        const el = makeNode(0, 0);
+        const pe = create(el);
+        pe.addStyle({ rule: "--proximity" }, [1, 0]);
+        await settle();
+        step();
+        const rect = el.getBoundingClientRect;
+        let seen;
+        el.getBoundingClientRect = () => { seen = el.style.getPropertyValue("--proximity"); return rect(); };
+        const setProperty = vi.spyOn(CSSStyleDeclaration.prototype, "setProperty");
+        pe.setCenterPoints();
+        expect(seen).toBe("0");
+        expect(setProperty).not.toHaveBeenCalled();
+    });
+
+    it("gives back the original value on destroy() and keeps ones the page set", async () =>
+    {
+        const el = makeNode(0, 0), bare = makeNode(50, 0);
+        el.style.setProperty("--proximity", "0.25");
+        const pe = create([el, bare]);
+        pe.addStyle({ rule: "--proximity" }, [1, 0]);
+        await settle();
+        pe.setCoords(0, 0);
+        step();
+        expect(el.style.getPropertyValue("--proximity")).toBe("1");
+        el.style.setProperty("--theme", "dark");
+        pe.destroy();
+        expect(el.style.cssText).toBe("--proximity: 0.25; --theme: dark;");
+        expect(bare.hasAttribute("style")).toBe(false);
+    });
+
+    it("gives back the original value when a node is dropped", async () =>
+    {
+        const a = makeNode(0, 0), b = makeNode(50, 0);
+        a.style.setProperty("--proximity", "0.25");
+        const pe = create([a, b]);
+        pe.addStyle({ rule: "--proximity" }, [1, 0]);
+        await settle();
+        step();
+        pe.nodes = [b];
+        expect(a.style.cssText).toBe("--proximity: 0.25;");
+        expect(b.style.getPropertyValue("--proximity")).not.toBe("");
+    });
+});
+
+
+
 describe("updateStyle", () =>
 {
     it("changes the keyframes in place, keeping the style's place and params", () =>
@@ -1991,6 +2086,23 @@ describe("performance", () =>
             report(el);
             step();
             expect(measure).toHaveBeenCalledOnce();
+        });
+
+        it("ignores size changes a custom property makes, in case the page lays out with it", async () =>
+        {
+            const el = makeNode(0, 0);
+            const pe = create(el);
+            pe.addStyle({ rule: "--w", unit: "px" }, [20, 10]);
+            await settle();
+            reportInitial();
+            runUntilIdle();
+            const measure = vi.spyOn(el, "getBoundingClientRect");
+
+            pe.setCoords(0, 0);
+            step();
+            report(el);
+            expect(runUntilIdle()).toBe(1);
+            expect(measure).not.toHaveBeenCalled();
         });
 
         it("still counts nodes resized only by a transform", async () =>

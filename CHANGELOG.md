@@ -8,6 +8,7 @@ All notable changes to this project are documented here. The format is based on 
 
 - `resting`, and `rest` and `wake` events, say when the nodes have settled and when they start moving again, so code that waits for the effect to go still no longer has to check every node each frame.
 - `valueFrom()` and `valueFromIndex()` return a node's eased value, the one its styles were drawn with, so code driven from the effect follows `attack` and `decay`. Unlike `getNodeIndexData(i, "lastDelta")`, they copy nothing, so they suit a `redraw` listener that reads every node. `distanceFrom()` is unchanged and still returns the value before easing.
+- A custom style's `rule` can be a CSS custom property, such as `--proximity`, so the page's CSS can do the rest with `calc()`: mix colours with `color-mix()`, scrub a paused `@keyframes` animation, or anything else that reads a number. The name is checked like any other rule, and the value is still one number plus a known unit. Custom properties aren't taken off while the nodes are measured, so one used in layout is measured with it applied. A new Mix demo shows all three.
 - A `beforeupdate` event at the start of each frame the loop draws. Changes made in a listener, such as `updateStyle()` or `setCoords()`, show in that frame, so outside animation keeps in step with the effect.
 
 ### Fixed

@@ -15,7 +15,8 @@ import * as Validate from './validate.mjs';
  */
 
 // camelCase ("letterSpacing", "webkitFilter") or kebab-case ("letter-spacing", "-webkit-filter")
-const CSS_PROPERTY = /^(?:[a-z][a-zA-Z0-9]*|-?[a-z][a-z0-9]*(?:-[a-z0-9]+)+)$/;
+// or a custom property ("--proximity"), limited to ASCII letters, digits, "-" and "_"
+const CSS_PROPERTY = /^(?:[a-z][a-zA-Z0-9]*|-?[a-z][a-z0-9]*(?:-[a-z0-9]+)+|--[a-zA-Z0-9_-]+)$/;
 
 // members of CSSStyleDeclaration and Object.prototype that aren't CSS properties
 const RESERVED_RULES = new Set([
@@ -154,7 +155,7 @@ function checkParams(params)
 /**
  * Add a new style rule to the styles animation stack.
  * @param {string|Object} property - The predefined style rule as a string, or an object containing a CSS style configuration.
- * @param {string} [property.rule] - The CSS property to write, in camelCase or kebab-case. cssText and other non-property members are rejected.
+ * @param {string} [property.rule] - The CSS property to write, in camelCase or kebab-case, or a custom property ("--name"). cssText and other non-property members are rejected.
  * @param {string} [property.func] - The CSS function wrapping the value. Functions that load resources (url() and similar) are rejected.
  * @param {number} [property.min] - The minimum style value.
  * @param {number} [property.max] - The maximum style value.
