@@ -336,7 +336,7 @@ Any browser that supports ES2022: Chrome and Edge 93+, Firefox 92+, Safari 15.4+
 
 ## Known issues
 
-- Only CSS properties that take a single number can be animated, so colours and other multi-value properties can't be used yet (planned for 4.2). CSS custom properties (`--foo`) aren't supported either.
+- Only CSS properties that take a single number can be animated, so colours and other multi-value properties can't be used yet (planned for 4.3). CSS custom properties (`--foo`) aren't supported either (planned for 4.2).
 - If an element containing a `position: fixed` element is given an animated `filter`, the fixed element can be measured slightly out of place, since the browser positions it relative to the filtered one.
 - When a style changes the elements' size (such as a custom `width`), a size change made by something else in the very same frame isn't noticed until the next scroll, resize or `setCenterPoints()`.
 
@@ -361,9 +361,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report a bug or make a change.
 
 ## Roadmap
 
-- (for 4.2) Multiple-value CSS properties, such as colours.
-- (for 4.2) A posterise option (`steps`), snapping the effect to a set number of even steps.
-- (for 4.2) Per-property parameters.
+- (for 4.2) Fixes: `destroy()` keeping inline styles set since, and several instances on the same element.
+- (for 4.2) Working with other code: CSS custom property output, rest events, a pre-frame hook, each element's eased value, and driving the effect from your own loop.
+- (for 4.3) Multiple-value CSS properties, such as colours.
+- (for 4.3) A posterise option (`steps`), snapping the effect to a set number of even steps.
+- (for 4.3) Per-property parameters.
 - (for 4.3) Multi-point animations.
 
 ## Version history
