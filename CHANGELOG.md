@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+### Added
+
+- `resting`, and `rest` and `wake` events, say when the nodes have settled and when they start moving again, so code that waits for the effect to go still no longer has to check every node each frame.
+- A `beforeupdate` event at the start of each frame the loop draws. Changes made in a listener, such as `updateStyle()` or `setCoords()`, show in that frame, so outside animation keeps in step with the effect.
+
 ### Fixed
 
 - `destroy()`, and dropping nodes from `nodes`, no longer throw away inline styles your own code set on the nodes after the instance was created. Each node gets its original value back only for the properties the effect set (the animated properties, plus `z-index` and `touch-action` if it set them), and its other inline styles are left alone. A property that both your code and the effect set still goes back to the value it had when the instance was created.

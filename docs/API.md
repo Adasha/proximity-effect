@@ -146,6 +146,7 @@ new ResizeObserver(() => { myEffect.scaleEffect = container.clientWidth / 800; }
 | `totalNodes` | Number | Read-only. The number of nodes. |
 | `styles` | Array of [Style objects](#style-objects) | Read-only. A copy of the styles added with `addStyle()`, in the order they were added. |
 | `paused` | Boolean | Read-only. `true` between `pause()` and `resume()`. |
+| `resting` | Boolean | Read-only. `true` once the nodes have settled, between the `rest` and `wake` events. Pausing doesn't change it. Use it, or the events, instead of checking every node's `lastDelta` each frame. |
 | `destroyed` | Boolean | Read-only. `true` once `destroy()` has been called. |
 
 ## Methods
@@ -218,7 +219,7 @@ Stops the effect for good: removes every event listener and observer, stops the 
 
 #### `update()`
 
-Draws one frame now. The animation loop calls this by itself, so it's only needed to draw while paused, or to draw straight away. It doesn't dispatch `redraw`, and does nothing once the instance is destroyed.
+Draws one frame now. The animation loop calls this by itself, so it's only needed to draw while paused, or to draw straight away. It doesn't dispatch `redraw` or any other event, doesn't change `resting`, and does nothing once the instance is destroyed.
 
 #### `setCenterPoints()`
 
@@ -354,8 +355,11 @@ myEffect.addEventListener("ready", () => console.log("Ready"));
 | Event | Dispatched when |
 | --- | --- |
 | `ready` | The instance has measured its nodes and started listening, once the document has loaded. Always dispatched asynchronously, so a listener added straight after the constructor hears it. |
+| `beforeupdate` | The animation loop is about to draw a frame, before it works out the nodes' distances. Changes made in a listener, such as `updateStyle()` or `setCoords()`, show in that frame, so code with its own animation (wind, say) can keep in step with the effect. It comes with every `redraw`, so an idle effect dispatches neither. A listener can't keep a resting effect running by itself: to draw again, change something or call `update()`. |
 | `redraw` | The animation loop has drawn a frame. Since the loop stops when nothing is changing, an idle effect dispatches nothing. Calling `update()` yourself doesn't dispatch it. |
 | `reflow` | Measuring the nodes again found that at least one had moved (after a resize, a container scroll, a change of nodes, and so on). Dispatched before that frame is drawn. |
+| `rest` | The nodes have settled: the loop drew a frame that changed nothing, and nothing is waiting to be drawn. Dispatched after that frame's `redraw`. A followed `target` is still checked every frame, but the effect rests while the target stays still. |
+| `wake` | The loop is drawing again after `rest`, because something changed (the pointer, a setter, a resize). Dispatched before that frame's `beforeupdate`. If the change turns out to move nothing, `rest` follows in the same frame. `pause()` and `resume()` dispatch neither `wake` nor `rest`: see `paused`. |
 
 Events are plain `Event` objects. They don't bubble (an instance has no parent), can't be cancelled and carry no details. Read what you need from the instance itself, as in this `redraw` listener:
 
