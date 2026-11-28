@@ -146,6 +146,8 @@ style.rule = "width";
 // methods
 assert<number | undefined>(pe.distanceFrom(el));
 assert<number | undefined>(pe.distanceFromIndex(0));
+assert<number | undefined>(pe.valueFrom(el));
+assert<number | undefined>(pe.valueFromIndex(0));
 pe.clearTarget();
 assert<Point | null>(pe.getCoords());
 pe.setCoords(1, 2);

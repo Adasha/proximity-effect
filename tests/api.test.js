@@ -20,6 +20,7 @@ const READ_ONLY = [
 
 const METHODS = [
     "addStyle", "hasStyle", "removeStyle", "updateStyle", "distanceFrom", "distanceFromIndex",
+    "valueFrom", "valueFromIndex",
     "clearTarget", "getCoords", "setCoords", "clearCoords", "setCenterPoints",
     "pause", "resume", "destroy", "getNodeData", "getNodeIndexData", "hasNodeIndexData", "update",
 ];

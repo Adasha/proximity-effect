@@ -1183,6 +1183,42 @@ export default class ProximityEffect extends EventTarget
 
 
 
+    /**
+     * Get the given node's eased value as of the last frame, from 0 (near) to 1 (far):
+     * the value its styles were drawn with, after attack and decay, with invert applied.
+     * Cheap enough to call for every node in each frame: nothing is copied.
+     * @param {Element} n - The node to check.
+     * @return {number|undefined} The value, or undefined before the first frame.
+     * @throws {RangeError} If the node isn't controlled by this instance.
+     */
+    valueFrom(n)
+    {
+        const index = this.#nodes.indexOf(n);
+        if (index<0)
+        {
+            throw new RangeError("ProximityEffect: that node is not controlled by this instance.");
+        }
+        return this.#easedValue(this.#nodeData[index]);
+    }
+
+
+
+    /**
+     * Get the given node index's eased value as of the last frame, from 0 (near) to 1 (far):
+     * the value its styles were drawn with, after attack and decay, with invert applied.
+     * Cheap enough to call for every node in each frame: nothing is copied.
+     * @param {number} i - The node index to check.
+     * @return {number|undefined} The value, or undefined before the first frame.
+     * @throws {TypeError} If the index is not a number.
+     * @throws {RangeError} If the index is not a whole number within the node list.
+     */
+    valueFromIndex(i)
+    {
+        return this.#easedValue(this.#nodeData[this.#checkIndex(i)]);
+    }
+
+
+
 
 
     /**
@@ -2210,6 +2246,17 @@ export default class ProximityEffect extends EventTarget
             throw new RangeError(`ProximityEffect: node index ${i} is out of range (0 to ${this.#nodeData.length-1}).`);
         }
         return i;
+    }
+
+
+
+    // The value the node's styles were drawn with. primeDistances seeds
+    // lastDelta before anything is drawn, so wait for the first frame (which
+    // sets distance) to report it. One place, so a per-style form (4.3's
+    // channels) and stepped output can be added here.
+    #easedValue(data)
+    {
+        return data.distance===undefined ? undefined : data.lastDelta;
     }
 
 

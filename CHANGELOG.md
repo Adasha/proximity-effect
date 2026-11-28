@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format is based on 
 ### Added
 
 - `resting`, and `rest` and `wake` events, say when the nodes have settled and when they start moving again, so code that waits for the effect to go still no longer has to check every node each frame.
+- `valueFrom()` and `valueFromIndex()` return a node's eased value, the one its styles were drawn with, so code driven from the effect follows `attack` and `decay`. Unlike `getNodeIndexData(i, "lastDelta")`, they copy nothing, so they suit a `redraw` listener that reads every node. `distanceFrom()` is unchanged and still returns the value before easing.
 - A `beforeupdate` event at the start of each frame the loop draws. Changes made in a listener, such as `updateStyle()` or `setCoords()`, show in that frame, so outside animation keeps in step with the effect.
 
 ### Fixed

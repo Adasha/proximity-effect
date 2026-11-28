@@ -270,6 +270,9 @@ export default class ProximityEffect extends EventTarget
     updateStyle(name: string, keyframes: Keyframes): boolean;
     distanceFrom(node: Element): number | undefined;
     distanceFromIndex(index: number): number | undefined;
+    /** The node's eased value as of the last frame (0 near, 1 far), which its styles were drawn with. Nothing is copied. */
+    valueFrom(node: Element): number | undefined;
+    valueFromIndex(index: number): number | undefined;
     clearTarget(): void;
     getCoords(): Point | null;
     setCoords(x: number, y: number): void;
