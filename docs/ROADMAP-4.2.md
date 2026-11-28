@@ -1,6 +1,6 @@
 # 4.2 plan
 
-**Status:** agenda set 2026-11-28. Stage 1 done (#39). 4.2 is about **fixing known issues and letting other code work with the effect**. New effects (colours, `steps`, per-style params and the other ideas below) move to 4.3. No breaking changes.
+**Status:** agenda set 2026-11-28. Stages 1 (#39) and 2 (#40) done. 4.2 is about **fixing known issues and letting other code work with the effect**. New effects (colours, `steps`, per-style params and the other ideas below) move to 4.3. No breaking changes.
 
 As with 4.1, each stage is its own PR into a `release/4.2` branch, with its own tests, types and doc changes.
 
@@ -32,9 +32,9 @@ Stages 1 to 4 are small and independent, so they can go in any order or side by 
 
 From the Dandelion gaps ([section 3](#3-hooks-for-outside-code) below):
 
-- `resting`, a read-only getter, from [#resting()](../src/ProximityEffect.js#L1618).
+- `resting`, a read-only getter. (Not from the old private `#resting()`, which was the reduced-motion `"rest"` check and is now `#reducedToRest()`. The loop tracks its own settled state.)
 - `wake` when the loop starts after resting, and `rest` when it settles and stops. Not dispatched by `pause()` and `resume()`, which already have `paused`.
-- `beforeupdate`, dispatched at the start of each loop frame, before anything is read, so outside code (such as Dandelion's wind) can call `updateStyle()` or `setCoords()` and have it drawn that frame. Decide whether a listener can keep a resting effect awake (probably not: it can call `update()` or change something that wakes it).
+- `beforeupdate`, dispatched at the start of each loop frame, before anything is read, so outside code (such as Dandelion's wind) can call `updateStyle()` or `setCoords()` and have it drawn that frame. A listener can't keep a resting effect awake: it can call `update()` or change something that wakes it.
 
 **Tests:** event order over wake, frames and rest; no `rest` straight after `wake` when something keeps changing; `resting` matches the events.
 
@@ -191,7 +191,7 @@ No API change. Each instance has its own rAF loop ([#start()](../src/ProximityEf
 
 Gaps hit while building Dandelion:
 
-- **Rest state.** The demo polls every node's `lastDelta` each frame to see whether an instance is moving, which is O(n) per instance per frame in user code. The instance already knows ([#resting()](../src/ProximityEffect.js#L1618)): add a `resting` getter and `wake`/`rest` events.
+- **Rest state.** The demo polls every node's `lastDelta` each frame to see whether an instance is moving, which is O(n) per instance per frame in user code. The instance already knows ([#resting()](../src/ProximityEffect.js#L1618)): add a `resting` getter and `wake`/`rest` events (stage 2).
 - **Pre-frame hook.** The demo's wind loop runs in its own rAF, so its `updateStyle()` calls land a frame before or after the effect's frame. A `beforeupdate` event, or the shared scheduler (2) offering a tick to subscribe to, keeps outside code in step.
 - **Driving it from outside.** `autoUpdate: false` plus `update(time)`, for GSAP tickers, game loops or a page's own scheduler. Check how this works with `pause()` and the sleep logic.
 - **Pointer velocity.** Momentum and wind effects all work out pointer speed themselves. Expose `pointerVelocity` (px/ms, smoothed), on the instance or the shared input.
